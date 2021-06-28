@@ -1,0 +1,28 @@
+Package: GPEDM
+Title: Gaussian Process regression for Empirical Dynamic Modeling
+Version: 0.0.0.9000
+Authors@R: 
+    c(person(given = "Stephan",
+           family = "Munch",
+           role = c("aut"),
+           email = "smunch@ucsc.edu",
+           comment = c(ORCID = "0000-0003-1253-9903")),
+      person(given = "Tanya",
+           family = "Rogers",
+           role = c("aut", "cre"),
+           email = "tanya.rogers@noaa.gov",
+           comment = c(ORCID = "0000-0001-7471-5429")))     
+Description: Functions for fiting hierarchical, separable length scale GP models with
+  automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) 
+  and other applications.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+LinkingTo: 
+    Rcpp
+Imports: 
+    Matrix,
+    laGP,
+    Rcpp
