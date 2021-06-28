@@ -6,11 +6,21 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-**This is a very much a work in progress. Use at your own risk.**
+**Disclaimer: This is a very much a work in progress. Use at your own
+risk.**
 
 This package contains functions for fiting hierarchical, separable
 length scale GP models with automatic relevance determination (ARD) for
-use in Empirical Dynamic Modeling (EDM) and other applications.
+use in Empirical Dynamic Modeling (EDM) and other applications. This is
+an adaptation of code originally developed by Stephan Munch in MATLAB.
+
+The main function is `fitGP` which is used to train the model and can
+also produce predictions if desired. Use `predict.GP` to generate other
+or additional predictions from a fitted model, `plot.GP` to plot
+observed and predicted values and `getconditionals` to obtain
+condictional reponses. Also available for use is the function `makelags`
+which can be used to create delay vectors. See the (not yet created)
+vignette for more detailed instructions.
 
 ## Installation
 
@@ -19,6 +29,9 @@ To install the package:
 ``` r
 devtools::install_github("tanyalrogers/GPEDM")
 ```
+
+If you are using Windows, you may need to install
+[Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
 ## Simple Example
 
@@ -89,5 +102,11 @@ testrand=fitGP(yd=yrand,E=2,tau=1)
 yrandlags=makelags(yrand,E=2,tau=1)
 testrand2=fitGP(yd=yrand,xd=yrandlags)
 ```
+
+## References
+
+Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing
+structural uncertainty: a Bayesian perspective on nonlinear forecasting
+for ecology. Ecological Complexity, 32:134.
 
 *Any advice on improving this package is appreciated.*
