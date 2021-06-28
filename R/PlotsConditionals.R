@@ -83,7 +83,7 @@ getconditionals=function(fit, plot=T) {
   
   outlist=NULL
   for(k in 1:np) { #populations
-    indi=which(pop==up[k])
+    indi=which(Pop==up[k])
     xval<-predmean<-predsd<-xg<-matrix(0,nrow=Tslp,ncol=d)
     poppred=rep(up[k],Tslp)
     for(i in 1:d) { #predictors
