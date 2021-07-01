@@ -1,4 +1,30 @@
-#' Plot predictions from a GP model.
+#' Print a summary of a GP model
+#'
+#' Prints out some key information including hyperparameters and fit stats.
+#'
+#' @param object Output from \code{fitGP}.
+#' @method summary GP
+#' @export
+#' 
+summary.GP=function(object) {
+  d=ncol(object$inputs$X)
+  cat("Number of predictors:",d)
+  cat("\nLength scale parameters:\n")
+  print(object$pars[1:d])
+  cat("Observation variance (ve):",object$pars["ve"])
+  cat("\nFunction variance (tau):",object$pars["tau"])
+  np=length(unique(object$inputs$pop))
+  cat("\nNumber of populations:",np)
+  if(np>1) {
+    cat("\nDynamic correlation (rho):",object$pars["rho"])
+  }
+  cat("\nIn-sample R-squared:",object$insampfitstats["R2"])
+  if(!is.null(object$outsampfitstats)) {
+    cat("\nOut-of-sample R-squared:",object$outsampfitstats["R2"])
+  }
+}
+
+#' Plot predictions from a GP model
 #'
 #' Plots observed and predicted values from a GP model. If the model includes
 #' multiple populations, separate plots are produced for each population.
@@ -22,19 +48,25 @@ plot.GP=function(x, plotinsamp=F) {
   up=unique(dplot$pop)
   np=length(up)  
   
+  if(!is.null(x$inputs$yd_names)) {
+    yl=x$inputs$yd_names
+  } else {
+    yl="y"
+  }
+  
   # par(mfrow=c(np,ifelse((ncol(x$inputs$xd)==1 | is.null(x$inputs)),3,2)),mar=c(5,4,2,2))
   par(mfrow=c(np,2),mar=c(5,4,2,2))
   
   for(i in 1:np) {
     dploti=subset(dplot,pop==up[i])
-    plot(dploti$timestep,dploti$predmean,type="o",ylab="y",xlab="time",
+    plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="time",
          ylim=range(dploti$predmean+dploti$predfsd,dploti$predmean-dploti$predfsd,dploti$obs,na.rm=T),main=up[i])
     lines(dploti$timestep,dploti$predmean+dploti$predfsd, lty=2)
     lines(dploti$timestep,dploti$predmean-dploti$predfsd, lty=2)
     points(dploti$timestep,dploti$obs,col="blue")
     legend(x = "bottomright",legend = c("obs","pred"),col=c("blue","black"),pch=1)
     
-    plot(dploti$obs,dploti$predmean,ylab="y pred",xlab="y obs",main=up[i])
+    plot(dploti$obs,dploti$predmean,ylab=paste(yl,"pred"),xlab=paste(yl,"obs"),main=up[i])
     abline(a=0,b=1)
     
   }
@@ -139,12 +171,17 @@ getconditionals=function(fit, plot=T) {
   out=do.call("rbind",out)
   
   if(plot) {
+    if(!is.null(fit$inputs$yd_names)) {
+      yl=fit$inputs$yd_names
+    } else {
+      yl="y"
+    }
     old.par <- par(no.readonly = TRUE)
     par(mfrow=c(np,d),mar=c(5,4,2,2))
     for(i in 1:np) {
       pdata=outlist[[i]]
       for(j in 1:d) {
-        plot(pdata$xval[,j],pdata$predmean[,j], type="l",xlab=xlabels[j],ylab="y",main=up[i],
+        plot(pdata$xval[,j],pdata$predmean[,j], type="l",xlab=xlabels[j],ylab=yl,main=up[i],
              ylim=range(pdata$predmean[,j]+pdata$predsd[,j],pdata$predmean[,j]-pdata$predsd[,j]))
         lines(pdata$xval[,j],pdata$predmean[,j]+pdata$predsd[,j],lty=2)
         lines(pdata$xval[,j],pdata$predmean[,j]-pdata$predsd[,j],lty=2)

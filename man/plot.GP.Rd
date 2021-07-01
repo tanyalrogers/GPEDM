@@ -2,7 +2,7 @@
 % Please edit documentation in R/PlotsConditionals.R
 \name{plot.GP}
 \alias{plot.GP}
-\title{Plot predictions from a GP model.}
+\title{Plot predictions from a GP model}
 \usage{
 \method{plot}{GP}(x, plotinsamp = F)
 }

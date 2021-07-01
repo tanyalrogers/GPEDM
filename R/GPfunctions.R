@@ -18,19 +18,28 @@
 #' 
 #' @details 
 #' 
+#' The data are assumed to be should be in time order. This is particularly important if the E/tau option
+#' or \code{predictmethod="sequential"} is used.
+#' 
 #' \strong{Missing values:} 
 #' 
-#' Missing values for \code{yd} and \code{xd} are allowed. Any rows containing missing values
-#' will be excluded from the model fitting procedure. If \code{pop} and \code{time} are supplied, 
-#' they should NOT contain missing values.
+#' Missing values for \code{yd} and \code{xd} are allowed. Any rows containing
+#' missing values will be excluded from the model fitting procedure (reinserted
+#' as NAs in the output). If \code{pop} and \code{time} are supplied, they
+#' should NOT contain missing values. 
 #' 
 #' \strong{Hyperparameters:} 
+#' 
+#' The model uses the following covariance function:
+#' 
+#' (Insert equation here.)
 #' 
 #' There is one inverse length scale \code{phi} estimated for each predictor variable. 
 #' Values near 0 indicate that the predictor has little influence on the response variable, 
 #' and it was likely dropped by ARD. Higher values of \code{phi} indicate greater nonlinearity.
 #' 
-#' Observation variance \code{ve} and variance \code{tau}. 
+#' The estimated variance terms are \code{ve} (observation variance) and 
+#' \code{tau} (pointwise function variance). 
 #' 
 #' Hyperparameter \code{rho} is the dynamic
 #' correlation in the hierarchical GP model, indicating similarity of dynamics
@@ -89,7 +98,7 @@
 #'   (character) of index (numeric). If \code{data} is not supplied, a numeric vector.
 #' @param E Embedding dimension. Required if \code{xd} is not supplied.
 #' @param tau Time delay. Required if \code{xd} is not supplied.
-#' @param scaling How the variable should be scaled (see Details). Scaling can be \code{"global"} 
+#' @param scaling How the variables should be scaled (see Details). Scaling can be \code{"global"} 
 #'   (default), \code{"local"} (only applicable if more than 1 pop), or \code{"none"}. Scaling is applied 
 #'   to \code{yd} and each \code{xd}. For a mix of scalings, do it manually beforehand and 
 #'   set scaling to \code{"none"}. All outputs are backtransformed to original scale.
@@ -114,8 +123,9 @@
 #' \item{insampfitstats}{Fit statistics for in-sample predictions.}
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes observation error.}
-#' \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested 
-#' and \code{ynew} is provided to evaluate predictions)}
+#' \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested). 
+#'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
+#'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' @seealso \code{\link{predict.GP}}, \code{\link{plot.GP}}, \code{\link{getconditionals}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
 #'   a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
@@ -129,40 +139,6 @@
 fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="global",
                initpars=NULL,modeprior=1,rhofixed=NULL,
                predictmethod=NULL,datanew=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
-  
-  #options for supplying training data:
-  #  -dataframe plus column names/indices for yd, xd, pop, time
-  #  -dataframe plus column names/indices yd, pop, time plus values for E and tau
-  #  -vector yd, pop, time plus matrix/vector xd
-  #  -vector yd, pop, time plus values for E and tau
-  
-  #  pop identifies separate populations (optional, defaults to 1 population)
-  #  pop can be numeric, character, or factor
-  #  time is a time index (optional, defaults to numeric index)
-  
-  #initpars is c(phi,ve,tau,rho), in constrained space, should be equal to ncol(xd)+3
-  #  defaults used if not supplied: c(rep(0.1,d), 0.001, 1-0.001, 0.5)
-  #  rhofixed fixes the rho parameter, if desired
-  #  modeprior is used for the phi prior and sets the expected number of modes over the unit interval
-  
-  #scaling can be "global" (default), "local" (only applicable if more than 1 pop), or "none"
-  #scaling is applied to yd and each xd
-  #for mix of scalings, do manually beforehand and set scaling to "none"
-  #all outputs are backtransformed to original scale
-  
-  #options for making predictions (test data):
-  #  -set predictmethod to "loo" or "sequential" to use subsets of training data
-  #  -if dataframe was supplied, supply new dataframe containing the same column names as used for training data
-  #  -if vector/matrix xd was supplied, supply new vector/matrix xnew (ynew optional, popnew required if pop was supplied)
-  #  -if yd, E, tau were supplied, supply a new vector ynew
-  
-  #  out of sample fit stats are computed if using "loo" or "sequential", if yd is found in datanew,
-  #    or if ynew supplied
-  
-  #observation rows with incomplete yd, xd (missing values) are removed prior to model fitting.
-  #pop and time, if supplied, should NOT contain missing values
-  #time entries should be in time order, particularly if E/tau option or predictmethod="sequential" is used
-  #missing predictions are reinserted in the output
   
   inputs=list()
   
@@ -599,8 +575,9 @@ getcovinv=function(Sigma) {
 #' @return A list with the following elements:
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes observation error.}
-#' \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if
-#' \code{ynew} is provided to evaluate predictions)}
+#' \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
+#'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
+#'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' @export
 predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) { 
   

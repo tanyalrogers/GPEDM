@@ -50,7 +50,7 @@ which may be useful for later plotting purposes. If \code{data} is supplied, a c
 
 \item{tau}{Time delay. Required if \code{xd} is not supplied.}
 
-\item{scaling}{How the variable should be scaled (see Details). Scaling can be \code{"global"}
+\item{scaling}{How the variables should be scaled (see Details). Scaling can be \code{"global"}
 (default), \code{"local"} (only applicable if more than 1 pop), or \code{"none"}. Scaling is applied
 to \code{yd} and each \code{xd}. For a mix of scalings, do it manually beforehand and
 set scaling to \code{"none"}. All outputs are backtransformed to original scale.}
@@ -93,8 +93,9 @@ deviation of the GP function, \code{predsd} includes observation error.}
 \item{insampfitstats}{Fit statistics for in-sample predictions.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes observation error.}
-\item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested
-and \code{ynew} is provided to evaluate predictions)}
+\item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested).
+Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
+or if \code{ynew} supplied (i.e. if the observed values are known).}
 }
 \description{
 Fits a GP model with separable length scales and automatic relevance determination (ARD).
@@ -114,19 +115,28 @@ This function will also, optionally, produce predictions.
 See Details for more information.
 }
 \details{
+The data are assumed to be should be in time order. This is particularly important if the E/tau option
+or \code{predictmethod="sequential"} is used.
+
 \strong{Missing values:}
 
-Missing values for \code{yd} and \code{xd} are allowed. Any rows containing missing values
-will be excluded from the model fitting procedure. If \code{pop} and \code{time} are supplied,
-they should NOT contain missing values.
+Missing values for \code{yd} and \code{xd} are allowed. Any rows containing
+missing values will be excluded from the model fitting procedure (reinserted
+as NAs in the output). If \code{pop} and \code{time} are supplied, they
+should NOT contain missing values.
 
 \strong{Hyperparameters:}
+
+The model uses the following covariance function:
+
+(Insert equation here.)
 
 There is one inverse length scale \code{phi} estimated for each predictor variable.
 Values near 0 indicate that the predictor has little influence on the response variable,
 and it was likely dropped by ARD. Higher values of \code{phi} indicate greater nonlinearity.
 
-Observation variance \code{ve} and variance \code{tau}.
+The estimated variance terms are \code{ve} (observation variance) and
+\code{tau} (pointwise function variance).
 
 Hyperparameter \code{rho} is the dynamic
 correlation in the hierarchical GP model, indicating similarity of dynamics

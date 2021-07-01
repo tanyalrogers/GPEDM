@@ -2,6 +2,7 @@
 
 S3method(plot,GP)
 S3method(predict,GP)
+S3method(summary,GP)
 export(fitGP)
 export(getconditionals)
 export(makelags)

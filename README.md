@@ -18,7 +18,7 @@ The main function is `fitGP` which is used to train the model and can
 also produce predictions if desired. Use `predict.GP` to generate other
 or additional predictions from a fitted model, `plot.GP` to plot
 observed and predicted values and `getconditionals` to obtain
-condictional reponses. Also available for use is the function `makelags`
+conditional reponses. Also available for use is the function `makelags`
 which can be used to create delay vectors. See the (not yet created)
 vignette for more detailed instructions.
 
@@ -57,6 +57,17 @@ dftest2=dftest[order(dftest$pop),]
 
 #specify training data as vector and matrix
 test=fitGP(yd=y,xd=xmat,scaling = "global",predictmethod = "loo")
+#see a summary
+summary(test)
+#> Number of predictors: 2
+#> Length scale parameters:
+#>          phi1          phi2 
+#>  4.625908e-01 1.727341e-303 
+#> Observation variance (ve): 0.06311373
+#> Function variance (tau): 3.235288
+#> Number of populations: 1
+#> In-sample R-squared: 0.9568493
+#> Out-of-sample R-squared: 0.9026721
 #plot out of sample results
 plot(test)
 #> Plotting out of sample results.
@@ -82,6 +93,17 @@ con1=getconditionals(test, plot = T)
 ``` r
 #specify training data with data frame, example with 2 populations and a missing data point
 testhier=fitGP(data=dftest2,yd="responsem",xd=c("x1","x2"),pop="pop2",scaling="local", predictmethod="loo")
+summary(testhier)
+#> Number of predictors: 2
+#> Length scale parameters:
+#>      phi1      phi2 
+#> 0.2656263 0.0000000 
+#> Observation variance (ve): 0.07148576
+#> Function variance (tau): 3.027286
+#> Number of populations: 2
+#> Dynamic correlation (rho): 0.901183
+#> In-sample R-squared: 0.9578276
+#> Out-of-sample R-squared: 0.8706187
 plot(testhier)
 #> Plotting out of sample results.
 ```

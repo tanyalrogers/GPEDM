@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 
 This package contains functions for fiting hierarchical, separable length scale GP models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.  
 
-The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `predict.GP` to generate other or additional predictions from a fitted model, `plot.GP` to plot observed and predicted values and `getconditionals` to obtain condictional reponses. Also available for use is the function `makelags` which can be used to create delay vectors. See the (not yet created) vignette for more detailed instructions.
+The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `predict.GP` to generate other or additional predictions from a fitted model, `plot.GP` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use is the function `makelags` which can be used to create delay vectors. See the (not yet created) vignette for more detailed instructions.
 
 ## Installation
 
@@ -56,6 +56,8 @@ dftest2=dftest[order(dftest$pop),]
 
 #specify training data as vector and matrix
 test=fitGP(yd=y,xd=xmat,scaling = "global",predictmethod = "loo")
+#see a summary
+summary(test)
 #plot out of sample results
 plot(test)
 #plot in sample results
@@ -65,6 +67,7 @@ con1=getconditionals(test, plot = T)
 
 #specify training data with data frame, example with 2 populations and a missing data point
 testhier=fitGP(data=dftest2,yd="responsem",xd=c("x1","x2"),pop="pop2",scaling="local", predictmethod="loo")
+summary(testhier)
 plot(testhier)
 cond2=getconditionals(testhier)
 

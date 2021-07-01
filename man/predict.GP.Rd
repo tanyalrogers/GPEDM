@@ -36,8 +36,9 @@ original model.}
 A list with the following elements:
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes observation error.}
-\item{outsampfitstats}{Fit statistics for out-of-sample predictions (if
-\code{ynew} is provided to evaluate predictions)}
+\item{outsampfitstats}{Fit statistics for out-of-sample predictions.
+Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
+or if \code{ynew} supplied (i.e. if the observed values are known).}
 }
 \description{
 Obtain predictions from a fitted GP model. There are several options:
