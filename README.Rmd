@@ -54,7 +54,7 @@ plot(pB$Abundance[1:(N-1)],pB$Abundance[2:N],
      xlab="Abundance t",ylab="Abundance t+1",main="PopB")
 ```
 
-Here is how you might set up a hierarchical time-delay embedding model. In this example, `Abundance` is the response variable (`yd`), for which we will use an embedding dimension (`E`) of 3 and time delay (`tau`) of 1. `Population` indicates which population the data are from, so it is included under `pop`. Since the data are on somewhat different scales and don't necessarily represent the same 'units', we will use local (within population) data scaling, as opposed to global. Just for fun, we will also request leave-one-out predictions.   
+Here is how you might set up a hierarchical time-delay embedding model. In this example, `Abundance` is the response variable (`yd`). We will use an embedding dimension (`E`) of 3 and time delay (`tau`) of 1. `Population` indicates which population the data are from, so it is included under `pop`. Since the data are on somewhat different scales and don't necessarily represent the same 'units', we will use local (within population) data scaling, as opposed to global. Just for fun, we will also request leave-one-out predictions.   
 
 ```{r example}
 tlogtest=fitGP(data = thetalog2pop, yd = "Abundance", pop = "Population", E=3, tau=1, 
@@ -105,7 +105,7 @@ There are 4 ways that the training data for a model can be specified. The above 
 The `pop` argument is optional in all of the above cases. If omitted, a single population is assumed.
 
 ```{r other methods}
-
+set.seed(10)
 thetalog2pop$othervar=rnorm(nrow(thetalog2pop))
 yvec=thetalog2pop$Abundance
 popvec=thetalog2pop$Population

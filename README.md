@@ -60,9 +60,9 @@ plot(pB$Abundance[1:(N-1)],pB$Abundance[2:N],
 <img src="man/figures/README-data-1.png" width="100%" />
 
 Here is how you might set up a hierarchical time-delay embedding model.
-In this example, `Abundance` is the response variable (`yd`), for which
-we will use an embedding dimension (`E`) of 3 and time delay (`tau`) of
-1. `Population` indicates which population the data are from, so it is
+In this example, `Abundance` is the response variable (`yd`). We will
+use an embedding dimension (`E`) of 3 and time delay (`tau`) of 1.
+`Population` indicates which population the data are from, so it is
 included under `pop`. Since the data are on somewhat different scales
 and don’t necessarily represent the same ‘units’, we will use local
 (within population) data scaling, as opposed to global. Just for fun, we
@@ -154,6 +154,7 @@ The `pop` argument is optional in all of the above cases. If omitted, a
 single population is assumed.
 
 ``` r
+set.seed(10)
 thetalog2pop$othervar=rnorm(nrow(thetalog2pop))
 yvec=thetalog2pop$Abundance
 popvec=thetalog2pop$Population
@@ -178,24 +179,24 @@ summary(m1)
 #> Number of predictors: 2 
 #> Abundance_1 othervar 
 #> Length scale parameters:
-#>          phi1          phi2 
-#>  5.303985e-01 3.355234e-173 
-#> Observation variance (ve): 0.01180427
-#> Function variance (tau): 2.536226
+#>         phi1         phi2 
+#> 0.5207983744 0.0003021264 
+#> Observation variance (ve): 0.01031384
+#> Function variance (tau): 2.539001
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.3264527
-#> In-sample R-squared: 0.9938753
+#> Dynamic correlation (rho): 0.2929397
+#> In-sample R-squared: 0.9947297
 summary(m3)
 #> Number of predictors: 4 
 #> Abundance_1 Abundance_2 othervar_1 othervar_2 
 #> Length scale parameters:
-#>          phi1          phi2          phi3          phi4 
-#>  5.303315e-01 3.111810e-264  0.000000e+00  0.000000e+00 
-#> Observation variance (ve): 0.01205426
-#> Function variance (tau): 2.537665
+#>         phi1         phi2         phi3         phi4 
+#> 5.090030e-01 2.128391e-19 2.752429e-04 1.830083e-44 
+#> Observation variance (ve): 0.01026833
+#> Function variance (tau): 2.671209
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.3249611
-#> In-sample R-squared: 0.9938883
+#> Dynamic correlation (rho): 0.2873044
+#> In-sample R-squared: 0.9948366
 summary(m4)
 #> Number of predictors: 2 
 #> Length scale parameters:
