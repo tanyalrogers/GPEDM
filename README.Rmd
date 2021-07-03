@@ -22,62 +22,113 @@ knitr::opts_chunk$set(
 
 This package contains functions for fiting hierarchical, separable length scale GP models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.  
 
-The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `predict.GP` to generate other or additional predictions from a fitted model, `plot.GP` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use is the function `makelags` which can be used to create delay vectors. See the (not yet created) vignette for more detailed instructions.
+The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary.GP` to view a summary, `predict.GP` to generate other or additional predictions from a fitted model, `plot.GP` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use is the function `makelags` which can be used to create delay vectors. See the (not yet created) vignette for more detailed instructions.
 
 ## Installation
 
 To install the package:
 
 ``` r
+install.packages("devtools") #if required
 devtools::install_github("tanyalrogers/GPEDM")
 ```
-If you are using Windows, you may need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
+If you are using Windows, you may need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/), which allows you to complile the C++ code.
 
-## Simple Example
+## Example
 
-These are truly trivial examples that I should replace with something else. I was using them mainly for testing.
+Here are some simulated data from 2 populations with theta logistic dynamics. The data contain some small lognormal process noise, and the populations have different theta values.
+
+```{r data}
+library(GPEDM)
+data("thetalog2pop")
+
+pA=subset(thetalog2pop,Population=="PopA")
+pB=subset(thetalog2pop,Population=="PopB")
+N=nrow(pA)
+par(mfrow=c(2,2),mar=c(4,4,2,1))
+plot(Abundance~Time,data=pA,type="l",main="PopA")
+plot(Abundance~Time,data=pB,type="l",main="PopB")
+plot(pA$Abundance[1:(N-1)],pA$Abundance[2:N],
+     xlab="Abundance t",ylab="Abundance t+1",main="PopA")
+plot(pB$Abundance[1:(N-1)],pB$Abundance[2:N],
+     xlab="Abundance t",ylab="Abundance t+1",main="PopB")
+```
+
+Here is how you might set up a hierarchical time-delay embedding model. In this example, `Abundance` is the response variable (`yd`), for which we will use an embedding dimension (`E`) of 3 and time delay (`tau`) of 1. `Population` indicates which population the data are from, so it is included under `pop`. Since the data are on somewhat different scales and don't necessarily represent the same 'units', we will use local (within population) data scaling, as opposed to global. Just for fun, we will also request leave-one-out predictions.   
 
 ```{r example}
-library(GPEDM)
-set.seed(10)
+tlogtest=fitGP(data = thetalog2pop, yd = "Abundance", pop = "Population", E=3, tau=1, 
+               scaling = "local", predictmethod = "loo")
+summary(tlogtest)
+```
 
-#some trival data
-l=20
-x1=seq(-5,5,length.out = l)
-x2=rnorm(l,0,1)
-y=0.5*x1^2+rnorm(l)
-xmat=cbind(x1,x2)
-#create a missing value
-ym=y
-ym[5]=NA
-#as a data frame
-dftest=cbind.data.frame(response=y,responsem=ym,xmat,pop=rep(c(1,2),10),pop2=rep(c("site A","site B"),10))
-dftest2=dftest[order(dftest$pop),]
+From the summary, we can see that ARD has (unsurprisingly) deemed lags 2 and 3 to be unimportant (length scales are 0), so E=1 is probably sufficient. The dynamic correlation (rho) tells us the degree to which the dynamics correlated (they are are rather dissimilar in this case). Since the simulated data don't contain that much noise, the R-squared values are quite high.  
 
-#specify training data as vector and matrix
-test=fitGP(yd=y,xd=xmat,scaling = "global",predictmethod = "loo")
-#see a summary
-summary(test)
-#plot out of sample results
-plot(test)
-#plot in sample results
-plot(test, plotinsamp = T)
-#plot conditional responses
-con1=getconditionals(test, plot = T)
+We can examine the observed and predicted values using `plot`. Standard error bands are included in the time series plots, although they're a little hard to see in this example.
 
-#specify training data with data frame, example with 2 populations and a missing data point
-testhier=fitGP(data=dftest2,yd="responsem",xd=c("x1","x2"),pop="pop2",scaling="local", predictmethod="loo")
-summary(testhier)
-plot(testhier)
-cond2=getconditionals(testhier)
+```{r plot1}
+plot(tlogtest)
+```
 
-#specify training data as lags (E, tau)
-yrand = rnorm(50,0,1)
-testrand=fitGP(yd=yrand,E=2,tau=1)
-#alternatively
-yrandlags=makelags(yrand,E=2,tau=1)
-testrand2=fitGP(yd=yrand,xd=yrandlags)
+To get the in-sample predictions:
 
+```{r plot2}
+plot(tlogtest, plotinsamp = T)
+```
+
+The function `getconditionals` will compute and plot conditional responses to each input variable (other input varibles set to their mean value). From this we can also clearly see that lags 2 and 3 have no impact, and we can see how the lag 1 dynamics of the 2 populations differ.
+
+```{r conditionals}
+con=getconditionals(tlogtest)
+```
+
+We can use the `predict` function to get other types of predictions. 
+
+```{r predict}
+#sequential predictions (they should improve over time)
+seqpred=predict(tlogtest,predictmethod = "sequential")
+### This is broken ###
+#plot(seqpred) #have to specify plot.GP for output of predict.GP, but not finding?
+```
+
+You could also supply new data for which to make predictions. In this case, you would supply a new data frame (`datanew`), which should contain columns `Abundance` and `Population`. 
+
+## Specifying training data
+
+There are 4 ways that the training data for a model can be specified. The above example is method 2. Method 1 allows for the most customization of response and predictor variables including mixed embeddings, inclusion of covariates, etc.
+
+1. data frame `data`, plus column names or indices for `yd` and `xd`  
+2. data frame `data`, plus column name or index for `yd`, and values for `E` and `tau`  
+3. vector `yd`, plus matrix or vector `xd`  
+4. vector `yd`, plus values for `E` and `tau`  
+
+The `pop` argument is optional in all of the above cases. If omitted, a single population is assumed.
+
+```{r other methods}
+
+thetalog2pop$othervar=rnorm(nrow(thetalog2pop))
+yvec=thetalog2pop$Abundance
+popvec=thetalog2pop$Population
+#function 'makelags' can be used to generate a lag matrix
+#be sure to include 'pop' if data contain multiple pops to prevent crossover
+xmat=makelags(yd=thetalog2pop[,c("Abundance","othervar")],pop=popvec,E=2,tau=1)
+thetalog2pop2=cbind(thetalog2pop,xmat)
+
+#Method 1
+m1=fitGP(data=thetalog2pop2,yd="Abundance",xd=c("Abundance_1","othervar"),
+         pop="Population",scaling="local")
+
+#Method 3
+#like 1, but your data aren't in a data frame
+m3=fitGP(yd=yvec,xd=xmat,pop=popvec,scaling="local")
+
+#Method 4
+#like 2, but your data aren't in a data frame
+m4=fitGP(yd=yvec,pop=popvec,E=2,tau=1,scaling="local")
+
+summary(m1)
+summary(m3)
+summary(m4)
 ```
 
 ## References

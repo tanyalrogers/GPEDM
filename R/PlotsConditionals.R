@@ -8,8 +8,11 @@
 #' 
 summary.GP=function(object) {
   d=ncol(object$inputs$X)
-  cat("Number of predictors:",d)
-  cat("\nLength scale parameters:\n")
+  cat("Number of predictors:",d,"\n")
+  if(!is.null(object$inputs$xd_names)) {
+    cat(object$inputs$xd_names,"\n")
+  }
+  cat("Length scale parameters:\n")
   print(object$pars[1:d])
   cat("Observation variance (ve):",object$pars["ve"])
   cat("\nFunction variance (tau):",object$pars["tau"])
@@ -59,7 +62,7 @@ plot.GP=function(x, plotinsamp=F) {
   
   for(i in 1:np) {
     dploti=subset(dplot,pop==up[i])
-    plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="time",
+    plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="Time",
          ylim=range(dploti$predmean+dploti$predfsd,dploti$predmean-dploti$predfsd,dploti$obs,na.rm=T),main=up[i])
     lines(dploti$timestep,dploti$predmean+dploti$predfsd, lty=2)
     lines(dploti$timestep,dploti$predmean-dploti$predfsd, lty=2)
@@ -85,13 +88,27 @@ plot.GP=function(x, plotinsamp=F) {
 #' population.
 #'
 #' @param fit Output from \code{fitGP}.
-#' @param plot Produce a plot, or not (logical).
+#' @param xrange The range of *scaled* predictor values over which responses
+#'   should be evaluated. Options are \code{"local"} (the range observed within
+#'   each population), or \code{"global"} (the range across all populations).
+#'   Irrelevant if there is only one population. The default (\code{"default"})
+#'   will be \code{"local"} if \code{scaling="local"} was used, and
+#'   \code{"global"} if \code{scaling="global"} or \code{scaling="none"} was
+#'   used. This option can useful for either preventing or allowing for
+#'   extrapolation beyond the range of the data in a given population.
+#' @param extrap Percentage to extrapolate beyond the predictor range for each
+#'   population (i.e. predictor values will range from \code{(1-extrap)*min(X)}
+#'   to \code{(1+extrap)*max(X)} Defaults to 0.01.
+#' @param nvals The number of values to evaluate across the predictor range for
+#'   each population. Defaults to 25, which should be fine for most
+#'   applications.
+#' @param plot Produce a plot, or not (logical, defaults to TRUE).
 #'
-#' @return A data frame.
+#' @return A data frame containing the predictor values and conditional responses 
+#'   (means and standard deviations).
 #' @export
-getconditionals=function(fit, plot=T) {
-  #produce sections across each input (all others inputs fixed to 0), for each population
-  
+getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
+
   #need to add 2d option*****
   
   #extract relevant stuff from model
@@ -108,10 +125,15 @@ getconditionals=function(fit, plot=T) {
   xmeans=fit$scaling$xmeans
   xsds=fit$scaling$xsds
   
+  if(xrange=="default") {
+    if(scaling=="local") { xrange2="local" } 
+    else { xrange2="global" }
+  } else { xrange2=xrange }
+  
   up=unique(Pop)
   np=length(up)
   d=ncol(X)
-  Tslp=25
+  Tslp=nvals
   
   outlist=NULL
   for(k in 1:np) { #populations
@@ -119,7 +141,11 @@ getconditionals=function(fit, plot=T) {
     xval<-predmean<-predsd<-xg<-matrix(0,nrow=Tslp,ncol=d)
     poppred=rep(up[k],Tslp)
     for(i in 1:d) { #predictors
-      xgi=seq(0.95*min(X[,i]),1.05*max(X[,i]),length.out = Tslp)
+      if(xrange2=="local") {
+        xgi=seq((1-extrap)*min(X[indi,i]),(1+extrap)*max(X[indi,i]),length.out = Tslp)
+      } else {
+        xgi=seq((1-extrap)*min(X[,i]),(1+extrap)*max(X[,i]),length.out = Tslp)
+      }
       xdp=xg
       xdp[,i]=xgi
       covmnew=getcov(phi,tau,rho,X,xdp,Pop,poppred)
@@ -160,7 +186,7 @@ getconditionals=function(fit, plot=T) {
   }
   
   if(!is.null(fit$inputs$xd_names)) { xlabels=fit$inputs$xd_names }
-  else { xlabels= paste("x",1:d) }
+  else { xlabels= paste0("x",1:d) }
   
   #combine into dataframe  #this needs work, put in longer format*****
   out=lapply(outlist,function(x) {

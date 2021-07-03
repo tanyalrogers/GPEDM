@@ -180,6 +180,10 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
   #if xd is not supplied (only yd), generate xd from lags using supplied E and tau
   if(is.null(xd)) {
     xd=makelags(yd,pop,E,tau)
+    if(!is.null(inputs$yd_names)) {
+      colnames(xd)=sub("var1",inputs$yd_names,colnames(xd))
+      inputs$xd_names=colnames(xd)
+    }
   }
   
   #make sure xd is a matrix, not vector or data frame
@@ -725,7 +729,8 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
       for(i in 1:(nt-1)) {
         it=which(td==tgrid[i])
         I=diag(length(it))
-        SS=S[it,it]+ve*I
+        SS=S[it,it]+ve*I;
+        SS=round(SS,7) #prevents Matrix from thinking it's not symmetric, numerical issue possibly
         icov_ss=getcovinv(SS)
         iK=icov_ss$iKVs
         k=iK%*%(Y[it]-ymean1[it,i])

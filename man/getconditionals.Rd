@@ -4,15 +4,33 @@
 \alias{getconditionals}
 \title{Get conditional responses from a GP model}
 \usage{
-getconditionals(fit, plot = T)
+getconditionals(fit, xrange = "default", extrap = 0.01, nvals = 25, plot = T)
 }
 \arguments{
 \item{fit}{Output from \code{fitGP}.}
 
-\item{plot}{Produce a plot, or not (logical).}
+\item{xrange}{The range of \emph{scaled} predictor values over which responses
+should be evaluated. Options are \code{"local"} (the range observed within
+each population), or \code{"global"} (the range across all populations).
+Irrelevant if there is only one population. The default (\code{"default"})
+will be \code{"local"} if \code{scaling="local"} was used, and
+\code{"global"} if \code{scaling="global"} or \code{scaling="none"} was
+used. This option can useful for either preventing or allowing for
+extrapolation beyond the range of the data in a given population.}
+
+\item{extrap}{Percentage to extrapolate beyond the predictor range for each
+population (i.e. predictor values will range from \code{(1-extrap)*min(X)}
+to \code{(1+extrap)*max(X)} Defaults to 0.01.}
+
+\item{nvals}{The number of values to evaluate across the predictor range for
+each population. Defaults to 25, which should be fine for most
+applications.}
+
+\item{plot}{Produce a plot, or not (logical, defaults to TRUE).}
 }
 \value{
-A data frame.
+A data frame containing the predictor values and conditional responses
+(means and standard deviations).
 }
 \description{
 This will obtain responses to each predictor variable across its range of

@@ -26,3 +26,5 @@ Imports:
     Matrix,
     laGP,
     Rcpp
+Depends: 
+    R (>= 2.10)
