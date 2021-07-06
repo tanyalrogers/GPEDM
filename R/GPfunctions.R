@@ -30,38 +30,36 @@
 #' 
 #' \strong{Hyperparameters:} 
 #' 
-#' The model uses the following covariance function:
+#' The model uses the a squared exponential covariance function. See the (not yet written)
+#' vignette for mathematical details.
 #' 
-#' (Insert equation here.)
+#' There is one inverse length scale \code{phi} estimated for each predictor
+#' variable (input dimension). Values near 0 indicate that the predictor has
+#' little influence on the response variable, and it was likely dropped by ARD.
+#' Higher values of \code{phi} indicate greater nonlinearity.
 #' 
-#' There is one inverse length scale \code{phi} estimated for each predictor variable. 
-#' Values near 0 indicate that the predictor has little influence on the response variable, 
-#' and it was likely dropped by ARD. Higher values of \code{phi} indicate greater nonlinearity.
+#' The estimated variance terms are \code{ve} (observation and process variance) and 
+#' \code{sigma2} (pointwise prior variance). 
 #' 
-#' The estimated variance terms are \code{ve} (observation variance) and 
-#' \code{tau} (pointwise function variance). 
-#' 
-#' Hyperparameter \code{rho} is the dynamic
-#' correlation in the hierarchical GP model, indicating similarity of dynamics
-#' across populations. If there is only 1 population (e.g. if \code{pop} is not
-#' supplied), \code{rho} is irrelevant (not used by the model) and will revert
-#' to the mode of the prior (~0.5). The value of \code{rho} can be fixed to any
-#' value from 0.0001 to 1 using \code{rhofixed}, otherwise it is estimated from the data.
-#' See Munch et al. (2017) for more details.
+#' Hyperparameter \code{rho} is the dynamic correlation in the hierarchical GP
+#' model, indicating similarity of dynamics across populations. If there is only
+#' 1 population (e.g. if \code{pop} is not supplied), \code{rho} is irrelevant
+#' (not used by the model) and will revert to the mode of its prior (~0.5). The
+#' value of \code{rho} can be fixed to any value from 0.0001 to 1 using
+#' \code{rhofixed}, otherwise it is estimated from the data. 
 #'  
 #' \strong{Scaling:} 
 #' 
-#' The model priors assume the response variable and all predictor
-#' variables have approximately zero mean and unit variance, therefore it is
-#' important to scale the data properly when fitting these models. For
-#' convenience, this function will scale the input data automatically by
-#' default, and backtransform output to the original scale. Automatic scaling
-#' can be \code{"global"} (default), or \code{"local"}. The latter will scale
-#' variables within (as opposed to across) populations, so is obviously only
-#' applicable if there is more than 1 population. You can also scale the data
-#' yourself beforehand in whatever manner you wish and set
-#' \code{scaling="none"}. In this case, you will obviously have to do the
-#' backtransformation yourself.
+#' The model priors assume the response variable and all predictor variables
+#' have approximately zero mean and unit variance, therefore it is important to
+#' scale the data properly when fitting these models. For convenience, this
+#' function will scale the input data automatically by default, and
+#' backtransform output to the original scale. Automatic scaling can be
+#' \code{"global"} (default), or \code{"local"}. The latter will scale variables
+#' within (as opposed to across) populations, so is obviously only applicable if
+#' there is more than 1 population. You can also scale the data yourself
+#' beforehand in whatever manner you wish and set \code{scaling="none"}. In this
+#' case, you will obviously have to do the backtransformation yourself.
 #' 
 #' \strong{Predictions:}
 #' 
@@ -103,16 +101,16 @@
 #'   to \code{yd} and each \code{xd}. For a mix of scalings, do it manually beforehand and 
 #'   set scaling to \code{"none"}. All outputs are backtransformed to original scale.
 #' @param initpars Starting values for hyperparameters (see Details) in the order
-#'   \code{c(phi,ve,tau,rho)}, in constrained (non-transformed) space. Should be a numeric 
+#'   \code{c(phi,ve,sigma2,rho)}, in constrained (non-transformed) space. Should be a numeric 
 #'   vector with length \code{ncol(xd)+3}. Defaults used if not supplied: \code{c(rep(0.1,ncol(xd)), 0.001, 1-0.001, 0.5)}
 #' @param modeprior This value is used by the phi prior and sets the expected number of modes over the unit interval. 
 #'   Defaults to 1.
 #' @param rhofixed Fixes the rho parameter, if desired (see Details).
 #' @inheritParams predict.GP
 #'
-#' @return A list (class GP) with the following elements:
-#' \item{pars}{Posterior mode of hyperparameters.}
-#' \item{parst}{Posterior mode of hyperparameters, transformed to real line (used for optimization).}
+#' @return A list (class GP and GPpred) with the following elements:
+#' \item{pars}{Posterior mode of hyperparameters (named vector).}
+#' \item{parst}{Posterior mode of hyperparameters (named vector), transformed to real line (used for optimization).}
 #' \item{grad}{Likelihood gradients of hyperparameters at posterior mode. Can be used to assess convergence.}
 #' \item{covm}{List containing various covariance matrices and the inverse covariance matrix.}
 #' \item{iter}{Number of iterations until convergence was reached. Currently fixed at a max of 200.}
@@ -299,7 +297,7 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
     }
   }
   
-  class(output)="GP"
+  class(output)=c("GP","GPpred")
   return(output)
 }
 
@@ -371,28 +369,28 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   d=ncol(X) #embedding dimension
   
   #transform parameters from real line to constrained space
-  vemin=0.01;taumin=0.01
-  vemax=4.99;taumax=4.99
+  vemin=0.01;sigma2min=0.01
+  vemax=4.99;sigma2max=4.99
   rhomin=0.0001;rhomax=1
   phi=exp(parst[1:d])
   ve=(vemax-vemin)/(1+exp(-parst[d+1]))+vemin
-  tau=(taumax-taumin)/(1+exp(-parst[d+2]))+taumin
+  sigma2=(sigma2max-sigma2min)/(1+exp(-parst[d+2]))+sigma2min
   rho=(rhomax-rhomin)/(1+exp(-parst[d+3]))+rhomin
   
   if (!is.null(rhofixed)) {rho=rhofixed}
   
   #derivative for rescaled parameters wrt inputs -- for gradient calculation
   dpars=c(phi,(ve-vemin)*(1-(ve-vemin)/(vemax-vemin)),
-          (tau-taumin)*(1-(tau-taumin)/(taumax-taumin)),
+          (sigma2-sigma2min)*(1-(sigma2-sigma2min)/(sigma2max-sigma2min)),
           (rho-rhomin)*(1-(rho-rhomin)/(rhomax-rhomin)))
   
   #specify priors 
-  priors=getpriors(phi,ve,tau,rho,modeprior,taumax,vemax)
+  priors=getpriors(phi,ve,sigma2,rho,modeprior,sigma2max,vemax)
   lp=priors$lp #log prior
   dlp=priors$dlp #derivative of log prior
   
   #get covariance matrix
-  covm=getcov(phi,tau,rho,X,X,pop,pop)
+  covm=getcov(phi,sigma2,rho,X,X,pop,pop)
   #D=covm$D #distance matrices
   popsame=covm$popsame #population simularity matrix
   Cd=covm$Cd #covariance matrix
@@ -443,7 +441,7 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   vdC=matrix2vector(Id)
   # dl[d+1]=vQ%*%vdC
   dl[d+1]=innerProd(vQ,vdC)
-  vdC=matrix2vector(Cd/tau)
+  vdC=matrix2vector(Cd/sigma2)
   # dl[d+2]=vQ%*%vdC
   dl[d+2]=innerProd(vQ,vdC)
   dC=Cd*(1-popsame)/rho
@@ -453,7 +451,7 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   
   # dC[[d+1]]=Id
   # dl[d+1]=vQ%*%as.vector(dC[[d+1]])
-  # dC[[d+2]]=Cd/tau
+  # dC[[d+2]]=Cd/sigma2
   # dl[d+2]=vQ%*%as.vector(dC[[d+2]])
   # dC[[d+3]]=Cd*(1-popsame)/rho  
   # dl[d+3]=vQ%*%as.vector(dC[[d+3]])
@@ -468,15 +466,15 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   } 
   
   #transformed parameters
-  pars=c(phi,ve,tau,rho)
+  pars=c(phi,ve,sigma2,rho)
   
   mpt=Cd%*%a  #in sample mean
   Cdt=Cd-Cd%*%iKVs%*%Cd  #in sample covariance
   
   #name stuff
-  names(pars)=c(paste0("phi",1:length(phi)),"ve","tau","rho")
-  names(parst)=c(paste0("phi",1:length(phi)),"ve","tau","rho")
-  names(neglgrad)=c(paste0("phi",1:length(phi)),"ve","tau","rho")
+  names(pars)=c(paste0("phi",1:length(phi)),"ve","sigma2","rho")
+  names(parst)=c(paste0("phi",1:length(phi)),"ve","sigma2","rho")
+  names(neglgrad)=c(paste0("phi",1:length(phi)),"ve","sigma2","rho")
   
   lnL_LOO=0.5*sum(log(diag(iKVs)))-0.5*sum(a^2/diag(iKVs))
   df=sum(diag((Cd%*%iKVs))) #trace
@@ -488,16 +486,16 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   return(out)
 }
 
-getpriors=function(phi,ve,tau,rho,modeprior,taumax,vemax){
+getpriors=function(phi,ve,sigma2,rho,modeprior,sigma2max,vemax){
   #length scale
   lam_phi=(2^(modeprior-1))^2*pi/2 #variance for gaussian - pi/2 means E(phi)=1
   lp_phi=-0.5*sum(phi^2)/lam_phi
   dlp_phi=-(phi^1)/lam_phi
-  #tau
-  a_tau=2
-  b_tau=2 #beta
-  lp_tau=(a_tau-1)*log(tau/taumax)+(b_tau-1)*log(1-tau/taumax)
-  dlp_tau=(a_tau-1)/(tau)-(b_tau-1)/(taumax-tau)
+  #sigma2
+  a_sigma2=2
+  b_sigma2=2 #beta
+  lp_sigma2=(a_sigma2-1)*log(sigma2/sigma2max)+(b_sigma2-1)*log(1-sigma2/sigma2max)
+  dlp_sigma2=(a_sigma2-1)/(sigma2)-(b_sigma2-1)/(sigma2max-sigma2)
   #process noise
   a_ve=2
   b_ve=2 #beta
@@ -509,13 +507,13 @@ getpriors=function(phi,ve,tau,rho,modeprior,taumax,vemax){
   lp_rho=(a_rho-1)*log(rho)+(b_rho-1)*log(1-rho)  
   dlp_rho=(a_rho-1)/rho-(b_rho-1)/(1-rho)
   
-  lp=lp_phi+lp_ve+lp_tau+lp_rho #log prior
-  dlp=c(dlp_phi,dlp_ve,dlp_tau,dlp_rho) #derivative of log prior
+  lp=lp_phi+lp_ve+lp_sigma2+lp_rho #log prior
+  dlp=c(dlp_phi,dlp_ve,dlp_sigma2,dlp_rho) #derivative of log prior
   
   return(list(lp=lp,dlp=dlp))
 }
 
-getcov=function(phi,tau,rho,X,X2,pop,pop2) {
+getcov=function(phi,sigma2,rho,X,X2,pop,pop2) {
   #construct base covariance matrix
   Tsl=nrow(X) #time series length
   Tslp=nrow(X2)
@@ -533,7 +531,7 @@ getcov=function(phi,tau,rho,X,X2,pop,pop2) {
   # }
   
   popsame=(outer(pop2,pop,"=="))*1 #should work for numeric, chr, or factor
-  Cd=tau*exp(lC0)*(popsame+rho*(1-popsame)) #covariance matrix without obs noise
+  Cd=sigma2*exp(lC0)*(popsame+rho*(1-popsame)) #covariance matrix without obs noise
   
   # return(list(D=D,popsame=popsame,Cd=Cd))
   return(list(popsame=popsame,Cd=Cd))
@@ -576,7 +574,7 @@ getcovinv=function(Sigma) {
 #' @param popnew New population vector. Not required if \code{datanew} is supplied.
 #' @param timenew New time vector. Not required if \code{datanew} is supplied.
 #' @param ynew New response vector. Optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}. Not required if \code{datanew} is supplied.
-#' @return A list with the following elements:
+#' @return A list (class GPpred) with the following elements:
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes observation error.}
 #' \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
@@ -587,7 +585,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
   
   iKVs=object$covm$iKVs
   phi=object$pars[grepl("phi",names(object$pars))]
-  tau=object$pars[names(object$pars)=="tau"]
+  sigma2=object$pars[names(object$pars)=="sigma2"]
   rho=object$pars[names(object$pars)=="rho"]
   ve=object$pars[names(object$pars)=="ve"]
   X=object$inputs$X
@@ -664,14 +662,14 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
     Popnew=popnew[completerowsnew]
     
     #get covariance matrix
-    covmnew=getcov(phi,tau,rho,X,Xnew,Pop,Popnew)
+    covmnew=getcov(phi,sigma2,rho,X,Xnew,Pop,Popnew)
     Cs=covmnew$Cd #covariance matrix
     
     #get predictions
     ymean=Cs%*%(iKVs%*%Y)
     yvar=numeric(length = nrow(Xnew))
     for (i in 1:nrow(Xnew)) {
-      yvar[i]=tau-Cs[i,]%*%iKVs%*%Cs[i,]
+      yvar[i]=sigma2-Cs[i,]%*%iKVs%*%Cs[i,]
     }
     
     #backfill missing values
@@ -696,7 +694,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
         icov_noi=getcovinv(S_noi)
         iKVs_noi=icov_noi$iKVs
         ymean[i]=Cdi%*%iKVs_noi%*%Y_noi
-        yvar[i]=tau-Cdi%*%iKVs_noi%*%Cdi
+        yvar[i]=sigma2-Cdi%*%iKVs_noi%*%Cdi
       }
       
       #backfill missing values
@@ -717,14 +715,14 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
       np=length(up) #number of populations
       tgrid=unique(td) #assuming timepoints are in order
       nt=length(tgrid) #number of timepoints
-      S=object$covm$Cd #tau*exp(lC0).*(popsame+rho*(1-popsame))
+      S=object$covm$Cd #sigma2*exp(lC0).*(popsame+rho*(1-popsame))
       
       #mint=min(td);maxt=max(td)
       #tgrid=mint:maxt #min to max time index
       #nt=maxt-mint+1
       
       ymean1=matrix(0,nrow=length(Y),ncol=nt)
-      ysd1=(tau+ve)*matrix(1,nrow=length(Y),ncol=nt)
+      ysd1=(sigma2+ve)*matrix(1,nrow=length(Y),ncol=nt)
       
       for(i in 1:(nt-1)) {
         it=which(td==tgrid[i])
@@ -739,7 +737,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
         ysd1[,i+1]=sqrt(abs(diag(S))+ve)
       }
       ymean=rep(NA,length(Y))
-      ysd2=rep((tau+ve),length(Y))
+      ysd2=rep((sigma2+ve),length(Y))
       for(i in 1:nt) {
         for(k in 1:np) {
           ind=which(td==tgrid[i] & Pop==up[k])
@@ -800,6 +798,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
       out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
     }
   }
+  class(out)="GPpred"
   return(out)
 }
 

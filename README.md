@@ -17,7 +17,7 @@ an adaptation of code originally developed by Stephan Munch in MATLAB.
 The main function is `fitGP` which is used to train the model and can
 also produce predictions if desired. Use `summary.GP` to view a summary,
 `predict.GP` to generate other or additional predictions from a fitted
-model, `plot.GP` to plot observed and predicted values and
+model, `plot.GPpred` to plot observed and predicted values and
 `getconditionals` to obtain conditional reponses. Also available for use
 is the function `makelags` which can be used to create delay vectors.
 See the (not yet created) vignette for more detailed instructions.
@@ -78,7 +78,7 @@ summary(tlogtest)
 #>          phi1          phi2          phi3 
 #>  5.290040e-01 1.248172e-216 1.248172e-216 
 #> Observation variance (ve): 0.01221358
-#> Function variance (tau): 2.53986
+#> Function variance (sigma2): 2.53986
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250464
 #> In-sample R-squared: 0.9939452
@@ -124,14 +124,27 @@ con=getconditionals(tlogtest)
 
 <img src="man/figures/README-conditionals-1.png" width="100%" />
 
+Make a plot of the inverse length scale parameters.
+
+``` r
+predvars=tlogtest$inputs$xd_names
+npreds=length(predvars)
+lscales=tlogtest$pars[1:npreds]
+plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
+```
+
+<img src="man/figures/README-ls-1.png" width="100%" />
+
 We can use the `predict` function to get other types of predictions.
 
 ``` r
 #sequential predictions (they should improve over time)
 seqpred=predict(tlogtest,predictmethod = "sequential")
-### This is broken ###
-#plot(seqpred) #have to specify plot.GP for output of predict.GP, but not finding?
+plot(seqpred)
+#> Plotting out of sample results.
 ```
+
+<img src="man/figures/README-predict-1.png" width="100%" />
 
 You could also supply new data for which to make predictions. In this
 case, you would supply a new data frame (`datanew`), which should
@@ -182,7 +195,7 @@ summary(m1)
 #>         phi1         phi2 
 #> 0.5207983744 0.0003021264 
 #> Observation variance (ve): 0.01031384
-#> Function variance (tau): 2.539001
+#> Function variance (sigma2): 2.539001
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2929397
 #> In-sample R-squared: 0.9947297
@@ -193,7 +206,7 @@ summary(m3)
 #>         phi1         phi2         phi3         phi4 
 #> 5.090030e-01 2.128391e-19 2.752429e-04 1.830083e-44 
 #> Observation variance (ve): 0.01026833
-#> Function variance (tau): 2.671209
+#> Function variance (sigma2): 2.671209
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2873044
 #> In-sample R-squared: 0.9948366
@@ -203,7 +216,7 @@ summary(m4)
 #>          phi1          phi2 
 #>  5.302715e-01 3.355234e-173 
 #> Observation variance (ve): 0.01205433
-#> Function variance (tau): 2.53792
+#> Function variance (sigma2): 2.53792
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250085
 #> In-sample R-squared: 0.9938883

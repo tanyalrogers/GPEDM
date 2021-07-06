@@ -33,7 +33,7 @@ original model.}
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}. Not required if \code{datanew} is supplied.}
 }
 \value{
-A list with the following elements:
+A list (class GPpred) with the following elements:
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes observation error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions.

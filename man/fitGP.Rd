@@ -56,7 +56,7 @@ to \code{yd} and each \code{xd}. For a mix of scalings, do it manually beforehan
 set scaling to \code{"none"}. All outputs are backtransformed to original scale.}
 
 \item{initpars}{Starting values for hyperparameters (see Details) in the order
-\code{c(phi,ve,tau,rho)}, in constrained (non-transformed) space. Should be a numeric
+\code{c(phi,ve,sigma2,rho)}, in constrained (non-transformed) space. Should be a numeric
 vector with length \code{ncol(xd)+3}. Defaults used if not supplied: \code{c(rep(0.1,ncol(xd)), 0.001, 1-0.001, 0.5)}}
 
 \item{modeprior}{This value is used by the phi prior and sets the expected number of modes over the unit interval.
@@ -80,9 +80,9 @@ original model.}
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}. Not required if \code{datanew} is supplied.}
 }
 \value{
-A list (class GP) with the following elements:
-\item{pars}{Posterior mode of hyperparameters.}
-\item{parst}{Posterior mode of hyperparameters, transformed to real line (used for optimization).}
+A list (class GP and GPpred) with the following elements:
+\item{pars}{Posterior mode of hyperparameters (named vector).}
+\item{parst}{Posterior mode of hyperparameters (named vector), transformed to real line (used for optimization).}
 \item{grad}{Likelihood gradients of hyperparameters at posterior mode. Can be used to assess convergence.}
 \item{covm}{List containing various covariance matrices and the inverse covariance matrix.}
 \item{iter}{Number of iterations until convergence was reached. Currently fixed at a max of 200.}
@@ -127,38 +127,36 @@ should NOT contain missing values.
 
 \strong{Hyperparameters:}
 
-The model uses the following covariance function:
+The model uses the a squared exponential covariance function. See the (not yet written)
+vignette for mathematical details.
 
-(Insert equation here.)
+There is one inverse length scale \code{phi} estimated for each predictor
+variable (input dimension). Values near 0 indicate that the predictor has
+little influence on the response variable, and it was likely dropped by ARD.
+Higher values of \code{phi} indicate greater nonlinearity.
 
-There is one inverse length scale \code{phi} estimated for each predictor variable.
-Values near 0 indicate that the predictor has little influence on the response variable,
-and it was likely dropped by ARD. Higher values of \code{phi} indicate greater nonlinearity.
+The estimated variance terms are \code{ve} (observation and process variance) and
+\code{sigma2} (pointwise prior variance).
 
-The estimated variance terms are \code{ve} (observation variance) and
-\code{tau} (pointwise function variance).
-
-Hyperparameter \code{rho} is the dynamic
-correlation in the hierarchical GP model, indicating similarity of dynamics
-across populations. If there is only 1 population (e.g. if \code{pop} is not
-supplied), \code{rho} is irrelevant (not used by the model) and will revert
-to the mode of the prior (~0.5). The value of \code{rho} can be fixed to any
-value from 0.0001 to 1 using \code{rhofixed}, otherwise it is estimated from the data.
-See Munch et al. (2017) for more details.
+Hyperparameter \code{rho} is the dynamic correlation in the hierarchical GP
+model, indicating similarity of dynamics across populations. If there is only
+1 population (e.g. if \code{pop} is not supplied), \code{rho} is irrelevant
+(not used by the model) and will revert to the mode of its prior (~0.5). The
+value of \code{rho} can be fixed to any value from 0.0001 to 1 using
+\code{rhofixed}, otherwise it is estimated from the data.
 
 \strong{Scaling:}
 
-The model priors assume the response variable and all predictor
-variables have approximately zero mean and unit variance, therefore it is
-important to scale the data properly when fitting these models. For
-convenience, this function will scale the input data automatically by
-default, and backtransform output to the original scale. Automatic scaling
-can be \code{"global"} (default), or \code{"local"}. The latter will scale
-variables within (as opposed to across) populations, so is obviously only
-applicable if there is more than 1 population. You can also scale the data
-yourself beforehand in whatever manner you wish and set
-\code{scaling="none"}. In this case, you will obviously have to do the
-backtransformation yourself.
+The model priors assume the response variable and all predictor variables
+have approximately zero mean and unit variance, therefore it is important to
+scale the data properly when fitting these models. For convenience, this
+function will scale the input data automatically by default, and
+backtransform output to the original scale. Automatic scaling can be
+\code{"global"} (default), or \code{"local"}. The latter will scale variables
+within (as opposed to across) populations, so is obviously only applicable if
+there is more than 1 population. You can also scale the data yourself
+beforehand in whatever manner you wish and set \code{scaling="none"}. In this
+case, you will obviously have to do the backtransformation yourself.
 
 \strong{Predictions:}
 

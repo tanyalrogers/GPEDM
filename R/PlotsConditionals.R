@@ -15,7 +15,7 @@ summary.GP=function(object) {
   cat("Length scale parameters:\n")
   print(object$pars[1:d])
   cat("Observation variance (ve):",object$pars["ve"])
-  cat("\nFunction variance (tau):",object$pars["tau"])
+  cat("\nFunction variance (sigma2):",object$pars["sigma2"])
   np=length(unique(object$inputs$pop))
   cat("\nNumber of populations:",np)
   if(np>1) {
@@ -37,7 +37,7 @@ summary.GP=function(object) {
 #'   results if available.
 #' @export
 
-plot.GP=function(x, plotinsamp=F) {
+plot.GPpred=function(x, plotinsamp=F) {
   old.par <- par(no.readonly = TRUE)
   
   if(is.null(x$outsampresults) | plotinsamp) {
@@ -114,7 +114,7 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
   #extract relevant stuff from model
   iKVs=fit$covm$iKVs
   phi=fit$pars[grepl("phi",names(fit$pars))]
-  tau=fit$pars[names(fit$pars)=="tau"]
+  sigma2=fit$pars[names(fit$pars)=="sigma2"]
   rho=fit$pars[names(fit$pars)=="rho"]
   X=fit$inputs$X
   Y=fit$inputs$Y
@@ -148,12 +148,12 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
       }
       xdp=xg
       xdp[,i]=xgi
-      covmnew=getcov(phi,tau,rho,X,xdp,Pop,poppred)
+      covmnew=getcov(phi,sigma2,rho,X,xdp,Pop,poppred)
       Cs=covmnew$Cd #covariance matrix
       predmean[,i]=Cs%*%(iKVs%*%Y)
       predvar=numeric(length = Tslp)
       for(j in 1:Tslp) {
-        predvar[j]=tau-Cs[j,]%*%iKVs%*%Cs[j,]
+        predvar[j]=sigma2-Cs[j,]%*%iKVs%*%Cs[j,]
       }
       predsd[,i]=sqrt(predvar)
       xval[,i]=xgi
