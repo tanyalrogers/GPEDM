@@ -92,7 +92,7 @@ plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 
 ```
 
-We can use the `predict` function to get other types of predictions. 
+We can use the `predict` function to get other types of predictions. The following obtains sequential predictions using the training data. You could, alternatively, supply new data for which to make predictions. In that case, you would supply a new data frame (`datanew`), which should contain columns `Abundance` and `Population`. 
 
 ```{r predict}
 #sequential predictions (they should improve over time)
@@ -100,7 +100,6 @@ seqpred=predict(tlogtest,predictmethod = "sequential")
 plot(seqpred)
 ```
 
-You could also supply new data for which to make predictions. In this case, you would supply a new data frame (`datanew`), which should contain columns `Abundance` and `Population`. 
 
 ## Specifying training data
 
@@ -136,7 +135,9 @@ m3=fitGP(yd=yvec,xd=xmat,pop=popvec,scaling="local")
 m4=fitGP(yd=yvec,pop=popvec,E=2,tau=1,scaling="local")
 
 summary(m1)
+
 summary(m3)
+
 summary(m4)
 ```
 

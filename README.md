@@ -77,8 +77,8 @@ summary(tlogtest)
 #> Length scale parameters:
 #>          phi1          phi2          phi3 
 #>  5.290040e-01 1.248172e-216 1.248172e-216 
-#> Observation variance (ve): 0.01221358
-#> Function variance (sigma2): 2.53986
+#> Observation/process variance (ve): 0.01221358
+#> Pointwise prior variance (sigma2): 2.53986
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250464
 #> In-sample R-squared: 0.9939452
@@ -135,7 +135,11 @@ plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 
 <img src="man/figures/README-ls-1.png" width="100%" />
 
-We can use the `predict` function to get other types of predictions.
+We can use the `predict` function to get other types of predictions. The
+following obtains sequential predictions using the training data. You
+could, alternatively, supply new data for which to make predictions. In
+that case, you would supply a new data frame (`datanew`), which should
+contain columns `Abundance` and `Population`.
 
 ``` r
 #sequential predictions (they should improve over time)
@@ -145,10 +149,6 @@ plot(seqpred)
 ```
 
 <img src="man/figures/README-predict-1.png" width="100%" />
-
-You could also supply new data for which to make predictions. In this
-case, you would supply a new data frame (`datanew`), which should
-contain columns `Abundance` and `Population`.
 
 ## Specifying training data
 
@@ -194,29 +194,31 @@ summary(m1)
 #> Length scale parameters:
 #>         phi1         phi2 
 #> 0.5207983744 0.0003021264 
-#> Observation variance (ve): 0.01031384
-#> Function variance (sigma2): 2.539001
+#> Observation/process variance (ve): 0.01031384
+#> Pointwise prior variance (sigma2): 2.539001
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2929397
 #> In-sample R-squared: 0.9947297
+
 summary(m3)
 #> Number of predictors: 4 
 #> Abundance_1 Abundance_2 othervar_1 othervar_2 
 #> Length scale parameters:
 #>         phi1         phi2         phi3         phi4 
 #> 5.090030e-01 2.128391e-19 2.752429e-04 1.830083e-44 
-#> Observation variance (ve): 0.01026833
-#> Function variance (sigma2): 2.671209
+#> Observation/process variance (ve): 0.01026833
+#> Pointwise prior variance (sigma2): 2.671209
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2873044
 #> In-sample R-squared: 0.9948366
+
 summary(m4)
 #> Number of predictors: 2 
 #> Length scale parameters:
 #>          phi1          phi2 
 #>  5.302715e-01 3.355234e-173 
-#> Observation variance (ve): 0.01205433
-#> Function variance (sigma2): 2.53792
+#> Observation/process variance (ve): 0.01205433
+#> Pointwise prior variance (sigma2): 2.53792
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250085
 #> In-sample R-squared: 0.9938883

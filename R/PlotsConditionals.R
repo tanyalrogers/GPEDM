@@ -14,8 +14,8 @@ summary.GP=function(object) {
   }
   cat("Length scale parameters:\n")
   print(object$pars[1:d])
-  cat("Observation variance (ve):",object$pars["ve"])
-  cat("\nFunction variance (sigma2):",object$pars["sigma2"])
+  cat("Observation/process variance (ve):",object$pars["ve"])
+  cat("\nPointwise prior variance (sigma2):",object$pars["sigma2"])
   np=length(unique(object$inputs$pop))
   cat("\nNumber of populations:",np)
   if(np>1) {
