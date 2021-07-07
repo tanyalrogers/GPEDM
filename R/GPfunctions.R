@@ -197,11 +197,11 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
     xsds=apply(xd,2,sd,na.rm=T)
     xds=xd
     #issue warnings if data are not scaled properly
-    if(ymeans>0.01|ymeans<(-0.01)|ysds>1.01|ysds<(-0.99)) {
+    if(ymeans>0.1|ymeans<(-0.1)|ysds>1.1|ysds<(-0.9)) {
       warning("yd is not scaled properly, model may be unreliable ", 
               "mean=",round(ymeans,3)," sd=",round(ysds,3),call. = F,immediate. = T)
     }
-    if(any(xmeans>0.01)|any(xmeans<(-0.01))|any(xsds>1.01)|any(xsds<(-0.99))) {
+    if(any(xmeans>0.1)|any(xmeans<(-0.1))|any(xsds>1.1)|any(xsds<(-0.9))) {
       warning("one or more xd is not scaled properly, model may be unreliable. ", 
               "means=",paste(round(xmeans,3),collapse=" "),
               " sds=",paste(round(xsds,3),collapse=" "),call. = F,immediate. = T)

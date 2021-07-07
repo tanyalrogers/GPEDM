@@ -38,7 +38,6 @@ summary.GP=function(object) {
 #' @export
 
 plot.GPpred=function(x, plotinsamp=F) {
-  old.par <- par(no.readonly = TRUE)
   
   if(is.null(x$outsampresults) | plotinsamp) {
     dplot=x$insampresults
@@ -58,8 +57,9 @@ plot.GPpred=function(x, plotinsamp=F) {
   }
   
   # par(mfrow=c(np,ifelse((ncol(x$inputs$xd)==1 | is.null(x$inputs)),3,2)),mar=c(5,4,2,2))
-  par(mfrow=c(np,2),mar=c(5,4,2,2))
-  
+  old.par <- par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
+  on.exit(par(old.par),add = T,after = F)
+
   for(i in 1:np) {
     dploti=subset(dplot,pop==up[i])
     plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="Time",
@@ -73,8 +73,6 @@ plot.GPpred=function(x, plotinsamp=F) {
     abline(a=0,b=1)
     
   }
-  
-  on.exit(par(old.par))
   
 }
 
@@ -202,8 +200,9 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
     } else {
       yl="y"
     }
-    old.par <- par(no.readonly = TRUE)
-    par(mfrow=c(np,d),mar=c(5,4,2,2))
+    old.par <- par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
+    on.exit(par(old.par),add = T,after = F)
+    #par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
     for(i in 1:np) {
       pdata=outlist[[i]]
       for(j in 1:d) {
@@ -213,7 +212,6 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
         lines(pdata$xval[,j],pdata$predmean[,j]-pdata$predsd[,j],lty=2)
       }
     }
-    on.exit(par(old.par))
   }
   return(out)
 }
