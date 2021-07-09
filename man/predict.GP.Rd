@@ -51,4 +51,7 @@ Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied i
 \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
 \code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
 }
+It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
+made by removing one of the training points, the hyperparameters are fit using all of the training data.
+The same goes for \code{"sequential"}.
 }

@@ -38,7 +38,7 @@
 #' little influence on the response variable, and it was likely dropped by ARD.
 #' Higher values of \code{phi} indicate greater nonlinearity.
 #' 
-#' The estimated variance terms are \code{ve} (observation and process variance) and 
+#' The estimated variance terms are \code{ve} (process variance) and 
 #' \code{sigma2} (pointwise prior variance). 
 #' 
 #' Hyperparameter \code{rho} is the dynamic correlation in the hierarchical GP
@@ -77,6 +77,10 @@
 #' After fitting, predictions can also be made using \code{\link{predict.GP}}.
 #' Predictions can plotted using \code{\link{plot.GP}}.
 #' Get conditional responses using \code{\link{getconditionals}}.
+#' 
+#' It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
+#' made by removing one of the training points, the hyperparameters are fit using all of the training data.
+#' The same goes for \code{"sequential"}.
 #'
 #' @param data A data frame, or matrix with named columns.
 #' @param yd The response variable (required). If \code{data} is supplied, a column name
@@ -124,6 +128,7 @@
 #' \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested). 
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
+#' \item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.
 #' @seealso \code{\link{predict.GP}}, \code{\link{plot.GP}}, \code{\link{getconditionals}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
 #'   a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
@@ -182,6 +187,8 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
       colnames(xd)=sub("var1",inputs$yd_names,colnames(xd))
       inputs$xd_names=colnames(xd)
     }
+    inputs$E=E
+    inputs$tau=tau
   }
   
   #make sure xd is a matrix, not vector or data frame
@@ -291,10 +298,7 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
   
   if(!is.null(predictmethod)|!is.null(xnew)|!is.null(datanew)) { #generate predictions if requested
     predictresults=predict.GP(output,predictmethod,datanew,xnew,popnew,timenew,ynew) 
-    output$outsampresults=predictresults$outsampresults
-    if(!is.null(predictresults$outsampfitstats)) {
-      output$outsampfitstats=predictresults$outsampfitstats
-    }
+    output=c(output,predictresults)
   }
   
   class(output)=c("GP","GPpred")
@@ -563,6 +567,9 @@ getcovinv=function(Sigma) {
 #'   \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
 #'   \code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
 #' }
+#' It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
+#' made by removing one of the training points, the hyperparameters are fit using all of the training data.
+#' The same goes for \code{"sequential"}.
 #'
 #' @param object Output from \code{fitGP}.
 #' @param predictmethod \code{loo} (default) does leave-one-out prediction using
@@ -603,7 +610,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
     #if data frame is supplied, take columns from it
     if(!is.null(datanew)) {
       ynew=datanew[,object$inputs$yd_names]
-      if(!is.null(object$inputs$xd_names)) { xnew=datanew[,object$inputs$xd_names] }
+      if(!is.null(object$inputs$xd_names) & is.null(object$inputs$E)) { xnew=datanew[,object$inputs$xd_names] }
       if(!is.null(object$inputs$pop_names)) { popnew=datanew[,object$inputs$pop_names] }
       if(!is.null(object$inputs$time_names)) { timenew=datanew[,object$inputs$time_names] }
     }

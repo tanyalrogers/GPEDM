@@ -77,7 +77,7 @@ summary(tlogtest)
 #> Length scale parameters:
 #>          phi1          phi2          phi3 
 #>  5.290040e-01 1.248172e-216 1.248172e-216 
-#> Observation/process variance (ve): 0.01221358
+#> Process variance (ve): 0.01221358
 #> Pointwise prior variance (sigma2): 2.53986
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250464
@@ -136,10 +136,7 @@ plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 <img src="man/figures/README-ls-1.png" width="100%" />
 
 We can use the `predict` function to get other types of predictions. The
-following obtains sequential predictions using the training data. You
-could, alternatively, supply new data for which to make predictions. In
-that case, you would supply a new data frame (`datanew`), which should
-contain columns `Abundance` and `Population`.
+following obtains sequential predictions using the training data.
 
 ``` r
 #sequential predictions (they should improve over time)
@@ -149,6 +146,27 @@ plot(seqpred)
 ```
 
 <img src="man/figures/README-predict-1.png" width="100%" />
+
+You could, alternatively, supply new data for which to make predictions.
+In that case, you would supply a new data frame (`datanew`), which
+should contain columns `Abundance` and `Population`.
+
+A common approach when fitting these models is to split the available
+data into a training and test dataset. For instance, say we wanted a
+single-population model for PopA with 2 time lags, and we wanted to use
+the first 40 data points as training data, and the last 10 points as
+test data. For that we could do the following.
+
+``` r
+pAtrain=pA[1:40,]
+pAtest=pA[41:50,]
+tlogtest2=fitGP(data = pAtrain, yd = "Abundance", E=2, tau=1,
+                datanew = pAtest)
+plot(tlogtest2)
+#> Plotting out of sample results.
+```
+
+<img src="man/figures/README-predict2-1.png" width="100%" />
 
 ## Specifying training data
 
@@ -194,7 +212,7 @@ summary(m1)
 #> Length scale parameters:
 #>         phi1         phi2 
 #> 0.5207983744 0.0003021264 
-#> Observation/process variance (ve): 0.01031384
+#> Process variance (ve): 0.01031384
 #> Pointwise prior variance (sigma2): 2.539001
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2929397
@@ -206,7 +224,7 @@ summary(m3)
 #> Length scale parameters:
 #>         phi1         phi2         phi3         phi4 
 #> 5.090030e-01 2.128391e-19 2.752429e-04 1.830083e-44 
-#> Observation/process variance (ve): 0.01026833
+#> Process variance (ve): 0.01026833
 #> Pointwise prior variance (sigma2): 2.671209
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2873044
@@ -217,7 +235,7 @@ summary(m4)
 #> Length scale parameters:
 #>          phi1          phi2 
 #>  5.302715e-01 3.355234e-173 
-#> Observation/process variance (ve): 0.01205433
+#> Process variance (ve): 0.01205433
 #> Pointwise prior variance (sigma2): 2.53792
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250085

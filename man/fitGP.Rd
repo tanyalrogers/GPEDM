@@ -96,6 +96,7 @@ deviation of the GP function, \code{predsd} includes observation error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested).
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
+\item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.
 }
 \description{
 Fits a GP model with separable length scales and automatic relevance determination (ARD).
@@ -135,7 +136,7 @@ variable (input dimension). Values near 0 indicate that the predictor has
 little influence on the response variable, and it was likely dropped by ARD.
 Higher values of \code{phi} indicate greater nonlinearity.
 
-The estimated variance terms are \code{ve} (observation and process variance) and
+The estimated variance terms are \code{ve} (process variance) and
 \code{sigma2} (pointwise prior variance).
 
 Hyperparameter \code{rho} is the dynamic correlation in the hierarchical GP
@@ -174,6 +175,10 @@ Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied i
 After fitting, predictions can also be made using \code{\link{predict.GP}}.
 Predictions can plotted using \code{\link{plot.GP}}.
 Get conditional responses using \code{\link{getconditionals}}.
+
+It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
+made by removing one of the training points, the hyperparameters are fit using all of the training data.
+The same goes for \code{"sequential"}.
 }
 \examples{
 yrand=rnorm(20)

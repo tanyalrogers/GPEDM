@@ -92,7 +92,7 @@ plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 
 ```
 
-We can use the `predict` function to get other types of predictions. The following obtains sequential predictions using the training data. You could, alternatively, supply new data for which to make predictions. In that case, you would supply a new data frame (`datanew`), which should contain columns `Abundance` and `Population`. 
+We can use the `predict` function to get other types of predictions. The following obtains sequential predictions using the training data. 
 
 ```{r predict}
 #sequential predictions (they should improve over time)
@@ -100,6 +100,17 @@ seqpred=predict(tlogtest,predictmethod = "sequential")
 plot(seqpred)
 ```
 
+You could, alternatively, supply new data for which to make predictions. In that case, you would supply a new data frame (`datanew`), which should contain columns `Abundance` and `Population`.  
+
+A common approach when fitting these models is to split the available data into a training and test dataset. For instance, say we wanted a single-population model for PopA with 2 time lags, and we wanted to use the first 40 data points as training data, and the last 10 points as test data. For that we could do the following.
+
+```{r predict2}
+pAtrain=pA[1:40,]
+pAtest=pA[41:50,]
+tlogtest2=fitGP(data = pAtrain, yd = "Abundance", E=2, tau=1,
+                datanew = pAtest)
+plot(tlogtest2)
+```
 
 ## Specifying training data
 
