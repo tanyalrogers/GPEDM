@@ -89,14 +89,18 @@ A list (class GP and GPpred) with the following elements:
 \item{inputs}{Inputs and scaled inputs.}
 \item{scaling}{Scaling information.}
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
-deviation of the GP function, \code{predsd} includes observation error.}
-\item{insampfitstats}{Fit statistics for in-sample predictions.}
+deviation of the GP function, \code{predsd} includes process error.}
+\item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, nllpost
+(posterior negative log likelihood), GCV_LOOnll (generalized cross-validation approximate
+leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
+the trace of the smoother matrix).}
+\item{insampfitstatspop}{Fit statistics (R2 and rmse) for in-sample predictions by population.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
-deviation of the GP function, \code{predsd} includes observation error.}
+deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested).
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
-\item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.
+\item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.}
 }
 \description{
 Fits a GP model with separable length scales and automatic relevance determination (ARD).

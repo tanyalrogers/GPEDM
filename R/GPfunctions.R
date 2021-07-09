@@ -121,14 +121,18 @@
 #' \item{inputs}{Inputs and scaled inputs.}
 #' \item{scaling}{Scaling information.}
 #' \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
-#' deviation of the GP function, \code{predsd} includes observation error.}
-#' \item{insampfitstats}{Fit statistics for in-sample predictions.}
+#' deviation of the GP function, \code{predsd} includes process error.}
+#' \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, nllpost 
+#'   (posterior negative log likelihood), GCV_LOOnll (generalized cross-validation approximate
+#'   leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to 
+#'   the trace of the smoother matrix).}
+#' \item{insampfitstatspop}{Fit statistics (R2 and rmse) for in-sample predictions by population.}
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
-#' deviation of the GP function, \code{predsd} includes observation error.}
+#' deviation of the GP function, \code{predsd} includes process error.}
 #' \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested). 
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
-#' \item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.
+#' \item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.}
 #' @seealso \code{\link{predict.GP}}, \code{\link{plot.GP}}, \code{\link{getconditionals}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
 #'   a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
@@ -261,7 +265,7 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
   
   #optimize model
   output=fmingrad_Rprop(initparst,Y,X,Pop,modeprior,rhofixed)
-  # contains: list(parst,pars,nllpost,grad,lnL_LOO,df,mean,cov,covm,iter)
+  # contains: list(parst,pars,nllpost,grad,GCV_LOOnll,df,mean,cov,covm,iter)
   
   #backfill missing values
   ypred<-yfsd<-ysd<-yd*NA
@@ -290,10 +294,24 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
   output$scaling=list(scaling=scaling,ymeans=ymeans,ysds=ysds,xmeans=xmeans,xsds=xsds)
   output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predfsd=yfsd,predsd=ysd,obs=yd)
   output$insampfitstats=c(R2=1-sum((yd-ypred)^2,na.rm=T)/sum((mean(yd,na.rm=T)-yd)^2,na.rm=T),
-                          rmse=sqrt(sum((yd-ypred)^2,na.rm=T)),
+                          rmse=sqrt(mean((yd-ypred)^2,na.rm=T)),
                           nllpost=output$nllpost,
-                          lnL_LOO=output$lnL_LOO,df=output$df)
-  output[c("lnL_LOO","df","nllpost","mean","cov")]=NULL #take these out of main list
+                          GCV_LOOnll=output$GCV_LOOnll,df=output$df)
+  if(length(unique(pop))>1) { #within site fit stats
+    up=unique(pop)
+    np=length(up)
+    R2pop<-rmsepop<-numeric(np)
+    names(R2pop)=up
+    names(rmsepop)=up
+    for(k in 1:np) {
+      ind=which(pop==up[k])
+      R2pop[k]=1-sum((yd[ind]-ypred[ind])^2,na.rm=T)/sum((mean(yd[ind],na.rm=T)-yd[ind])^2,na.rm=T)
+      rmsepop[k]=sqrt(mean((yd[ind]-ypred[ind])^2,na.rm=T))
+    }
+    output$insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+  }
+  
+  output[c("GCV_LOOnll","df","nllpost","mean","cov")]=NULL #take these out of main list
   #may eventually want to exclude some more outputs
   
   if(!is.null(predictmethod)|!is.null(xnew)|!is.null(datanew)) { #generate predictions if requested
@@ -399,7 +417,7 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   popsame=covm$popsame #population simularity matrix
   Cd=covm$Cd #covariance matrix
   Id=diag(ncol(Cd))
-  Sigma=Cd+ve*Id #covariance matrix with observation noise
+  Sigma=Cd+ve*Id #covariance matrix with process noise
   covm$Sigma=Sigma
 
   #get inverse covariance
@@ -480,12 +498,12 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   names(parst)=c(paste0("phi",1:length(phi)),"ve","sigma2","rho")
   names(neglgrad)=c(paste0("phi",1:length(phi)),"ve","sigma2","rho")
   
-  lnL_LOO=0.5*sum(log(diag(iKVs)))-0.5*sum(a^2/diag(iKVs))
+  GCV_LOOnll=-(0.5*sum(log(diag(iKVs)))-0.5*sum(a^2/diag(iKVs)))
   df=sum(diag((Cd%*%iKVs))) #trace
   
   out=list(pars=pars,parst=parst,
            nllpost=neglpost,grad=neglgrad,
-           lnL_LOO=lnL_LOO,df=df,mean=mpt,cov=Cdt,
+           GCV_LOOnll=GCV_LOOnll,df=df,mean=mpt,cov=Cdt,
            covm=covm)
   return(out)
 }
@@ -583,7 +601,7 @@ getcovinv=function(Sigma) {
 #' @param ynew New response vector. Optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}. Not required if \code{datanew} is supplied.
 #' @return A list (class GPpred) with the following elements:
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
-#' deviation of the GP function, \code{predsd} includes observation error.}
+#' deviation of the GP function, \code{predsd} includes process error.}
 #' \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
@@ -790,7 +808,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
   if(!is.null(ynew)) {
     out$outsampresults$obs=ynew
     out$outsampfitstats=c(R2=1-sum((ynew-ypred)^2,na.rm=T)/sum((mean(ynew,na.rm=T)-ynew)^2,na.rm=T),
-                          rmse=sqrt(sum((ynew-ypred)^2,na.rm=T)))
+                          rmse=sqrt(mean((ynew-ypred)^2,na.rm=T)))
     if(length(unique(popnew))>1) { #within site fit stats
       up=unique(popnew)
       np=length(up)
@@ -800,7 +818,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
       for(k in 1:np) {
         ind=which(popnew==up[k])
         R2pop[k]=1-sum((ynew[ind]-ypred[ind])^2,na.rm=T)/sum((mean(ynew[ind],na.rm=T)-ynew[ind])^2,na.rm=T)
-        rmsepop[k]=sqrt(sum((ynew[ind]-ypred[ind])^2,na.rm=T))
+        rmsepop[k]=sqrt(mean((ynew[ind]-ypred[ind])^2,na.rm=T))
       }
       out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
     }

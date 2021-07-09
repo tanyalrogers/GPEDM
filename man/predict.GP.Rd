@@ -35,7 +35,7 @@ original model.}
 \value{
 A list (class GPpred) with the following elements:
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
-deviation of the GP function, \code{predsd} includes observation error.}
+deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
