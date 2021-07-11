@@ -64,20 +64,21 @@ Defaults to 1.}
 
 \item{rhofixed}{Fixes the rho parameter, if desired (see Details).}
 
-\item{predictmethod}{\code{loo} (default) does leave-one-out prediction using
+\item{predictmethod}{\code{loo} does leave-one-out prediction using
 the training data. \code{sequential} does sequential (leave-future-out)
 prediction using the training data.}
 
 \item{datanew}{Data frame containing the same columns supplied in the
 original model.}
 
-\item{xnew}{New preditor matrix or vector. Not required if \code{datanew} is supplied.}
+\item{xnew}{New predictor matrix or vector. Not required if \code{datanew} is supplied.}
 
 \item{popnew}{New population vector. Not required if \code{datanew} is supplied.}
 
 \item{timenew}{New time vector. Not required if \code{datanew} is supplied.}
 
-\item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}. Not required if \code{datanew} is supplied.}
+\item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
+lieu of \code{xd}. Not required if \code{datanew} is supplied.}
 }
 \value{
 A list (class GP and GPpred) with the following elements:
@@ -90,17 +91,18 @@ A list (class GP and GPpred) with the following elements:
 \item{scaling}{Scaling information.}
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
-\item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, nllpost
-(posterior negative log likelihood), GCV_LOOnll (generalized cross-validation approximate
+\item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post
+(log posterior evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
-the trace of the smoother matrix).}
-\item{insampfitstatspop}{Fit statistics (R2 and rmse) for in-sample predictions by population.}
+the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
+comparable to ln_post.}
+\item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested).
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
-\item{outsampfitstatspop}{Fit statistics for out-of-sample predictions (if requested) by population.}
+\item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
 }
 \description{
 Fits a GP model with separable length scales and automatic relevance determination (ARD).
@@ -111,7 +113,7 @@ There are several ways to specify the training data:
 \item data frame \code{data}, plus column names or indices for \code{yd} and \code{xd}
 \item data frame \code{data}, plus column name or index for \code{yd}, and values for \code{E} and \code{tau}
 \item vector \code{yd}, plus matrix or vector \code{xd}
-\item vector \code{yd}, plus values for E and tau
+\item vector \code{yd}, plus values for \code{E} and \code{tau}
 }
 Arguments \code{pop} and \code{time} are optional in all of the above cases.
 They should be column names or indices in cases 1 and 2, vectors in cases 3 and 4.
@@ -120,7 +122,7 @@ This function will also, optionally, produce predictions.
 See Details for more information.
 }
 \details{
-The data are assumed to be should be in time order. This is particularly important if the E/tau option
+The data are assumed to be in time order. This is particularly important if the E/tau option
 or \code{predictmethod="sequential"} is used.
 
 \strong{Missing values:}
@@ -167,8 +169,8 @@ case, you will obviously have to do the backtransformation yourself.
 
 There are several options for producing predictions:
 \enumerate{
-\item Use \code{predictmethod="loo"} for leave-one-out prediction using the training data
-\item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data
+\item Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
+\item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
 \item If data frame \code{data} was supplied, supply data frame \code{datanew} containing same column names.
 Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
 \item If vectors/matrices were supplied for \code{yd}, \code{xd}, etc, equivalent vector/matrices \code{xnew},
@@ -177,7 +179,7 @@ Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied i
 }
 
 After fitting, predictions can also be made using \code{\link{predict.GP}}.
-Predictions can plotted using \code{\link{plot.GP}}.
+Predictions can plotted using \code{\link{plot.GPpred}}.
 Get conditional responses using \code{\link{getconditionals}}.
 
 It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
@@ -193,5 +195,5 @@ Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural unce
 a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
 }
 \seealso{
-\code{\link{predict.GP}}, \code{\link{plot.GP}}, \code{\link{getconditionals}}
+\code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}
 }

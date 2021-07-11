@@ -17,20 +17,21 @@
 \arguments{
 \item{object}{Output from \code{fitGP}.}
 
-\item{predictmethod}{\code{loo} (default) does leave-one-out prediction using
+\item{predictmethod}{\code{loo} does leave-one-out prediction using
 the training data. \code{sequential} does sequential (leave-future-out)
 prediction using the training data.}
 
 \item{datanew}{Data frame containing the same columns supplied in the
 original model.}
 
-\item{xnew}{New preditor matrix or vector. Not required if \code{datanew} is supplied.}
+\item{xnew}{New predictor matrix or vector. Not required if \code{datanew} is supplied.}
 
 \item{popnew}{New population vector. Not required if \code{datanew} is supplied.}
 
 \item{timenew}{New time vector. Not required if \code{datanew} is supplied.}
 
-\item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}. Not required if \code{datanew} is supplied.}
+\item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
+lieu of \code{xd}. Not required if \code{datanew} is supplied.}
 }
 \value{
 A list (class GPpred) with the following elements:
@@ -39,12 +40,13 @@ deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
+\item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
 }
 \description{
 Obtain predictions from a fitted GP model. There are several options:
 \enumerate{
-\item Use \code{predictmethod="loo"} for leave-one-out prediction using the training data
-\item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data
+\item (Default) Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
+\item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
 \item If data frame \code{data} was supplied, supply data frame \code{datanew} containing same column names.
 Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
 \item If vectors/matrices were supplied for \code{yd}, \code{xd}, etc, equivalent vector/matrices \code{xnew},

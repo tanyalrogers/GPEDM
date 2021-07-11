@@ -14,5 +14,6 @@ results if available.}
 }
 \description{
 Plots observed and predicted values from a GP model. If the model includes
-multiple populations, separate plots are produced for each population.
+multiple populations, separate plots are produced for each population. The
+standard deviations plotted are predfsd.
 }

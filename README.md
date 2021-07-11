@@ -73,10 +73,11 @@ tlogtest=fitGP(data = thetalog2pop, yd = "Abundance", pop = "Population", E=3, t
                scaling = "local", predictmethod = "loo")
 summary(tlogtest)
 #> Number of predictors: 3 
-#> Abundance_1 Abundance_2 Abundance_3 
 #> Length scale parameters:
-#>          phi1          phi2          phi3 
-#>  5.290040e-01 1.248172e-216 1.248172e-216 
+#>        predictor      postmode
+#> phi1 Abundance_1  5.290040e-01
+#> phi2 Abundance_2 1.248172e-216
+#> phi3 Abundance_3 1.248172e-216
 #> Process variance (ve): 0.01221358
 #> Pointwise prior variance (sigma2): 2.53986
 #> Number of populations: 2
@@ -112,6 +113,20 @@ plot(tlogtest, plotinsamp = T)
 
 <img src="man/figures/README-plot2-1.png" width="100%" />
 
+If you prefer ggplot:
+
+``` r
+library(ggplot2)
+ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
+  facet_wrap(pop~., scales = "free") +
+  geom_line() + geom_ribbon(aes(ymin=predmean-predfsd,ymax=predmean+predfsd), alpha=0.4) +
+  geom_point(aes(y=obs)) +
+  theme_bw()
+#> Warning: Removed 3 rows containing missing values (geom_path).
+```
+
+<img src="man/figures/README-ggplot timeseries-1.png" width="100%" />
+
 The function `getconditionals` will compute and plot conditional
 responses to each input variable (other input varibles set to their mean
 value). From this we can also clearly see that lags 2 and 3 have no
@@ -123,6 +138,25 @@ con=getconditionals(tlogtest)
 ```
 
 <img src="man/figures/README-conditionals-1.png" width="100%" />
+
+If you prefer ggplot:
+
+``` r
+#have to convert conditionals output to long format
+#there may be a more concise way to do this
+library(tidyr)
+npreds=length(grep("_yMean",colnames(con)))
+conlong1=gather(con[,1:(npreds+1)],x,xValue,2:(npreds+1))
+conlong2=gather(con[,c(1,(npreds+2):(2*npreds+1))],ym,yMean,2:(npreds+1))
+conlong3=gather(con[,c(1,(2*npreds+2):(3*npreds+1))],ys,ySD,2:(npreds+1))
+conlong=cbind.data.frame(conlong1,yMean=conlong2$yMean,ySD=conlong3$ySD)
+ggplot(conlong,aes(x=xValue,y=yMean)) +
+  facet_grid(pop~x, scales = "free") +
+  geom_line() + geom_ribbon(aes(ymin=yMean-ySD,ymax=yMean+ySD), alpha=0.4) +
+  theme_bw()
+```
+
+<img src="man/figures/README-ggplot conditionals-1.png" width="100%" />
 
 Make a plot of the inverse length scale parameters.
 
@@ -208,10 +242,10 @@ m4=fitGP(yd=yvec,pop=popvec,E=2,tau=1,scaling="local")
 
 summary(m1)
 #> Number of predictors: 2 
-#> Abundance_1 othervar 
 #> Length scale parameters:
-#>         phi1         phi2 
-#> 0.5207983744 0.0003021264 
+#>        predictor     postmode
+#> phi1 Abundance_1 0.5207983744
+#> phi2    othervar 0.0003021264
 #> Process variance (ve): 0.01031384
 #> Pointwise prior variance (sigma2): 2.539001
 #> Number of populations: 2
@@ -220,10 +254,12 @@ summary(m1)
 
 summary(m3)
 #> Number of predictors: 4 
-#> Abundance_1 Abundance_2 othervar_1 othervar_2 
 #> Length scale parameters:
-#>         phi1         phi2         phi3         phi4 
-#> 5.090030e-01 2.128391e-19 2.752429e-04 1.830083e-44 
+#>        predictor     postmode
+#> phi1 Abundance_1 5.090030e-01
+#> phi2 Abundance_2 2.128391e-19
+#> phi3  othervar_1 2.752429e-04
+#> phi4  othervar_2 1.830083e-44
 #> Process variance (ve): 0.01026833
 #> Pointwise prior variance (sigma2): 2.671209
 #> Number of populations: 2
@@ -233,8 +269,9 @@ summary(m3)
 summary(m4)
 #> Number of predictors: 2 
 #> Length scale parameters:
-#>          phi1          phi2 
-#>  5.302715e-01 3.355234e-173 
+#>           postmode
+#> phi1  5.302715e-01
+#> phi2 3.355234e-173
 #> Process variance (ve): 0.01205433
 #> Pointwise prior variance (sigma2): 2.53792
 #> Number of populations: 2

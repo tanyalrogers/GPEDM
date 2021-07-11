@@ -76,10 +76,38 @@ To get the in-sample predictions:
 plot(tlogtest, plotinsamp = T)
 ```
 
+If you prefer ggplot:
+
+```{r ggplot timeseries}
+library(ggplot2)
+ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
+  facet_wrap(pop~., scales = "free") +
+  geom_line() + geom_ribbon(aes(ymin=predmean-predfsd,ymax=predmean+predfsd), alpha=0.4) +
+  geom_point(aes(y=obs)) +
+  theme_bw()
+```
+
 The function `getconditionals` will compute and plot conditional responses to each input variable (other input varibles set to their mean value). From this we can also clearly see that lags 2 and 3 have no impact, and we can see how the lag 1 dynamics of the 2 populations differ.
 
 ```{r conditionals}
 con=getconditionals(tlogtest)
+```
+
+If you prefer ggplot:
+
+```{r ggplot conditionals}
+#have to convert conditionals output to long format
+#there may be a more concise way to do this
+library(tidyr)
+npreds=length(grep("_yMean",colnames(con)))
+conlong1=gather(con[,1:(npreds+1)],x,xValue,2:(npreds+1))
+conlong2=gather(con[,c(1,(npreds+2):(2*npreds+1))],ym,yMean,2:(npreds+1))
+conlong3=gather(con[,c(1,(2*npreds+2):(3*npreds+1))],ys,ySD,2:(npreds+1))
+conlong=cbind.data.frame(conlong1,yMean=conlong2$yMean,ySD=conlong3$ySD)
+ggplot(conlong,aes(x=xValue,y=yMean)) +
+  facet_grid(pop~x, scales = "free") +
+  geom_line() + geom_ribbon(aes(ymin=yMean-ySD,ymax=yMean+ySD), alpha=0.4) +
+  theme_bw()
 ```
 
 Make a plot of the inverse length scale parameters.

@@ -9,11 +9,12 @@
 summary.GP=function(object) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
-  if(!is.null(object$inputs$xd_names)) {
-    cat(object$inputs$xd_names,"\n")
-  }
   cat("Length scale parameters:\n")
-  print(object$pars[1:d])
+  if(!is.null(object$inputs$xd_names)) {
+    print(data.frame(predictor=object$inputs$xd_names,postmode=object$pars[1:d]))
+  } else {
+    print(data.frame(postmode=object$pars[1:d]))
+  }
   cat("Process variance (ve):",object$pars["ve"])
   cat("\nPointwise prior variance (sigma2):",object$pars["sigma2"])
   np=length(unique(object$inputs$pop))
@@ -30,7 +31,8 @@ summary.GP=function(object) {
 #' Plot predictions from a GP model
 #'
 #' Plots observed and predicted values from a GP model. If the model includes
-#' multiple populations, separate plots are produced for each population.
+#' multiple populations, separate plots are produced for each population. The
+#' standard deviations plotted are predfsd.
 #'
 #' @param x Output from \code{fitGP} or \code{predict.GP}.
 #' @param plotinsamp Plot the in-sample results. Defaults to out-of-sample
@@ -202,12 +204,14 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
     }
     old.par <- par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
     on.exit(par(old.par),add = T,after = F)
-    #par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
+
     for(i in 1:np) {
+      ylims=range(out[out$pop==up[i],grep("_yMean",colnames(out))]+out[out$pop==up[i],grep("_ySD",colnames(out))],
+                  out[out$pop==up[i],grep("_yMean",colnames(out))]+out[out$pop==up[i],grep("_ySD",colnames(out))])
       pdata=outlist[[i]]
       for(j in 1:d) {
-        plot(pdata$xval[,j],pdata$predmean[,j], type="l",xlab=xlabels[j],ylab=yl,main=up[i],
-             ylim=range(pdata$predmean[,j]+pdata$predsd[,j],pdata$predmean[,j]-pdata$predsd[,j]))
+        plot(pdata$xval[,j],pdata$predmean[,j], type="l",xlab=xlabels[j],ylab=yl,main=up[i],ylim=ylims)
+             #ylim=range(pdata$predmean[,j]+pdata$predsd[,j],pdata$predmean[,j]-pdata$predsd[,j]))
         lines(pdata$xval[,j],pdata$predmean[,j]+pdata$predsd[,j],lty=2)
         lines(pdata$xval[,j],pdata$predmean[,j]-pdata$predsd[,j],lty=2)
       }
