@@ -294,7 +294,7 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
   output$inputs=c(inputs,list(yd=yd,xd=xd,pop=pop,time=time,completerows=completerows,Y=Y,X=X,Pop=Pop))
   output$scaling=list(scaling=scaling,ymeans=ymeans,ysds=ysds,xmeans=xmeans,xsds=xsds)
   output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predfsd=yfsd,predsd=ysd,obs=yd)
-  output$insampfitstats=c(R2=1-sum((yd-ypred)^2,na.rm=T)/sum((mean(yd,na.rm=T)-yd)^2,na.rm=T),
+  output$insampfitstats=c(R2=getR2(yd,ypred),
                           rmse=sqrt(mean((yd-ypred)^2,na.rm=T)),
                           ln_post=-output$nllpost,
                           lnL_LOO=output$lnL_LOO,df=output$df)
@@ -306,7 +306,7 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
     names(rmsepop)=up
     for(k in 1:np) {
       ind=which(pop==up[k])
-      R2pop[k]=1-sum((yd[ind]-ypred[ind])^2,na.rm=T)/sum((mean(yd[ind],na.rm=T)-yd[ind])^2,na.rm=T)
+      R2pop[k]=getR2(yd[ind],ypred[ind])
       rmsepop[k]=sqrt(mean((yd[ind]-ypred[ind])^2,na.rm=T))
     }
     output$insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
@@ -810,7 +810,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
   out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=ypred,predfsd=yfsd,predsd=ysd))
   if(!is.null(ynew)) {
     out$outsampresults$obs=ynew
-    out$outsampfitstats=c(R2=1-sum((ynew-ypred)^2,na.rm=T)/sum((mean(ynew,na.rm=T)-ynew)^2,na.rm=T),
+    out$outsampfitstats=c(R2=getR2(ynew,ypred), 
                           rmse=sqrt(mean((ynew-ypred)^2,na.rm=T)))
     if(length(unique(popnew))>1) { #within site fit stats
       up=unique(popnew)
@@ -820,7 +820,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
       names(rmsepop)=up
       for(k in 1:np) {
         ind=which(popnew==up[k])
-        R2pop[k]=1-sum((ynew[ind]-ypred[ind])^2,na.rm=T)/sum((mean(ynew[ind],na.rm=T)-ynew[ind])^2,na.rm=T)
+        R2pop[k]=getR2(ynew[ind],ypred[ind]) 
         rmsepop[k]=sqrt(mean((ynew[ind]-ypred[ind])^2,na.rm=T))
       }
       out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
@@ -832,6 +832,12 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
 
 logit=function(x) {
   log(x/(1-x))
+}
+
+getR2=function(obse, prede) {
+  d=na.omit(cbind(obse, prede))
+  R2=1-sum((d[,1]-d[,2])^2)/sum((d[,1]-mean(d[,1]))^2)
+  return(R2)
 }
 
 #' Generate delay vectors
