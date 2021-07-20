@@ -82,8 +82,8 @@ summary(tlogtest)
 #> Pointwise prior variance (sigma2): 2.53986
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250464
-#> In-sample R-squared: 0.9939452
-#> Out-of-sample R-squared: 0.9919687
+#> In-sample R-squared: 0.9933951
+#> Out-of-sample R-squared: 0.991239
 ```
 
 From the summary, we can see that ARD has (unsurprisingly) deemed lags 2
@@ -250,7 +250,7 @@ summary(m1)
 #> Pointwise prior variance (sigma2): 2.539001
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2929397
-#> In-sample R-squared: 0.9947297
+#> In-sample R-squared: 0.994516
 
 summary(m3)
 #> Number of predictors: 4 
@@ -264,7 +264,7 @@ summary(m3)
 #> Pointwise prior variance (sigma2): 2.671209
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2873044
-#> In-sample R-squared: 0.9948366
+#> In-sample R-squared: 0.9945253
 
 summary(m4)
 #> Number of predictors: 2 
@@ -276,7 +276,7 @@ summary(m4)
 #> Pointwise prior variance (sigma2): 2.53792
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250085
-#> In-sample R-squared: 0.9938883
+#> In-sample R-squared: 0.9935198
 ```
 
 ## References
