@@ -11,7 +11,7 @@ summary.GP=function(object) {
   cat("Number of predictors:",d,"\n")
   cat("Length scale parameters:\n")
   if(!is.null(object$inputs$xd_names)) {
-    print(data.frame(predictor=object$inputs$xd_names,postmode=object$pars[1:d]))
+    print(data.frame(predictor=object$inputs$xd_names,posteriormode=object$pars[1:d]))
   } else {
     print(data.frame(postmode=object$pars[1:d]))
   }
@@ -23,8 +23,16 @@ summary.GP=function(object) {
     cat("\nDynamic correlation (rho):",object$pars["rho"])
   }
   cat("\nIn-sample R-squared:",object$insampfitstats["R2"])
+  if(np>1) {
+    cat("\nIn-sample R-squared by population:\n")
+    print(data.frame(R2=object$insampfitstatspop$R2))
+  }
   if(!is.null(object$outsampfitstats)) {
-    cat("\nOut-of-sample R-squared:",object$outsampfitstats["R2"])
+    cat("Out-of-sample R-squared:",object$outsampfitstats["R2"])
+    if(np>1) {
+      cat("\nOut-of-sample R-squared by population:\n")
+      print(data.frame(R2=object$outsampfitstatspop$R2))
+    }
   }
 }
 

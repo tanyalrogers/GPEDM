@@ -834,8 +834,22 @@ logit=function(x) {
   log(x/(1-x))
 }
 
-getR2=function(obse, prede) {
-  d=na.omit(cbind(obse, prede))
+#' Calculate R-squared
+#'
+#' Calculates an R-squared value. Vectors for observed and predicted values 
+#' must be the same length. Missing values are allowed. Any observed-predicted
+#' pairs with missing values are removed before computations are done.
+#' 
+#' @details
+#' Returned R-squared might be negative. This indicates that the prediction is 
+#' worse than using the mean.
+#'
+#' @param obs Vector of observed values.
+#' @param pred Vector of predicted values.
+#' @return The R-squared value.
+#' @export
+getR2=function(obs, pred) {
+  d=na.omit(cbind(obs, pred))
   R2=1-sum((d[,1]-d[,2])^2)/sum((d[,1]-mean(d[,1]))^2)
   return(R2)
 }
