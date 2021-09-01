@@ -76,14 +76,14 @@ summary(tlogtest)
 #> Number of predictors: 3 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1  5.290040e-01
-#> phi2 Abundance_2 1.248172e-216
-#> phi3 Abundance_3 1.248172e-216
+#> phi1 Abundance_1         0.529
+#> phi2 Abundance_2         0.000
+#> phi3 Abundance_3         0.000
 #> Process variance (ve): 0.01221358
 #> Pointwise prior variance (sigma2): 2.53986
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250464
-#> In-sample R-squared: 0.9933951
+#> In-sample R-squared: 0.9933951 
 #> In-sample R-squared by population:
 #>             R2
 #> PopA 0.9970774
@@ -253,13 +253,13 @@ summary(m1)
 #> Number of predictors: 2 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1  0.5207983744
-#> phi2    othervar  0.0003021264
+#> phi1 Abundance_1        0.5208
+#> phi2    othervar        0.0003
 #> Process variance (ve): 0.01031384
 #> Pointwise prior variance (sigma2): 2.539001
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2929397
-#> In-sample R-squared: 0.994516
+#> In-sample R-squared: 0.994516 
 #> In-sample R-squared by population:
 #>             R2
 #> PopA 0.9971648
@@ -269,15 +269,15 @@ summary(m3)
 #> Number of predictors: 4 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1  5.090030e-01
-#> phi2 Abundance_2  2.128391e-19
-#> phi3  othervar_1  2.752429e-04
-#> phi4  othervar_2  1.830083e-44
+#> phi1 Abundance_1       0.50900
+#> phi2 Abundance_2       0.00000
+#> phi3  othervar_1       0.00028
+#> phi4  othervar_2       0.00000
 #> Process variance (ve): 0.01026833
 #> Pointwise prior variance (sigma2): 2.671209
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.2873044
-#> In-sample R-squared: 0.9945253
+#> In-sample R-squared: 0.9945253 
 #> In-sample R-squared by population:
 #>             R2
 #> PopA 0.9971060
@@ -293,7 +293,7 @@ summary(m4)
 #> Pointwise prior variance (sigma2): 2.53792
 #> Number of populations: 2
 #> Dynamic correlation (rho): 0.3250085
-#> In-sample R-squared: 0.9935198
+#> In-sample R-squared: 0.9935198 
 #> In-sample R-squared by population:
 #>             R2
 #> PopA 0.9971162
