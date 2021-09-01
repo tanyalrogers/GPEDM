@@ -286,9 +286,9 @@ summary(m3)
 summary(m4)
 #> Number of predictors: 2 
 #> Length scale parameters:
-#>           postmode
-#> phi1  5.302715e-01
-#> phi2 3.355234e-173
+#>      posteriormode
+#> phi1       0.53027
+#> phi2       0.00000
 #> Process variance (ve): 0.01205433
 #> Pointwise prior variance (sigma2): 2.53792
 #> Number of populations: 2

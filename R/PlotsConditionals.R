@@ -13,7 +13,7 @@ summary.GP=function(object) {
   if(!is.null(object$inputs$xd_names)) {
     print(data.frame(predictor=object$inputs$xd_names,posteriormode=round(object$pars[1:d],5)))
   } else {
-    print(data.frame(postmode=object$pars[1:d]))
+    print(data.frame(posteriormode=round(object$pars[1:d],5)))
   }
   cat("Process variance (ve):",object$pars["ve"])
   cat("\nPointwise prior variance (sigma2):",object$pars["sigma2"])
