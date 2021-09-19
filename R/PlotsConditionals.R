@@ -112,7 +112,7 @@ plot.GPpred=function(x, plotinsamp=F) {
 #'   applications.
 #' @param plot Produce a plot, or not (logical, defaults to TRUE).
 #'
-#' @return A data frame containing the predictor values and conditional responses 
+#' @return Returns (invisibly) a data frame containing the predictor values and conditional responses 
 #'   (means and standard deviations).
 #' @export
 getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
@@ -215,7 +215,7 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
 
     for(i in 1:np) {
       ylims=range(out[out$pop==up[i],grep("_yMean",colnames(out))]+out[out$pop==up[i],grep("_ySD",colnames(out))],
-                  out[out$pop==up[i],grep("_yMean",colnames(out))]+out[out$pop==up[i],grep("_ySD",colnames(out))])
+                  out[out$pop==up[i],grep("_yMean",colnames(out))]-out[out$pop==up[i],grep("_ySD",colnames(out))])
       pdata=outlist[[i]]
       for(j in 1:d) {
         plot(pdata$xval[,j],pdata$predmean[,j], type="l",xlab=xlabels[j],ylab=yl,main=up[i],ylim=ylims)
@@ -225,5 +225,5 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
       }
     }
   }
-  return(out)
+  return(invisible(out))
 }
