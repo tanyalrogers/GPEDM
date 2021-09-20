@@ -4,22 +4,28 @@
 #' Also fits a hierarchical version of the GP model if distinct populations are indicated
 #' using \code{pop}.
 #' There are several ways to specify the training data:
+#' \itemize{
+#'   \item A. supply data frame \code{data}, plus column names or indices for \code{yd}, \code{xd}, \code{pop}, and \code{time}.
+#'   \item B. supply vectors for \code{yd}, \code{pop}, and \code{time}, and a matrix or vector for \code{xd}.
+#' }
+#' For each of the above 2 options, there are 3 options for specifying the predictors.
 #' \enumerate{
-#'   \item data frame \code{data}, plus column names or indices for \code{yd} and \code{xd}
-#'   \item data frame \code{data}, plus column name or index for \code{yd}, and values for \code{E} and \code{tau} 
-#'   \item vector \code{yd}, plus matrix or vector \code{xd}
-#'   \item vector \code{yd}, plus values for \code{E} and \code{tau}
+#'   \item supplying \code{yd} and \code{xd} (omitting \code{E} and \code{tau}) will use the columns of \code{xd} as predictors. This allows 
+#'   for the most customization.
+#'   \item supplying \code{yd}, \code{E}, and \code{tau} (omitting \code{xd}) will use \code{E} lags of \code{yd} (with spacing \code{tau}) as predictors.
+#'   This is equivalent to option 3 with \code{xd}=\code{yd}.
+#'   \item supplying \code{yd}, \code{xd}, \code{E}, and \code{tau} will use \code{E} lags of *each column* of \code{xd} (with spacing \code{tau}) as predictors.
+#'   Do not use this option if \code{xd} already contains lags, in that case use option 1.
 #' }
 #' Arguments \code{pop} and \code{time} are optional in all of the above cases. 
-#' They should be column names or indices in cases 1 and 2, vectors in cases 3 and 4.
 #' If \code{pop} and \code{time} are supplied, they should NOT contain missing values.
 #' This function will also, optionally, produce predictions.
 #' See Details for more information.
 #' 
 #' @details 
 #' 
-#' The data are assumed to be in time order. This is particularly important if the E/tau option
-#' or \code{predictmethod="sequential"} is used.
+#' The data are assumed to be in time order. This is particularly important if \code{E} and \code{tau}
+#' are supplied or \code{predictmethod="sequential"} is used.
 #' 
 #' \strong{Missing values:} 
 #' 
@@ -30,7 +36,7 @@
 #' 
 #' \strong{Hyperparameters:} 
 #' 
-#' The model uses the a squared exponential covariance function. See the (not yet written)
+#' The model uses a squared exponential covariance function. See the (not yet written)
 #' vignette for mathematical details.
 #' 
 #' There is one inverse length scale \code{phi} estimated for each predictor
@@ -98,8 +104,10 @@
 #'   assumed to be evenly spaced) but supplying \code{time} will be add these values to the output table, 
 #'   which may be useful for later plotting purposes. If \code{data} is supplied, a column name
 #'   (character) of index (numeric). If \code{data} is not supplied, a numeric vector.
-#' @param E Embedding dimension. Required if \code{xd} is not supplied.
-#' @param tau Time delay. Required if \code{xd} is not supplied.
+#' @param E Embedding dimension. If supplied, will be used to constuct lags of \code{xd} (or
+#'   lags of \code{yd} if \code{xd} is not supplied).
+#' @param tau Time delay. If supplied, will be used to constuct lags of \code{xd} (or
+#'   lags of \code{yd} if \code{xd} is not supplied).
 #' @param scaling How the variables should be scaled (see Details). Scaling can be \code{"global"} 
 #'   (default), \code{"local"} (only applicable if more than 1 pop), or \code{"none"}. Scaling is applied 
 #'   to \code{yd} and each \code{xd}. For a mix of scalings, do it manually beforehand and 
@@ -118,7 +126,10 @@
 #' \item{grad}{Likelihood gradients of hyperparameters at posterior mode. Can be used to assess convergence.}
 #' \item{covm}{List containing various covariance matrices and the inverse covariance matrix.}
 #' \item{iter}{Number of iterations until convergence was reached. Currently fixed at a max of 200.}
-#' \item{inputs}{Inputs and scaled inputs.}
+#' \item{inputs}{Inputs and scaled inputs. Note that if you use \code{E} and \code{tau},
+#' the names of the predictors in the input data frame will be stored under
+#' \code{xd_names}, and the names of the lagged predictors corresponding to the
+#' inverse length scales will be stored under \code{xd_names2}, provided these names exist.}
 #' \item{scaling}{Scaling information.}
 #' \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
@@ -147,10 +158,21 @@
 fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="global",
                initpars=NULL,modeprior=1,rhofixed=NULL,
                predictmethod=NULL,datanew=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
+
+  #input checks
+  if((!is.null(E) & is.null(tau)) | (is.null(E) & !is.null(tau))) {
+    stop("Both E and tau must be supplied if generating lags internally.")
+  }
+  if(is.null(xd) & (is.null(E) | is.null(tau))) {
+    stop("xd and/or E and tau must be supplied")
+  }
+  if(!(scaling %in% c("global","local","none"))) {
+    stop("scaling must be either 'global','local',or 'none'")
+  }
   
   inputs=list()
   
-  #store names of predictors, if available
+  #if xd is matrix, store names of predictors, if available
   if(!is.null(colnames(xd))) {
     inputs$xd_names=colnames(xd)
   }
@@ -185,17 +207,19 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
       time[pop==up[i]]=1:length(time[pop==up[i]])
     }
   }
-  #if xd is not supplied (only yd), generate xd from lags using supplied E and tau
-  if(is.null(xd)) {
-    xd=makelags(yd,pop,E,tau)
-    if(!is.null(inputs$yd_names)) {
-      colnames(xd)=sub("var1",inputs$yd_names,colnames(xd))
-      inputs$xd_names=colnames(xd)
+  
+  #if E and tau are supplied, generate lags of each xd
+  if(!is.null(E)) {
+    if(is.null(xd)) { #if xd is not supplied, use yd as xd
+      xd=yd
+      if(!is.null(inputs$yd_names)) inputs$xd_names=inputs$yd_names
     }
+    xd=makelags(xd,pop,E,tau,yname=inputs$xd_names)
+    if(!is.null(inputs$xd_names)) inputs$xd_names2=colnames(xd)
     inputs$E=E
     inputs$tau=tau
   }
-  
+
   #make sure xd is a matrix, not vector or data frame
   xd=as.matrix(xd)
   d=ncol(xd) #embedding dimension, or number of predictors
@@ -422,7 +446,6 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   covm$Sigma=Sigma
 
   #get inverse covariance
-  
   icov=getcovinv(Sigma)
   iKVs=icov$iKVs
   L=icov$L
@@ -631,11 +654,12 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
     #if data frame is supplied, take columns from it
     if(!is.null(datanew)) {
       ynew=datanew[,object$inputs$yd_names]
-      if(!is.null(object$inputs$xd_names) & is.null(object$inputs$E)) { xnew=datanew[,object$inputs$xd_names] }
+      if(!is.null(object$inputs$xd_names)) { xnew=datanew[,object$inputs$xd_names] }
       if(!is.null(object$inputs$pop_names)) { popnew=datanew[,object$inputs$pop_names] }
       if(!is.null(object$inputs$time_names)) { timenew=datanew[,object$inputs$time_names] }
     }
     
+    #get number of predictions
     if(!is.null(ynew)) {
       Tslp=length(ynew)
     } else {
@@ -654,11 +678,15 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
         timenew[popnew==up[i]]=1:length(timenew[popnew==up[i]])
       }
     }
-    #if xd is not supplied (only yd), generate xd from lags using supplied E and tau
-    if(is.null(xnew)) {
-      xnew=makelags(ynew,popnew,object$inputs$E,object$inputs$tau)
-    }
     
+    #if E tau supplied, generate lags of xnew (or ynew if xnew not supplied).
+    if(!is.null(object$inputs$E)) {
+      if(is.null(xnew)) {
+        xnew=ynew
+      } 
+      xnew=makelags(xnew,popnew,object$inputs$E,object$inputs$tau,yname=object$inputs$xd_names)
+    }
+
     #make sure xd is a matrix, not vector or data frame
     xnew=as.matrix(xnew)
     
@@ -865,6 +893,9 @@ getR2=function(obs, pred) {
 #' @param pop A vector of populations (optional).
 #' @param E Embedding dimension.
 #' @param tau Time delay.
+#' @param yname Optional, name of the variable if yd is a vector, or variables
+#'   if yd is a matrix or dataframe with unnamed columns. Otherwise not used.
+#'   Defaults to "var" if NULL.
 #' @return A matrix with named columns, the appended number indicating tau. If
 #'   \code{yd} has named columns, named columns in the lag matrix will match.
 #' @export
@@ -876,12 +907,23 @@ getR2=function(obs, pred) {
 #' lags2 <- makelags(dfrand,E=2,tau=2)
 #' lags3 <- makelags(dfrand,pop=site,E=2,tau=1)
 #' 
-makelags=function(yd,pop=NULL,E,tau) {
+makelags=function(yd,pop=NULL,E,tau,yname=NULL) {
+  
+  #input checks
+  if(!is.wholenumber(E) | !is.wholenumber(tau) | E<0 | tau<0) {
+    stop("E and tau must be positive integers")
+  }
+  
+  if(is.null(yname)) yname="var"
   
   yd=as.matrix(yd)
   num_vars=ncol(yd)
   if(is.null(colnames(yd))) {
-    colnames(yd)=paste0("var", seq_len(num_vars))
+    if(num_vars==length(yname)) {
+      colnames(yd)=yname
+    } else {
+      colnames(yd)=paste0(yname, seq_len(num_vars))
+    }
   }
   if(is.null(pop)) {
     pop=rep(1,nrow(yd))
@@ -908,3 +950,6 @@ makelags=function(yd,pop=NULL,E,tau) {
   return(output)
 }
 
+is.wholenumber=function(x, tol = .Machine$double.eps^0.5) {
+  abs(x - round(x)) < tol
+} 

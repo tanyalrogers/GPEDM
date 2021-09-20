@@ -98,9 +98,9 @@ summary(tlogtest)
 From the summary, we can see that ARD has (unsurprisingly) deemed lags 2
 and 3 to be unimportant (length scales are 0), so E=1 is probably
 sufficient. The dynamic correlation (rho) tells us the degree to which
-the dynamics correlated (they are are rather dissimilar in this case).
-Since the simulated data don’t contain that much noise, the R-squared
-values are quite high.
+the dynamics are correlated (they are are rather dissimilar in this
+case). Since the simulated data don’t contain that much noise, the
+R-squared values are quite high.
 
 We can examine the observed and predicted values using `plot`. Standard
 error bands are included in the time series plots, although they’re a
@@ -167,10 +167,14 @@ ggplot(conlong,aes(x=xValue,y=yMean)) +
 
 <img src="man/figures/README-ggplot conditionals-1.png" width="100%" />
 
-Make a plot of the inverse length scale parameters.
+Make a plot of the inverse length scale parameters. Note that if you use
+`E` and `tau`, the names of the predictors in the input data frame will
+be stored under `xd_names`, and the names of the lagged predictors
+corresponding to the inverse length scales will be stored under
+`xd_names2`.
 
 ``` r
-predvars=tlogtest$inputs$xd_names
+predvars=tlogtest$inputs$xd_names2
 npreds=length(predvars)
 lscales=tlogtest$pars[1:npreds]
 plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
@@ -213,16 +217,29 @@ plot(tlogtest2)
 
 ## Specifying training data
 
-There are 4 ways that the training data for a model can be specified.
-The above example is method 2. Method 1 allows for the most
-customization of response and predictor variables including mixed
-embeddings, inclusion of covariates, etc.
+There are several ways that the training data for a model can be
+specified.
 
-1.  data frame `data`, plus column names or indices for `yd` and `xd`  
-2.  data frame `data`, plus column name or index for `yd`, and values
-    for `E` and `tau`  
-3.  vector `yd`, plus matrix or vector `xd`  
-4.  vector `yd`, plus values for `E` and `tau`
+A. supply data frame `data`, plus column names or indices for `yd` and
+`xd`.  
+B. supply a vector for `yd` and a vector or matrix for `xd`.
+
+For each of the above 2 options, there are 3 options for specifying the
+predictors.
+
+1.  supplying `yd` and `xd` (omitting `E` and `tau`) will use the
+    columns of `xd` as predictors. This allows for the most
+    customization.  
+2.  supplying `yd`, `E`, and `tau` (omitting `xd`) will use `E` lags of
+    `yd` (with spacing `tau`) as predictors. This is equivalent to
+    option 3 with `xd`=`yd`.  
+3.  supplying `yd`, `xd`, `E`, and `tau` will use `E` lags of *each
+    column* of `xd` (with spacing `tau`) as predictors. Do not use this
+    option if `xd` already contains lags, in that case use option 1.
+
+The above example is method A2. Method A1/B1 allows for the most
+customization of response and predictor variables including mixed
+embeddings.
 
 The `pop` argument is optional in all of the above cases. If omitted, a
 single population is assumed.
@@ -237,19 +254,25 @@ popvec=thetalog2pop$Population
 xmat=makelags(yd=thetalog2pop[,c("Abundance","othervar")],pop=popvec,E=2,tau=1)
 thetalog2pop2=cbind(thetalog2pop,xmat)
 
-#Method 1
-m1=fitGP(data=thetalog2pop2,yd="Abundance",xd=c("Abundance_1","othervar"),
+#Method A1
+ma1=fitGP(data=thetalog2pop2,yd="Abundance",xd=c("Abundance_1","othervar"),
          pop="Population",scaling="local")
 
-#Method 3
-#like 1, but your data aren't in a data frame
-m3=fitGP(yd=yvec,xd=xmat,pop=popvec,scaling="local")
+#Method B1
+#like A1, but your data aren't in a data frame
+mb1=fitGP(yd=yvec,xd=xmat,pop=popvec,scaling="local")
 
-#Method 4
-#like 2, but your data aren't in a data frame
-m4=fitGP(yd=yvec,pop=popvec,E=2,tau=1,scaling="local")
+#Method B2
+#like A2, but your data aren't in a data frame
+mb2=fitGP(yd=yvec,pop=popvec,E=2,tau=1,scaling="local")
 
-summary(m1)
+#Method A3
+#generate lags of multiple predictors internally
+ma3=fitGP(data=thetalog2pop2,yd="Abundance",xd=c("Abundance","othervar"),
+         pop="Population",E=2,tau=1,scaling="local")
+
+
+summary(ma1)
 #> Number of predictors: 2 
 #> Length scale parameters:
 #>        predictor posteriormode
@@ -265,7 +288,7 @@ summary(m1)
 #> PopA 0.9971648
 #> PopB 0.9855420
 
-summary(m3)
+summary(mb1)
 #> Number of predictors: 4 
 #> Length scale parameters:
 #>        predictor posteriormode
@@ -283,7 +306,7 @@ summary(m3)
 #> PopA 0.9971060
 #> PopB 0.9856004
 
-summary(m4)
+summary(mb2)
 #> Number of predictors: 2 
 #> Length scale parameters:
 #>      posteriormode
@@ -298,6 +321,24 @@ summary(m4)
 #>             R2
 #> PopA 0.9971162
 #> PopB 0.9817038
+
+summary(ma3)
+#> Number of predictors: 4 
+#> Length scale parameters:
+#>        predictor posteriormode
+#> phi1 Abundance_1       0.50900
+#> phi2 Abundance_2       0.00000
+#> phi3  othervar_1       0.00028
+#> phi4  othervar_2       0.00000
+#> Process variance (ve): 0.01026833
+#> Pointwise prior variance (sigma2): 2.671209
+#> Number of populations: 2
+#> Dynamic correlation (rho): 0.2873044
+#> In-sample R-squared: 0.9945253 
+#> In-sample R-squared by population:
+#>             R2
+#> PopA 0.9971060
+#> PopB 0.9856004
 ```
 
 ## References

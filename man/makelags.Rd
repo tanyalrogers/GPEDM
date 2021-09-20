@@ -4,7 +4,7 @@
 \alias{makelags}
 \title{Generate delay vectors}
 \usage{
-makelags(yd, pop = NULL, E, tau)
+makelags(yd, pop = NULL, E, tau, yname = NULL)
 }
 \arguments{
 \item{yd}{A vector containing a time series. Alternatively, a matrix or data
@@ -16,6 +16,10 @@ series, lags will be generated for each variable.}
 \item{E}{Embedding dimension.}
 
 \item{tau}{Time delay.}
+
+\item{yname}{Optional, name of the variable if yd is a vector, or variables
+if yd is a matrix or dataframe with unnamed columns. Otherwise not used.
+Defaults to "var" if NULL.}
 }
 \value{
 A matrix with named columns, the appended number indicating tau. If

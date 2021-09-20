@@ -10,7 +10,9 @@ summary.GP=function(object) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
   cat("Length scale parameters:\n")
-  if(!is.null(object$inputs$xd_names)) {
+  if(!is.null(object$inputs$xd_names2)) {
+    print(data.frame(predictor=object$inputs$xd_names2,posteriormode=round(object$pars[1:d],5)))
+  } else if(!is.null(object$inputs$xd_names)) {
     print(data.frame(predictor=object$inputs$xd_names,posteriormode=round(object$pars[1:d],5)))
   } else {
     print(data.frame(posteriormode=round(object$pars[1:d],5)))
@@ -192,8 +194,9 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
       }
     }
   }
-  
-  if(!is.null(fit$inputs$xd_names)) { xlabels=fit$inputs$xd_names }
+
+  if(!is.null(fit$inputs$xd_names2)) { xlabels=fit$inputs$xd_names2 } 
+  else if(!is.null(fit$inputs$xd_names)) { xlabels=fit$inputs$xd_names }
   else { xlabels= paste0("x",1:d) }
   
   #combine into dataframe  #this needs work, put in longer format*****
