@@ -961,6 +961,7 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     stop("E and tau must be positive integers")
   }
   
+  #default names in case where data is not used and names are needed
   pname="pop"
   tname="time"
   xname="xvar"
@@ -987,6 +988,9 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
   
   yd=as.matrix(yd)
   num_vars=ncol(yd)
+  
+  #in the case where yd is a vector or unnamed matrix
+  #assign names or reassign name from data
   if(is.null(colnames(yd))) {
     if(num_vars==length(yname)) {
       colnames(yd)=yname
@@ -994,75 +998,45 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
       colnames(yd)=paste0(yname, seq_len(num_vars))
     }
   }
+  
+  #if pop is not supplied, create vector of 1s (all same population)
   if(is.null(pop)) {
     pop=rep(1,nrow(yd))
   }
   up=unique(pop)
   
-  #1
-  if(forecast==FALSE & vtimestep==FALSE) {
-    output=matrix(NA, nrow = nrow(yd), ncol = num_vars*E)
-    col_names=character(num_vars*E)
+  #standard method
+  if(vtimestep==FALSE) {
     
-    for(k in 1:length(up)) { #populations
-      col_index=1
-      for(j in 1:num_vars) { #variables
-        ind=which(pop==up[k])
-        ts=yd[ind,j]
-        for (i in 1:E) {
-          ts=c(rep_len(NA, tau),ts[1:(length(ts) - tau)])
-          output[ind,col_index]=ts
-          col_names[col_index]=paste0(colnames(yd)[j],"_", i * tau)
-          col_index=col_index + 1
-        }
+    output=makelags_subrt(yd=yd, pop=pop,E=E,tau=tau,forecast=forecast)
+    
+    if(forecast==FALSE) return(output)
+    
+    if(forecast==TRUE) {
+      if(length(up)>1) {
+        popfore=rep(up,each=tau)
+        output=cbind.data.frame(popfore,output)
+        colnames(output)[1]=pname
       }
+      if(!is.null(time)) {
+        timefore=numeric(length(up)*tau)
+        popfore=rep(up,each=tau)
+        for(k in 1:length(up)) { #populations
+          ind=which(pop==up[k])
+          indfore=which(popfore==up[k])
+          timei=time[ind]
+          Tdiff=diff(timei[(length(timei)-1):length(timei)])
+          timefore[indfore]=timei[length(timei)]+(1:tau)*Tdiff
+        }
+        output=cbind.data.frame(timefore,output)
+        colnames(output)[1]=tname
+      }
+      return(output)
     }
-    colnames(output)=col_names
-    return(output)
   }
   
-  #2
-  if(forecast==TRUE & vtimestep==FALSE) {
-    output=matrix(NA, nrow = length(up)*tau, ncol = num_vars*E)
-    popfore=rep(up,each=tau)
-    col_names=character(num_vars*E)
-    
-    for(k in 1:length(up)) { #populations
-      col_index=1
-      for(j in 1:num_vars) { #variables
-        ind=which(pop==up[k])
-        indfore=which(popfore==up[k])
-        ts=yd[ind,j]
-        for (i in 1:E) {
-          tsfore=ts[(length(ts) - tau*i+1):(length(ts)- tau*(i-1))]
-          output[indfore,col_index]=tsfore
-          col_names[col_index]=paste0(colnames(yd)[j],"_", i * tau)
-          col_index=col_index + 1
-        }
-      }
-    }
-    colnames(output)=col_names
-    if(length(up)>1) {
-      output=cbind.data.frame(popfore,output)
-      colnames(output)[1]=pname
-    }
-    if(!is.null(time)) {
-      timefore=numeric(length(up)*tau)
-      for(k in 1:length(up)) { #populations
-        ind=which(pop==up[k])
-        indfore=which(popfore==up[k])
-        timei=time[ind]
-        Tdiff=diff(timei[(length(timei)-1):length(timei)])
-        timefore[indfore]=timei[length(timei)]+(1:tau)*Tdiff
-      }
-      output=cbind.data.frame(timefore,output)
-      colnames(output)[1]=tname
-    }
-    return(output)
-  }
-  
-  #3
-  if(forecast==FALSE & vtimestep==TRUE) {
+  #variable timestep method
+  if(vtimestep==TRUE) {
     
     #if time is not supplied, make a numeric index
     if(is.null(time)) { 
@@ -1071,7 +1045,6 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
         time[pop==up[i]]=1:length(time[pop==up[i]])
       }
     }
-    
     #if covariates are specified
     if(!is.null(xd)) {
       xd=as.matrix(xd)
@@ -1086,7 +1059,7 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     } else {
       yxd=yd
     }
-
+    
     ###exclude rows with missing values (yd only), generate Tdiff, generate lags
     
     #remove missing values
@@ -1094,101 +1067,129 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     yxd1=yxd[completerows1,,drop=F]
     pop1=pop[completerows1]
     time1=time[completerows1]
-    
     #compute Tdiff
-    yxd1t=cbind(yxd1,Tdiff=c(diff(time1,lag=tau),rep_len(NA, tau)))
-    num_vars=ncol(yxd1t)
-    
-    #generate lags
-    output1=matrix(NA, nrow = nrow(yxd1t), ncol = num_vars*E)
-    col_names=character(num_vars*E)
-    
-    for(k in 1:length(up)) { #populations
-      col_index=1
-      for(j in 1:num_vars) { #variables
-        ind=which(pop1==up[k])
-        ts=yxd1t[ind,j]
-        for (i in 1:E) {
-          ts=c(rep_len(NA, tau),ts[1:(length(ts) - tau)])
-          output1[ind,col_index]=ts
-          col_names[col_index]=paste0(colnames(yxd1t)[j],"_", i * tau)
-          col_index=col_index + 1
-        }
-      }
+    Tdiff1=numeric(length(time1))
+    for(i in 1:length(up)) {
+      Tdiff1[pop1==up[i]]=c(diff(time1[pop1==up[i]],lag=tau),rep_len(NA, tau))
     }
-    colnames(output1)=col_names
+    yxd1t=cbind(yxd1,Tdiff=Tdiff1)
+
+    output1=makelags_subrt(yd=yxd1t,pop=pop1,E=E,tau=tau,forecast=forecast)
     
-    #backfill missing values
-    yxdt_back<-matrix(NA, nrow = length(completerows1), ncol = ncol(output1), 
-                       dimnames = list(NULL,col_names))
-    yxdt_back[completerows1,]=output1
-    
-    ###exclude rows with missing values (yd and xd), generate Tdiff, generate lags
-    
+    if(forecast==FALSE) {
+      #backfill missing values
+      yxdt_back<-matrix(NA, nrow = length(completerows1), ncol = ncol(output1), 
+                        dimnames = list(NULL,colnames(output1)))
+      yxdt_back[completerows1,]=output1
+    } else {
+      yxdt_back=output1
+    }
+
     if(!is.null(xd)) {
+      
+      ###exclude rows with missing values (yd and xd), generate Tdiff, generate lags
       
       #remove missing values
       completerows2=complete.cases(yxd)
       yxd2=yxd[completerows2,,drop=F]
       pop2=pop[completerows2]
       time2=time[completerows2]
-      
       #compute Tdiff
-      yxd2t=cbind(yxd2,Tdiff=c(diff(time2,lag=tau),rep_len(NA, tau)))
-      num_vars=ncol(yxd2t)
-      
-      #generate lags
-      output2=matrix(NA, nrow = nrow(yxd2t), ncol = num_vars*E)
-      col_names=character(num_vars*E)
-      
-      for(k in 1:length(up)) { #populations
-        col_index=1
-        for(j in 1:num_vars) { #variables
-          ind=which(pop2==up[k])
-          ts=yxd2t[ind,j]
-          for (i in 1:E) {
-            ts=c(rep_len(NA, tau),ts[1:(length(ts) - tau)])
-            output2[ind,col_index]=ts
-            col_names[col_index]=paste0(colnames(yxd2t)[j],"_", i * tau)
-            col_index=col_index + 1
-          }
-        }
+      Tdiff2=numeric(length(time2))
+      for(i in 1:length(up)) {
+        Tdiff2[pop2==up[i]]=c(diff(time2[pop2==up[i]],lag=tau),rep_len(NA, tau))
       }
-      colnames(output2)=col_names
+      yxd2t=cbind(yxd2,Tdiff=Tdiff2)
       
-      #backfill missing values
-      yxd2t_back<-matrix(NA, nrow = length(completerows2), ncol = ncol(output2), 
-                         dimnames = list(NULL,col_names))
-      yxd2t_back[completerows2,]=output2
+      output2=makelags_subrt(yd=yxd2t,pop=pop2,E=E,tau=tau,forecast=forecast)
+      
+      if(forecast==FALSE) {
+        #backfill missing values
+        yxd2t_back<-matrix(NA, nrow = length(completerows2), ncol = ncol(output2), 
+                           dimnames = list(NULL,colnames(output2)))
+        yxd2t_back[completerows2,]=output2
+      } else {
+        yxd2t_back=output2
+      }
       
       #combine results
       sub2=!complete.cases(yxdt_back) & complete.cases(yxd2t_back)
       yxdt_back[sub2,]=yxd2t_back[sub2,]
     }
     
+    output=yxdt_back
+    
     if(!is.null(Tdiffmax)) {
-      cols=grep("Tdiff_",colnames(yxdt_back))
-      yxdt_back[, cols][yxdt_back[, cols] > Tdiffmax] <- NA
+      cols=grep("Tdiff_",colnames(output))
+      output[, cols][output[, cols] > Tdiffmax] <- NA
     }
     
-    if(augment==F) {
-      return(yxdt_back)
-    } else {
+    if(augment==TRUE) {
       #produce augmentation matrix
       
       return("Not yet implemented")
     }
+    
+    if(forecast==FALSE) return(output)
+      
+    if(forecast==TRUE) {
+      if(length(up)>1) {
+        popfore=rep(up,each=tau)
+        output=cbind.data.frame(popfore,output)
+        colnames(output)[1]=pname
+      }
+      if(!is.null(time)) {
+        timefore=numeric(length(up)*tau)
+        popfore=rep(up,each=tau)
+        for(k in 1:length(up)) { #populations
+          ind=which(pop==up[k])
+          indfore=which(popfore==up[k])
+          timei=time[ind]
+          Tdiff=diff(timei[(length(timei)-1):length(timei)])
+          timefore[indfore]=timei[length(timei)]+(1:tau)*Tdiff
+        }
+        output=cbind.data.frame(timefore,output)
+        colnames(output)[1]=tname
+      }
+      return(output)
+    }
   }
+}
 
-  #4
-  if(forecast==TRUE & vtimestep==TRUE) {
-    
-    
-    return("Not yet implemented")
-  }
+makelags_subrt=function(yd, #matrix
+                        pop,E,tau,forecast) {
+  up=unique(pop)
+  num_vars=ncol(yd)
   
+  output=matrix(NA, nrow = nrow(yd), ncol = num_vars*E)
+  outputfore=matrix(NA, nrow = length(up)*tau, ncol = num_vars*E)
+  popfore=rep(up,each=tau)
+  
+  col_names=character(num_vars*E)
+  
+  for(k in 1:length(up)) { #populations
+    col_index=1
+    for(j in 1:num_vars) { #variables
+      ind=which(pop==up[k])
+      indfore=which(popfore==up[k])
+      ts=yd[ind,j]
+      for (i in 1:E) {
+        tslag=c(rep_len(NA, tau*i),ts[1:(length(ts) - tau*i)])
+        output[ind,col_index]=tslag
+        tsfore=ts[(length(ts) - tau*i+1):(length(ts)- tau*(i-1))]
+        outputfore[indfore,col_index]=tsfore
+        col_names[col_index]=paste0(colnames(yd)[j],"_", i * tau)
+        col_index=col_index + 1
+      }
+    }
+  }
+  colnames(output)=col_names
+  colnames(outputfore)=col_names
+  
+  if(forecast==FALSE) return(output)
+  else return(outputfore)
 }
 
 is.wholenumber=function(x, tol = .Machine$double.eps^0.5) {
   abs(x - round(x)) < tol
-} 
+}
