@@ -279,7 +279,7 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
   #transform parameters
   initparst=c(log(initpars[1:d]),logit(initpars[d+1]), logit(initpars[d+2]), logit(initpars[d+3]))
   
-  #if only one population, set rho to 0
+  #if only one population, set transformed rho to 0
   if(length(unique(pop))==1) {initparst[d+3]=0}
   
   #remove missing values
@@ -653,7 +653,7 @@ predict.GP=function(object,predictmethod="loo",datanew=NULL,xnew=NULL,popnew=NUL
     
     #if data frame is supplied, take columns from it
     if(!is.null(datanew)) {
-      ynew=datanew[,object$inputs$yd_names]
+      if(object$inputs$yd_names %in% colnames(datanew)) { ynew=datanew[,object$inputs$yd_names] }
       if(!is.null(object$inputs$xd_names)) { xnew=datanew[,object$inputs$xd_names] }
       if(!is.null(object$inputs$pop_names)) { popnew=datanew[,object$inputs$pop_names] }
       if(!is.null(object$inputs$time_names)) { timenew=datanew[,object$inputs$time_names] }
@@ -921,8 +921,8 @@ getR2=function(obs, pred) {
 #'   population). If \code{data} is supplied, the column name or index.
 #' @param E Embedding dimension. Required.
 #' @param tau Time delay. Required.
-#' @param yname Optional, name of the variable if yd is input as a vector, or variables
-#'   if yd is a matrix with unnamed columns. Otherwise not used.
+#' @param yname Optional, name of the variable if \code{yd} is input as a vector, or variables
+#'   if \code{yd} is a matrix with unnamed columns. Otherwise not used.
 #'   Defaults to "var" if NULL.
 #' @param forecast Produce a forecast matrix instead of the standard training/test matrix.
 #' @param vtimestep Use variable timestep method. 
@@ -932,13 +932,14 @@ getR2=function(obs, pred) {
 #' @param time Used to generate forecast time if \code{forecast=TRUE} and to calculate
 #'   Tdiff if \code{vtimestep=TRUE}. If not supplied and \code{vtimestep=TRUE}, a numeric index is used.
 #' @param augment If \code{vtimestep=TRUE}, produce augmentation lag matrix.
-#' @param Tdiffmax If \code{vtimestep=TRUE}, the maximum Tdiff value to allow in production
+#' @param Tdiff_max If \code{vtimestep=TRUE}, the maximum Tdiff value to allow in production
 #'   of the lag matrix or augmentation lag matrix. 
-#' @param Tdiff_fore If \code{vtimestep=TRUE} and \code{forecast=TRUE}, vector of Tdiffs to 
-#'   forecast beyond the last timestep.
+#' @param Tdiff_fore If \code{vtimestep=TRUE} and \code{forecast=TRUE}, vector of time units to 
+#'   forecast beyond the last timestep. Defaults to the minimum time difference between consecutive
+#'   timepoints, multipled by tau.
 #' @param nreps If \code{augment=TRUE}, the max number of delay vectors for each
 #'   Tdiff value.
-#' @return A matrix with named columns, the appended number indicating tau. If
+#' @return A matrix with named columns, the appended number indicating the time lag. If
 #'   \code{yd} has named columns, named columns in the lag matrix will match. If
 #'   generating forecasts, the output matrix will include a column for
 #'   population if there is more than one, and will include a time column if
@@ -959,11 +960,20 @@ getR2=function(obs, pred) {
 #' 
 makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
                   forecast=FALSE,vtimestep=FALSE,xd=NULL,time=NULL,
-                  augment=FALSE,Tdiffmax=NULL,Tdiff_fore=NULL,nreps=NULL) {
+                  augment=FALSE,Tdiff_max=NULL,Tdiff_fore=NULL,nreps=NULL) {
   
   #input checks
   if(!is.wholenumber(E) | !is.wholenumber(tau) | E<0 | tau<0) {
     stop("E and tau must be positive integers")
+  }
+  if((vtimestep==FALSE | forecast==TRUE) & augment==TRUE) {
+    message("augment==TRUE can only be used with vtimestep==TRUE and forecast==FALSE")
+  }
+  if(!is.null(Tdiff_fore) & (forecast==FALSE | vtimestep==FALSE)) {
+    message("Tdiff_fore not used; only used with vtimestep==TRUE and forecast==TRUE")
+  }
+  if(!is.null(Tdiff_max) & vtimestep==FALSE) {
+    message("Tdiff_max not used; only used with vtimestep==TRUE")
   }
   
   #default names in case where data is not used and names are needed
@@ -1003,7 +1013,7 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
       colnames(yd)=paste0(yname, seq_len(num_vars))
     }
   }
-  
+  #same for xd (usually only relevant if there is only one xd)
   if(!is.null(xd)) {
     xd=as.matrix(xd)
     if(is.null(colnames(xd))) {
@@ -1027,16 +1037,18 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     #if covariates are specified
     if(!is.null(xd)) { yd=cbind(yd,xd) }
     
-    output=makelags_subrt(yd=yd, pop=pop,E=E,tau=tau,forecast=forecast)
+    output=makelags_subrt(yd=yd,pop=pop,E=E,tau=tau,forecast=forecast)
     
     if(forecast==FALSE) return(output)
     
     if(forecast==TRUE) {
+      #append pop if more than 1
       if(length(up)>1) {
         popfore=rep(up,each=tau)
         output=cbind.data.frame(popfore,output)
         colnames(output)[1]=pname
       }
+      #append time if supplied
       if(!is.null(time)) {
         timefore=numeric(length(up)*tau)
         popfore=rep(up,each=tau)
@@ -1090,26 +1102,38 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
       yxdt_back<-matrix(NA, nrow = length(completerows1), ncol = ncol(output1), 
                         dimnames = list(NULL,colnames(output1)))
       yxdt_back[completerows1,]=output1
-    } else {
+    } else { #forecast==TRUE
       popfore=rep(up,each=tau)
+      #append pop if more than 1
       if(length(up)>1) {
         output1=cbind.data.frame(popfore,output1)
         colnames(output1)[1]=pname
       }
-      timefore=numeric(length(up)*tau)
+      #forecast times
+      nfore=ifelse(!is.null(Tdiff_fore),length(Tdiff_fore),1)
+      output1list=rep(list(output1),nfore)
       Tdiff1col=grep("Tdiff", colnames(output1))[1]
-      for(k in 1:length(up)) { #populations
-        ind=which(pop1==up[k])
-        indfore=which(popfore==up[k])
-        timei=time1[ind]
-        timeall=time[which(pop==up[k])]
-        Tdiff=min(diff(timei))
-        #Tdiff=diff(timei[(length(timei)-1):length(timei)])
-        timefore[indfore]=timeall[length(timeall)]+(1:tau)*Tdiff
-        output1[indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
+      for(i in 1:nfore) {
+        timefore=numeric(length(up)*tau)
+        for(k in 1:length(up)) { #populations
+          ind=which(pop1==up[k])
+          indfore=which(popfore==up[k])
+          timei=time1[ind]
+          timeall=time[which(pop==up[k])]
+          if(is.null(Tdiff_fore)) {
+            #Tdiff=diff(timei[(length(timei)-1):length(timei)])
+            Tdiff=min(diff(timei))*tau
+          } else {
+            Tdiff=Tdiff_fore[i]
+          }
+          timefore[indfore]=timeall[(length(timeall)-tau+1):length(timeall)]+Tdiff
+          output1list[[i]][indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
+        }          
+        output1list[[i]]=cbind.data.frame(timefore,output1list[[i]])
+        colnames(output1list[[i]])[1]=tname
       }
-      output1=cbind.data.frame(timefore,output1)
-      colnames(output1)[1]=tname
+      #print(output1list)
+      output1=do.call(rbind,output1list)
       yxdt_back=output1
       #print(output1)
       }
@@ -1137,26 +1161,38 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
         yxd2t_back<-matrix(NA, nrow = length(completerows2), ncol = ncol(output2), 
                            dimnames = list(NULL,colnames(output2)))
         yxd2t_back[completerows2,]=output2
-      } else {
+      } else { #forecast==TRUE
         popfore=rep(up,each=tau)
+        #append pop if more than 1
         if(length(up)>1) {
           output2=cbind.data.frame(popfore,output2)
           colnames(output1)[1]=pname
         }
-        timefore=numeric(length(up)*tau)
+        #forecast times
+        nfore=ifelse(!is.null(Tdiff_fore),length(Tdiff_fore),1)
+        output2list=rep(list(output2),nfore)
         Tdiff1col=grep("Tdiff", colnames(output2))[1]
-        for(k in 1:length(up)) { #populations
-          ind=which(pop2==up[k])
-          indfore=which(popfore==up[k])
-          timei=time2[ind]
-          timeall=time[which(pop==up[k])]
-          Tdiff=min(diff(timei))
-          #Tdiff=diff(timei[(length(timei)-1):length(timei)])
-          timefore[indfore]=timeall[length(timeall)]+(1:tau)*Tdiff
-          output2[indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
+        for(i in 1:nfore) {
+          timefore=numeric(length(up)*tau)
+          for(k in 1:length(up)) { #populations
+            ind=which(pop2==up[k])
+            indfore=which(popfore==up[k])
+            timei=time2[ind]
+            timeall=time[which(pop==up[k])]
+            if(is.null(Tdiff_fore)) {
+              #Tdiff=diff(timei[(length(timei)-1):length(timei)])
+              Tdiff=min(diff(timei))*tau
+            } else {
+              Tdiff=Tdiff_fore[i]
+            }
+            timefore[indfore]=timeall[(length(timeall)-tau+1):length(timeall)]+Tdiff
+            output2list[[i]][indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
+          }          
+          output2list[[i]]=cbind.data.frame(timefore,output2list[[i]])
+          colnames(output2list[[i]])[1]=tname
         }
-        output2=cbind.data.frame(timefore,output2)
-        colnames(output2)[1]=tname
+        #print(output2list)
+        output2=do.call(rbind,output2list)
         yxd2t_back=output2
         #print(output2)
       }
@@ -1169,9 +1205,9 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     
     output=yxdt_back
     
-    if(!is.null(Tdiffmax)) {
+    if(!is.null(Tdiff_max)) {
       cols=grep("Tdiff_",colnames(output))
-      output[, cols][output[, cols] > Tdiffmax] <- NA
+      output[, cols][output[, cols] > Tdiff_max] <- NA
     }
     
     if(augment==TRUE) {

@@ -215,6 +215,37 @@ plot(tlogtest2)
 
 <img src="man/figures/README-predict2-1.png" width="100%" />
 
+### Making forecasts
+
+You can construct a forecast matrix using `makelags` by setting
+`forecast=T` and supplying this as `datanew`. In order to do this (as
+the code is currently written), you have to generate the lags beforehand
+for *both* the training data and the forecast (you cannot use `E` and
+`tau` in `fitGP`, you have to use `makelags` for both, and the settings
+in `makelags` should match, other than `forecast`. It is a good idea to
+include the `time` argument when doing this.
+
+``` r
+lags1=makelags(thetalog2pop,yd=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
+fore1=makelags(thetalog2pop,yd=c("Abundance"),pop="Population",time="Time",E=3,tau=1,forecast = T)
+data1=cbind(thetalog2pop, lags1)
+
+tlogfore=fitGP(data = data1, yd = "Abundance", xd=c("Abundance_1","Abundance_2","Abundance_3"), 
+               pop = "Population", time = "Time", scaling = "local", datanew = fore1)
+
+ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
+  facet_wrap(pop~., scales = "free") +
+  geom_line() + geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4) +
+  geom_point(aes(y=obs)) +
+  geom_point(data=tlogfore$outsampresults, aes(y=predmean), color="red") +
+  geom_errorbar(data=tlogfore$outsampresults,
+                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
+  theme_bw()
+#> Warning: Removed 3 rows containing missing values (geom_path).
+```
+
+<img src="man/figures/README-forecast-1.png" width="100%" />
+
 ## Specifying training data
 
 There are several ways that the training data for a model can be

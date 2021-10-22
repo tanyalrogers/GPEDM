@@ -81,9 +81,10 @@ plot.GPpred=function(x, plotinsamp=F) {
     points(dploti$timestep,dploti$obs,col="blue")
     legend(x = "bottomright",legend = c("obs","pred"),col=c("blue","black"),pch=1)
     
-    plot(dploti$obs,dploti$predmean,ylab=paste(yl,"pred"),xlab=paste(yl,"obs"),main=up[i])
-    abline(a=0,b=1)
-    
+    if(!is.null(dploti$obs)) {    
+      plot(dploti$obs,dploti$predmean,ylab=paste(yl,"pred"),xlab=paste(yl,"obs"),main=up[i])
+      abline(a=0,b=1)
+    }    
   }
   
 }

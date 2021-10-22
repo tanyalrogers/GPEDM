@@ -16,7 +16,7 @@ makelags(
   xd = NULL,
   time = NULL,
   augment = FALSE,
-  Tdiffmax = NULL,
+  Tdiff_max = NULL,
   Tdiff_fore = NULL,
   nreps = NULL
 )
@@ -37,8 +37,8 @@ population). If \code{data} is supplied, the column name or index.}
 
 \item{tau}{Time delay. Required.}
 
-\item{yname}{Optional, name of the variable if yd is input as a vector, or variables
-if yd is a matrix with unnamed columns. Otherwise not used.
+\item{yname}{Optional, name of the variable if \code{yd} is input as a vector, or variables
+if \code{yd} is a matrix with unnamed columns. Otherwise not used.
 Defaults to "var" if NULL.}
 
 \item{forecast}{Produce a forecast matrix instead of the standard training/test matrix.}
@@ -54,17 +54,18 @@ Tdiff if \code{vtimestep=TRUE}. If not supplied and \code{vtimestep=TRUE}, a num
 
 \item{augment}{If \code{vtimestep=TRUE}, produce augmentation lag matrix.}
 
-\item{Tdiffmax}{If \code{vtimestep=TRUE}, the maximum Tdiff value to allow in production
+\item{Tdiff_max}{If \code{vtimestep=TRUE}, the maximum Tdiff value to allow in production
 of the lag matrix or augmentation lag matrix.}
 
-\item{Tdiff_fore}{If \code{vtimestep=TRUE} and \code{forecast=TRUE}, vector of Tdiffs to
-forecast beyond the last timestep.}
+\item{Tdiff_fore}{If \code{vtimestep=TRUE} and \code{forecast=TRUE}, vector of time units to
+forecast beyond the last timestep. Defaults to the minimum time difference between consecutive
+timepoints, multipled by tau.}
 
 \item{nreps}{If \code{augment=TRUE}, the max number of delay vectors for each
 Tdiff value.}
 }
 \value{
-A matrix with named columns, the appended number indicating tau. If
+A matrix with named columns, the appended number indicating the time lag. If
 \code{yd} has named columns, named columns in the lag matrix will match. If
 generating forecasts, the output matrix will include a column for
 population if there is more than one, and will include a time column if
