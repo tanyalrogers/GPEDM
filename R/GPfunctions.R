@@ -215,7 +215,12 @@ fitGP=function(data=NULL,yd,xd=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,scaling="
       if(!is.null(inputs$yd_names)) inputs$xd_names=inputs$yd_names
     }
     xd=makelags(yd=xd,pop=pop,E=E,tau=tau,yname=inputs$xd_names)
-    if(!is.null(inputs$xd_names)) inputs$xd_names2=colnames(xd)
+    if(!is.null(inputs$xd_names)) {
+      inputs$xd_names2=colnames(xd)
+      if(any(grepl("_1",inputs$xd_names) | grepl("_2",inputs$xd_names))) {
+        message("It looks like xd might already contain lags, are you sure you want to be using E and tau?")
+      }
+    }
     inputs$E=E
     inputs$tau=tau
   }
