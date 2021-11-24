@@ -46,9 +46,11 @@ assumed to be evenly spaced) but supplying \code{time} will be add these values 
 which may be useful for later plotting purposes. If \code{data} is supplied, a column name
 (character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
 
-\item{E}{Embedding dimension. Required if \code{xd} is not supplied.}
+\item{E}{Embedding dimension. If supplied, will be used to constuct lags of \code{xd} (or
+lags of \code{yd} if \code{xd} is not supplied).}
 
-\item{tau}{Time delay. Required if \code{xd} is not supplied.}
+\item{tau}{Time delay. If supplied, will be used to constuct lags of \code{xd} (or
+lags of \code{yd} if \code{xd} is not supplied).}
 
 \item{scaling}{How the variables should be scaled (see Details). Scaling can be \code{"global"}
 (default), \code{"local"} (only applicable if more than 1 pop), or \code{"none"}. Scaling is applied
@@ -87,7 +89,10 @@ A list (class GP and GPpred) with the following elements:
 \item{grad}{Likelihood gradients of hyperparameters at posterior mode. Can be used to assess convergence.}
 \item{covm}{List containing various covariance matrices and the inverse covariance matrix.}
 \item{iter}{Number of iterations until convergence was reached. Currently fixed at a max of 200.}
-\item{inputs}{Inputs and scaled inputs.}
+\item{inputs}{Inputs and scaled inputs. Note that if you use \code{E} and \code{tau},
+the names of the predictors in the input data frame will be stored under
+\code{xd_names}, and the names of the lagged predictors corresponding to the
+inverse length scales will be stored under \code{xd_names2}, provided these names exist.}
 \item{scaling}{Scaling information.}
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
@@ -109,21 +114,27 @@ Fits a GP model with separable length scales and automatic relevance determinati
 Also fits a hierarchical version of the GP model if distinct populations are indicated
 using \code{pop}.
 There are several ways to specify the training data:
+\itemize{
+\item A. supply data frame \code{data}, plus column names or indices for \code{yd}, \code{xd}, \code{pop}, and \code{time}.
+\item B. supply vectors for \code{yd}, \code{pop}, and \code{time}, and a matrix or vector for \code{xd}.
+}
+For each of the above 2 options, there are 3 options for specifying the predictors.
 \enumerate{
-\item data frame \code{data}, plus column names or indices for \code{yd} and \code{xd}
-\item data frame \code{data}, plus column name or index for \code{yd}, and values for \code{E} and \code{tau}
-\item vector \code{yd}, plus matrix or vector \code{xd}
-\item vector \code{yd}, plus values for \code{E} and \code{tau}
+\item supplying \code{yd} and \code{xd} (omitting \code{E} and \code{tau}) will use the columns of \code{xd} as predictors. This allows
+for the most customization.
+\item supplying \code{yd}, \code{E}, and \code{tau} (omitting \code{xd}) will use \code{E} lags of \code{yd} (with spacing \code{tau}) as predictors.
+This is equivalent to option 3 with \code{xd}=\code{yd}.
+\item supplying \code{yd}, \code{xd}, \code{E}, and \code{tau} will use \code{E} lags of \emph{each column} of \code{xd} (with spacing \code{tau}) as predictors.
+Do not use this option if \code{xd} already contains lags, in that case use option 1.
 }
 Arguments \code{pop} and \code{time} are optional in all of the above cases.
-They should be column names or indices in cases 1 and 2, vectors in cases 3 and 4.
 If \code{pop} and \code{time} are supplied, they should NOT contain missing values.
 This function will also, optionally, produce predictions.
 See Details for more information.
 }
 \details{
-The data are assumed to be in time order. This is particularly important if the E/tau option
-or \code{predictmethod="sequential"} is used.
+The data are assumed to be in time order. This is particularly important if \code{E} and \code{tau}
+are supplied or \code{predictmethod="sequential"} is used.
 
 \strong{Missing values:}
 
@@ -134,7 +145,7 @@ should NOT contain missing values.
 
 \strong{Hyperparameters:}
 
-The model uses the a squared exponential covariance function. See the (not yet written)
+The model uses a squared exponential covariance function. See the (not yet written)
 vignette for mathematical details.
 
 There is one inverse length scale \code{phi} estimated for each predictor

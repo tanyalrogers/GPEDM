@@ -29,7 +29,7 @@ applications.}
 \item{plot}{Produce a plot, or not (logical, defaults to TRUE).}
 }
 \value{
-A data frame containing the predictor values and conditional responses
+Returns (invisibly) a data frame containing the predictor values and conditional responses
 (means and standard deviations).
 }
 \description{
