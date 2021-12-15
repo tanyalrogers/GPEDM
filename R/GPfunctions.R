@@ -972,13 +972,19 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     stop("E and tau must be positive integers")
   }
   if((vtimestep==FALSE | forecast==TRUE) & augment==TRUE) {
-    message("augment==TRUE can only be used with vtimestep==TRUE and forecast==FALSE")
+    stop("augment==TRUE can only be used with vtimestep==TRUE and forecast==FALSE")
   }
-  if(!is.null(Tdiff_fore) & (forecast==FALSE | vtimestep==FALSE)) {
-    message("Tdiff_fore not used; only used with vtimestep==TRUE and forecast==TRUE")
+  if(!is.null(Tdiff_fore) & !(vtimestep==TRUE & (forecast==TRUE | augment==TRUE))) {
+    message("Tdiff_fore not used; only used with vtimestep==TRUE and either forecast==TRUE or augment==TRUE")
   }
   if(!is.null(Tdiff_max) & vtimestep==FALSE) {
     message("Tdiff_max not used; only used with vtimestep==TRUE")
+  }
+  if(!is.null(nreps) & (vtimestep==FALSE | augment==FALSE)) {
+    message("nreps not used; only used with vtimestep==TRUE and augment==TRUE")
+  }
+  if(tau>1 & vtimestep==TRUE) {
+    message("Using tau>1 with vtimestep method is not recommended")
   }
   
   #default names in case where data is not used and names are needed
@@ -1083,147 +1089,335 @@ makelags=function(data=NULL,yd,pop=NULL,E,tau,yname=NULL,
     }
     
     #if covariates are specified
-    if(!is.null(xd)) { yxd=cbind(yd,xd) }
-    else { yxd=yd }
+    if(!is.null(xd)) { xyd=cbind(yd,xd) 
+    } else { xyd=yd }
     
-    ###exclude rows with missing values (yd only), generate Tdiff, generate lags
-    
-    #remove missing values
-    completerows1=complete.cases(yd)
-    yxd1=yxd[completerows1,,drop=F]
-    pop1=pop[completerows1]
-    time1=time[completerows1]
-    #compute Tdiff
-    Tdiff1=numeric(length(time1))
-    for(i in 1:length(up)) {
-      Tdiff1[pop1==up[i]]=c(diff(time1[pop1==up[i]],lag=tau),rep_len(NA, tau))
-    }
-    yxd1t=cbind(yxd1,Tdiff=Tdiff1)
-
-    output1=makelags_subrt(yd=yxd1t,pop=pop1,E=E,tau=tau,forecast=forecast)
-    
-    if(forecast==FALSE) {
-      #backfill missing values
-      yxdt_back<-matrix(NA, nrow = length(completerows1), ncol = ncol(output1), 
-                        dimnames = list(NULL,colnames(output1)))
-      yxdt_back[completerows1,]=output1
-    } else { #forecast==TRUE
-      popfore=rep(up,each=tau)
-      #append pop if more than 1
-      if(length(up)>1) {
-        output1=cbind.data.frame(popfore,output1)
-        colnames(output1)[1]=pname
-      }
-      #forecast times
-      nfore=ifelse(!is.null(Tdiff_fore),length(Tdiff_fore),1)
-      output1list=rep(list(output1),nfore)
-      Tdiff1col=grep("Tdiff", colnames(output1))[1]
-      for(i in 1:nfore) {
-        timefore=numeric(length(up)*tau)
-        for(k in 1:length(up)) { #populations
-          ind=which(pop1==up[k])
-          indfore=which(popfore==up[k])
-          timei=time1[ind]
-          timeall=time[which(pop==up[k])]
-          if(is.null(Tdiff_fore)) {
-            #Tdiff=diff(timei[(length(timei)-1):length(timei)])
-            Tdiff=min(diff(timei))*tau
-          } else {
-            Tdiff=Tdiff_fore[i]
-          }
-          timefore[indfore]=timeall[(length(timeall)-tau+1):length(timeall)]+Tdiff
-          output1list[[i]][indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
-        }          
-        output1list[[i]]=cbind.data.frame(timefore,output1list[[i]])
-        colnames(output1list[[i]])[1]=tname
-      }
-      #print(output1list)
-      output1=do.call(rbind,output1list)
-      yxdt_back=output1
-      #print(output1)
-      }
-
-    if(!is.null(xd)) {
+    outlist=NULL
+    for(k in 1:length(up)) {
+      pind=which(pop==up[k])
+      xydi=xyd[pind,,drop=F]
+      timei=time[pind]
+      nm=which(apply(xydi, 1, function(x) all(!is.na(x))))
+      out=matrix(nrow = nrow(xydi), ncol = E*(ncol(xydi)+1))
+      vnames=colnames(xydi)
+      colnames(out)=paste(rep(c(vnames,"Tdiff"),each=E),rep(seq(tau,tau*E,tau), times=length(vnames)+1), sep = "_")
       
-      ###exclude rows with missing values (yd and xd), generate Tdiff, generate lags
-      
-      #remove missing values
-      completerows2=complete.cases(yxd)
-      yxd2=yxd[completerows2,,drop=F]
-      pop2=pop[completerows2]
-      time2=time[completerows2]
-      #compute Tdiff
-      Tdiff2=numeric(length(time2))
-      for(i in 1:length(up)) {
-        Tdiff2[pop2==up[i]]=c(diff(time2[pop2==up[i]],lag=tau),rep_len(NA, tau))
-      }
-      yxd2t=cbind(yxd2,Tdiff=Tdiff2)
-      
-      output2=makelags_subrt(yd=yxd2t,pop=pop2,E=E,tau=tau,forecast=forecast)
-      
-      if(forecast==FALSE) {
-        #backfill missing values
-        yxd2t_back<-matrix(NA, nrow = length(completerows2), ncol = ncol(output2), 
-                           dimnames = list(NULL,colnames(output2)))
-        yxd2t_back[completerows2,]=output2
-      } else { #forecast==TRUE
-        popfore=rep(up,each=tau)
-        #append pop if more than 1
-        if(length(up)>1) {
-          output2=cbind.data.frame(popfore,output2)
-          colnames(output1)[1]=pname
+      if(forecast) {
+        if(is.null(Tdiff_fore)) {
+          #Tdiff_fore=diff(timei[(length(timei)-1):length(timei)])
+          Tdiff_fore=min(diff(timei))*tau
         }
-        #forecast times
-        nfore=ifelse(!is.null(Tdiff_fore),length(Tdiff_fore),1)
-        output2list=rep(list(output2),nfore)
-        Tdiff1col=grep("Tdiff", colnames(output2))[1]
-        for(i in 1:nfore) {
-          timefore=numeric(length(up)*tau)
-          for(k in 1:length(up)) { #populations
-            ind=which(pop2==up[k])
-            indfore=which(popfore==up[k])
-            timei=time2[ind]
-            timeall=time[which(pop==up[k])]
-            if(is.null(Tdiff_fore)) {
-              #Tdiff=diff(timei[(length(timei)-1):length(timei)])
-              Tdiff=min(diff(timei))*tau
-            } else {
-              Tdiff=Tdiff_fore[i]
+        foredf=matrix(NA,ncol = ncol(xydi), nrow = length(Tdiff_fore))
+        colnames(foredf)=colnames(xydi)
+        xyd2=rbind(xydi, foredf)
+        time2=c(timei, timei[length(timei)]+Tdiff_fore)
+        out=matrix(nrow = nrow(xydi)+length(Tdiff_fore), ncol = E*(ncol(xydi)+1))
+        colnames(out)=paste(rep(c(vnames,"Tdiff"),each=E),rep(seq(tau,tau*E,tau), times=length(vnames)+1), sep = "_")
+        indfore=(nrow(xydi)+1):nrow(xyd2)
+      } else {
+        xyd2=xydi
+        time2=timei
+      }
+      
+      for(i in 1:nrow(xyd2)) {
+        if(i>E*tau) {
+          index=numeric(length = E+1)
+          index[1]=i
+          indiff=i-nm
+          for(Ei in 1:E) {
+            newind=nm[which.min(indiff[indiff>=tau*Ei & nm<=index[Ei]-tau])]
+            if(length(newind)!=0) {
+              index[Ei+1]=newind
+              out[i,0:(length(vnames)-1)*E+Ei]=as.numeric(xydi[index[Ei+1],])
+              out[i,length(vnames)*E+Ei]=time2[index[Ei]]-time2[index[Ei+1]]
             }
-            timefore[indfore]=timeall[(length(timeall)-tau+1):length(timeall)]+Tdiff
-            output2list[[i]][indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
-          }          
-          output2list[[i]]=cbind.data.frame(timefore,output2list[[i]])
-          colnames(output2list[[i]])[1]=tname
+          }
         }
-        #print(output2list)
-        output2=do.call(rbind,output2list)
-        yxd2t_back=output2
-        #print(output2)
       }
       
-      #combine results
-      # Tdiff1col=grep("Tdiff", colnames(yxdt_back))[1]
-      sub2=!complete.cases(yxdt_back) & complete.cases(yxd2t_back)
-      yxdt_back[sub2,]=yxd2t_back[sub2,]
+      if(forecast) {
+        out=cbind.data.frame(time2[indfore],out[indfore,,drop=F])
+        colnames(out)[1]=tname
+        if(length(up)>1) {
+          out=cbind.data.frame(up[k],out)
+          colnames(out)[1]=pname
+        }
+        outlist[[k]]=out
+      } else {
+        outlist[[k]]=out
+      }
     }
-    
-    output=yxdt_back
+    output=do.call(rbind,outlist)
     
     if(!is.null(Tdiff_max)) {
       cols=grep("Tdiff_",colnames(output))
       output[, cols][output[, cols] > Tdiff_max] <- NA
     }
     
+    #augmentation
     if(augment==TRUE) {
-      #produce augmentation matrix
       
-      return("Not yet implemented")
+      if(is.null(nreps)) {
+        message("defaulting to nreps=10")
+        nreps=10
+      }
+      
+      cols=grep("Tdiff_",colnames(output))
+      auglist=NULL
+      
+      for(k in 1:length(up)) {
+        pind=which(pop==up[k])
+        xydi=xyd[pind,,drop=F]
+        ydi=yd[pind,]
+        timei=time[pind]
+        outputi=outlist[[k]]
+        
+        #get existing unique combinations of Tdiffs
+        outputi2=cbind(outputi,ydi)
+        outbase=as.data.frame(na.omit(outputi2))[,cols]
+        outbase$combo=apply(outbase,1,paste,collapse="")
+        outtab=as.data.frame(table(combo=outbase$combo))
+        outtab=unique(merge(outbase,outtab))
+        outtab=outtab[,-1]
+        
+        #use Tdiff_fore to get missing combos
+        if(!is.null(Tdiff_fore)) {
+          Tgrid=expand.grid(c(rep(list(Tdiff_fore),E)))
+          colnames(Tgrid)=paste0("Tdiff_",1:E)
+          outtab=merge(outtab,Tgrid,all = T)
+          outtab$Freq[is.na(outtab$Freq)]=0
+        }
+        
+        #iterate though all combos until nmax or out of xydi possibilities
+        #retain valid lag vectors and associated time index
+        augmat=outputi[0,]
+        newrow0=outputi[1,]
+        timeaug=numeric()
+        yaug=numeric()
+        outtab$Freq_new=NA
+        rownames(outtab)=NULL
+        for(i in 1:nrow(outtab)) {
+          freq=outtab$Freq[i]
+          remainingrows=nrow(xydi)
+          randind=sample(1:nrow(xydi),nrow(xydi),replace = F)
+          randindi=1
+          while(freq<nreps & randindi<=nrow(xydi)) {
+            if(randind[randindi]>E*tau & !is.na(ydi[randind[randindi]])) {
+              index=numeric(length = E+1)
+              index[1]=randind[randindi]
+              tdiffs=as.numeric(outtab[i,grep("Tdiff_",colnames(outtab))])
+              newrow=newrow0
+              for(Ei in 1:E) {
+                index[Ei+1]=index[Ei]-tdiffs[Ei]
+                if(index[Ei+1]>0) {
+                  newrow[0:(length(vnames)-1)*E+Ei]=as.numeric(xydi[index[Ei+1],])
+                  newrow[length(vnames)*E+Ei]=time[index[Ei]]-time[index[Ei+1]]
+                }
+              }
+              if(all(!is.na(newrow)) & !duplicated(rbind(outputi,newrow))[nrow(outputi)+1]) {
+                augmat=rbind(augmat,newrow)
+                timeaug=c(timeaug,time[randind[randindi]])
+                yaug=c(yaug,ydi[randind[randindi]])
+                freq=freq+1
+              }
+            }
+            randindi=randindi+1
+          }
+          outtab$Freq_new[i]=freq
+        }
+        rownames(augmat)=NULL
+        out=cbind.data.frame(timeaug,yaug,augmat)
+        colnames(out)[1:2]=c(tname,yname)
+        if(length(up)>1) {
+          out=cbind.data.frame(up[k],out)
+          colnames(out)[1]=pname
+        }
+        auglist[[k]]=out
+      }
+      output=do.call(rbind,auglist)
+      if(nrow(output)==0) {
+        message("All combinations exceed nreps.")
+      }
+      print(outtab)
     }
-    
     return(output)
-    
   }
+  #   ###exclude rows with missing values (yd only), generate Tdiff, generate lags
+  #   
+  #   #remove missing values
+  #   completerows1=complete.cases(yd)
+  #   yxd1=yxd[completerows1,,drop=F]
+  #   pop1=pop[completerows1]
+  #   time1=time[completerows1]
+  #   #compute Tdiff
+  #   Tdiff1=numeric(length(time1))
+  #   for(i in 1:length(up)) {
+  #     Tdiff1[pop1==up[i]]=c(diff(time1[pop1==up[i]],lag=tau),rep_len(NA, tau))
+  #   }
+  #   yxd1t=cbind(yxd1,Tdiff=Tdiff1)
+  # 
+  #   output1=makelags_subrt(yd=yxd1t,pop=pop1,E=E,tau=tau,forecast=forecast)
+  #   
+  #   if(forecast==FALSE) {
+  #     #backfill missing values
+  #     yxdt_back<-matrix(NA, nrow = length(completerows1), ncol = ncol(output1), 
+  #                       dimnames = list(NULL,colnames(output1)))
+  #     yxdt_back[completerows1,]=output1
+  #   } else { #forecast==TRUE
+  #     popfore=rep(up,each=tau)
+  #     #append pop if more than 1
+  #     if(length(up)>1) {
+  #       output1=cbind.data.frame(popfore,output1)
+  #       colnames(output1)[1]=pname
+  #     }
+  #     #forecast times
+  #     nfore=ifelse(!is.null(Tdiff_fore),length(Tdiff_fore),1)
+  #     output1list=rep(list(output1),nfore)
+  #     Tdiff1col=grep("Tdiff", colnames(output1))[1]
+  #     for(i in 1:nfore) {
+  #       timefore=numeric(length(up)*tau)
+  #       for(k in 1:length(up)) { #populations
+  #         ind=which(pop1==up[k])
+  #         indfore=which(popfore==up[k])
+  #         timei=time1[ind]
+  #         timeall=time[which(pop==up[k])]
+  #         if(is.null(Tdiff_fore)) {
+  #           #Tdiff=diff(timei[(length(timei)-1):length(timei)])
+  #           Tdiff=min(diff(timei))*tau
+  #         } else {
+  #           Tdiff=Tdiff_fore[i]
+  #         }
+  #         timefore[indfore]=timeall[(length(timeall)-tau+1):length(timeall)]+Tdiff
+  #         output1list[[i]][indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
+  #       }          
+  #       output1list[[i]]=cbind.data.frame(timefore,output1list[[i]])
+  #       colnames(output1list[[i]])[1]=tname
+  #     }
+  #     #print(output1list)
+  #     output1=do.call(rbind,output1list)
+  #     yxdt_back=output1
+  #     #print(output1)
+  #     }
+  # 
+  #   if(!is.null(xd)) {
+  #     
+  #     ###exclude rows with missing values (yd and xd), generate Tdiff, generate lags
+  #     
+  #     #remove missing values
+  #     completerows2=complete.cases(yxd)
+  #     yxd2=yxd[completerows2,,drop=F]
+  #     pop2=pop[completerows2]
+  #     time2=time[completerows2]
+  #     #compute Tdiff
+  #     Tdiff2=numeric(length(time2))
+  #     for(i in 1:length(up)) {
+  #       Tdiff2[pop2==up[i]]=c(diff(time2[pop2==up[i]],lag=tau),rep_len(NA, tau))
+  #     }
+  #     yxd2t=cbind(yxd2,Tdiff=Tdiff2)
+  #     
+  #     output2=makelags_subrt(yd=yxd2t,pop=pop2,E=E,tau=tau,forecast=forecast)
+  #     
+  #     if(forecast==FALSE) {
+  #       #backfill missing values
+  #       yxd2t_back<-matrix(NA, nrow = length(completerows2), ncol = ncol(output2), 
+  #                          dimnames = list(NULL,colnames(output2)))
+  #       yxd2t_back[completerows2,]=output2
+  #     } else { #forecast==TRUE
+  #       popfore=rep(up,each=tau)
+  #       #append pop if more than 1
+  #       if(length(up)>1) {
+  #         output2=cbind.data.frame(popfore,output2)
+  #         colnames(output1)[1]=pname
+  #       }
+  #       #forecast times
+  #       nfore=ifelse(!is.null(Tdiff_fore),length(Tdiff_fore),1)
+  #       output2list=rep(list(output2),nfore)
+  #       Tdiff1col=grep("Tdiff", colnames(output2))[1]
+  #       for(i in 1:nfore) {
+  #         timefore=numeric(length(up)*tau)
+  #         for(k in 1:length(up)) { #populations
+  #           ind=which(pop2==up[k])
+  #           indfore=which(popfore==up[k])
+  #           timei=time2[ind]
+  #           timeall=time[which(pop==up[k])]
+  #           if(is.null(Tdiff_fore)) {
+  #             #Tdiff=diff(timei[(length(timei)-1):length(timei)])
+  #             Tdiff=min(diff(timei))*tau
+  #           } else {
+  #             Tdiff=Tdiff_fore[i]
+  #           }
+  #           timefore[indfore]=timeall[(length(timeall)-tau+1):length(timeall)]+Tdiff
+  #           output2list[[i]][indfore,Tdiff1col]=timefore[indfore]-timei[(length(timei)-tau+1):length(timei)]
+  #         }          
+  #         output2list[[i]]=cbind.data.frame(timefore,output2list[[i]])
+  #         colnames(output2list[[i]])[1]=tname
+  #       }
+  #       #print(output2list)
+  #       output2=do.call(rbind,output2list)
+  #       yxd2t_back=output2
+  #       #print(output2)
+  #     }
+  #     
+  #     #combine results
+  #     # Tdiff1col=grep("Tdiff", colnames(yxdt_back))[1]
+  #     sub2=!complete.cases(yxdt_back) & complete.cases(yxd2t_back)
+  #     yxdt_back[sub2,]=yxd2t_back[sub2,]
+  #   }
+  #   
+  #   output=yxdt_back
+  #   
+  #   if(!is.null(Tdiff_max)) {
+  #     cols=grep("Tdiff_",colnames(output))
+  #     output[, cols][output[, cols] > Tdiff_max] <- NA
+  #   }
+  #   
+  #   #produce augmentation matrix
+  #   if(augment==TRUE) {
+  #     
+  #     return("Not yet implemented")
+  #     
+  #     #get existing unique combinations of Tdiffs
+  #     cols=grep("Tdiff_",colnames(output))
+  #     outbase=na.omit(cbind.data.frame(pop=pop,output[,cols]))
+  #     Tdiffs=outbase[,grep("Tdiff_",colnames(outbase))]
+  #     outbase$combo=apply(outbase,1,paste,collapse="")
+  #     outtab=as.data.frame(table(combo=outbase$combo))
+  #     outtab=unique(merge(outbase,outtab))
+  #     outtab=outtab[,-1]
+  #     
+  #     #use Tdiff_fore to get missing combos
+  #     if(!is.null(Tdiff_fore)) {
+  #       Tgrid=expand.grid(c(rep(list(Tdiff_fore),E),list(unique(pop))))
+  #       colnames(Tgrid)=c(paste0("Tdiff_",1:E),"pop")
+  #       outtab=merge(outtab,Tgrid,all = T)
+  #       outtab$Freq[is.na(outtab$Freq)]=0
+  #     }
+  #     
+  #     #iterate though all combos until nmax or out of xyd possibilities
+  #     #retain valid lag vectors and associated time index
+  #     
+  #     augmat=NULL
+  #     for(i in 1:nrow(outtab)) {
+  #       freq=outtab$Freq[i]
+  #       xydi=xyd[which(pop==outtab$pop[i])]
+  #       timei=time[which(pop==outtab$pop[i])]
+  #       remainingrows=nrow(xydi)
+  #       while(freq<=nreps | remainingrows>0) {
+  #         s
+  #       }
+  #       
+  #     }
+  #     
+  #     
+  #     time
+  #     xyd
+  #     nreps
+  #     
+  #   }
+  #   
+  #   return(output)
+  #   
+  # }
 }
 
 makelags_subrt=function(yd, #matrix
