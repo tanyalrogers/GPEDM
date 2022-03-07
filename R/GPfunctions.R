@@ -913,7 +913,8 @@ getR2=function(obs, pred) {
 #' population if there is more than one, and will include a time column if
 #' \code{time} is supplied. The time increment is based on the minimum
 #' difference between timepoints. If generating forecasts using the variable
-#' timestep method ... can optionally specify forecast increment and number?
+#' timestep method, a vector of time units to forecast beyond the last timestep
+#' can be provided under \code{Tdiff_fore}.
 #' 
 #'
 #' @param data A data frame, or matrix with named columns.
