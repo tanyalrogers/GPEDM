@@ -13,7 +13,7 @@
 \details{
   The main function is \code{\link{fitGP}} which is used to train the model and can also 
   produce predictions if desired. Use \code{\link{predict.GP}} to generate other or additional
-  predictions from a fitted model, \code{\link{plot.GP}} to plot observed and predicted 
+  predictions from a fitted model, \code{\link{plot.GPpred}} to plot observed and predicted 
   values and \code{\link{getconditionals}} to obtain condictional reponses. Also available
   for use is the function \code{\link{makelags}} which can be used to create delay vectors.
   See the (yet to be created) vignette for more detailed instructions.
@@ -29,7 +29,7 @@ a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexi
 }
 \keyword{ package }
 \seealso{
-  \code{\link{fitGP}}, \code{\link{plot.GP}}, \code{\link{getconditionals}}, 
+  \code{\link{fitGP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, 
   \code{\link{makelags}}
 }
 \examples{

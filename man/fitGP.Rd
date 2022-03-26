@@ -12,7 +12,7 @@ fitGP(
   time = NULL,
   E = NULL,
   tau = NULL,
-  scaling = "global",
+  scaling = c("global", "local", "none"),
   initpars = NULL,
   modeprior = 1,
   rhofixed = NULL,

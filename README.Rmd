@@ -34,7 +34,7 @@ devtools::install_github("tanyalrogers/GPEDM")
 ```
 If you are using Windows, you may need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/), which allows you to complile the C++ code.
 
-## Example
+## Basic Use
 
 Here are some simulated data from 2 populations with theta logistic dynamics. The data contain some small lognormal process noise, and the populations have different theta values.
 
@@ -64,7 +64,11 @@ summary(tlogtest)
 
 From the summary, we can see that ARD has (unsurprisingly) deemed lags 2 and 3 to be unimportant (length scales are 0), so E=1 is probably sufficient. The dynamic correlation (rho) tells us the degree to which the dynamics are correlated (they are are rather dissimilar in this case). Since the simulated data don't contain that much noise, the R-squared values are quite high.  
 
-We can examine the observed and predicted values using `plot`. Standard error bands are included in the time series plots, although they're a little hard to see in this example.
+### Plot observed and predicted values
+
+The observed and predicted values can be found under `model$insampresults` or `model$outsampresults`.
+
+We can make a quick plot of the observed and predicted values using `plot`. Standard error bands are included in the time series plots, although they're a little hard to see in this example.
 
 ```{r plot1}
 plot(tlogtest)
@@ -78,7 +82,7 @@ plot(tlogtest, plotinsamp = T)
 
 If you prefer ggplot:
 
-```{r ggplot timeseries}
+```{r ggplot-timeseries, fig.height=2.5}
 library(ggplot2)
 ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
   facet_wrap(pop~., scales = "free") +
@@ -86,6 +90,8 @@ ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
   geom_point(aes(y=obs)) +
   theme_bw()
 ```
+
+### Plot conditional responses
 
 The function `getconditionals` will compute and plot conditional responses to each input variable (other input varibles set to their mean value). From this we can also clearly see that lags 2 and 3 have no impact, and we can see how the lag 1 dynamics of the 2 populations differ.
 
@@ -95,7 +101,7 @@ con=getconditionals(tlogtest)
 
 If you prefer ggplot:
 
-```{r ggplot conditionals}
+```{r ggplot-conditionals}
 #have to convert conditionals output to long format
 #there may be a more concise way to do this
 library(tidyr)
@@ -110,17 +116,21 @@ ggplot(conlong,aes(x=xValue,y=yMean)) +
   theme_bw()
 ```
 
-Make a plot of the inverse length scale parameters. Note that if you use `E` and `tau`, the names of the predictors in the input data frame will be stored under `xd_names`, and the names of the lagged predictors corresponding to the inverse length scales will be stored under `xd_names2`.
+### Plot inverse length scales
 
-```{r ls}
+The model hyperparameters are located under `model$pars`. If you have $n$ predictors, the first $n$ values of `pars` will be the length scales. Note that if you use `E` and `tau`, the names of the predictors in the input data frame will be stored under `model$inputs$xd_names`, and the names of the lagged predictors corresponding to the inverse length scales will be stored under `model$inputs$xd_names2`.
+
+```{r ls, fig.height=3, fig.width=5}
 predvars=tlogtest$inputs$xd_names2
 npreds=length(predvars)
 lscales=tlogtest$pars[1:npreds]
+par(mar=c(4,4,1,1))
 plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
-
 ```
 
-We can use the `predict` function to get other types of predictions. The following obtains sequential predictions using the training data. 
+### Other types of predictions
+
+We can use the `predict` function to get various types of predictions from a fitted model. Leave-one-out, `predictmethod = "loo"` is one option (above, we got these predictions at the same time we fit the model, but this is not necessary). The following obtains sequential (leave-future-out) predictions using the training data. 
 
 ```{r predict}
 #sequential predictions (they should improve over time)
@@ -128,11 +138,11 @@ seqpred=predict(tlogtest,predictmethod = "sequential")
 plot(seqpred)
 ```
 
-You could, alternatively, supply new data for which to make predictions. In that case, you would supply a new data frame (`datanew`), which should contain columns `Abundance` and `Population`.  
+You could, alternatively, supply new data for which to make predictions. In that case, you would supply a new data frame (`datanew`). In our example, this data frame which should contain columns `Abundance` and `Population`.  
 
 A common approach when fitting these models is to split the available data into a training and test dataset. For instance, say we wanted a single-population model for PopA with 2 time lags, and we wanted to use the first 40 data points as training data, and the last 10 points as test data. For that we could do the following.
 
-```{r predict2}
+```{r predict2, fig.height=3}
 pAtrain=pA[1:40,]
 pAtest=pA[41:50,]
 tlogtest2=fitGP(data = pAtrain, yd = "Abundance", E=2, tau=1,
@@ -142,7 +152,7 @@ plot(tlogtest2)
 
 If you don't want the first `E*tau` points getting excluded from your test data, generate the lags beforehand, then split the data (don't use `E` and `tau` options in `fitGP`). See **Specifying training data** (option 1).
 
-```{r predict3}
+```{r predict3, fig.height=3}
 pAlags=makelags(pA, yd = "Abundance", E=2, tau=1)
 pAdata=cbind(pA,pAlags)
 pAtrain=pAdata[1:40,]
@@ -157,7 +167,7 @@ plot(tlogtest3)
 
 You can construct a forecast matrix using `makelags` by setting `forecast=T` and supplying this as `datanew`. In order to do this (as the code is currently written), you have to generate the lags beforehand for *both* the training data and the forecast (you cannot use `E` and `tau` in `fitGP`, you have to use `makelags` for both, and the settings in `makelags` should match, other than `forecast`, See **Specifying training data** option 1). It is a good idea to include the `time` argument when doing this.
 
-```{r forecast}
+```{r forecast, fig.height=3}
 lags1=makelags(thetalog2pop,yd=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
 fore1=makelags(thetalog2pop,yd=c("Abundance"),pop="Population",time="Time",E=3,tau=1,forecast = T)
 data1=cbind(thetalog2pop, lags1)
@@ -195,7 +205,7 @@ Options 2 and 3 exist for convenience, but for the most control over the model a
 
 The `pop` argument is optional in all of the above cases. If omitted, a single population is assumed.
 
-```{r other methods}
+```{r other_methods}
 set.seed(10)
 thetalog2pop$othervar=rnorm(nrow(thetalog2pop))
 yvec=thetalog2pop$Abundance
@@ -238,7 +248,7 @@ By default, `fitGP` excludes any rows that contain missing values (NAs) in eithe
 
 Using this method requires that lag predictors be generated beforehand (option 1 in **Specifying training data**). The `makelags` function has an option for the variable timestep method (`vtimestep=TRUE`) that will generate the time difference lags automatically. Including the `time` argument is strongly recommended, and you definitely need to include it if the rows with missing values have already been removed and/or the timesteps are uneven.
 
-```{r vtimestep}
+```{r vtimestep, fig.height=3}
 #just using one population for now, it will also work with multiple populations
 
 #add some missing values
@@ -267,7 +277,7 @@ ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
 
 You can also generate a forecast matrix using the variable timestep method. The number of timesteps to forecast can be specified with `Tdiff_fore`.
 
-```{r vtimestep2}
+```{r vtimestep2, fig.height=3}
 pAmissfore=makelags(data=pAmiss, yd="Abundance", E=2, tau=1, time="Time", vtimestep=T,  
                     forecast=T, Tdiff_fore=c(1,2))
 pAmissfore
@@ -283,6 +293,9 @@ ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
                 aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
   theme_bw()
 ```
+
+### Using augmentation data
+
 
 
 ## References

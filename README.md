@@ -36,7 +36,7 @@ If you are using Windows, you may need to install
 [Rtools](https://cran.r-project.org/bin/windows/Rtools/), which allows
 you to complile the C++ code.
 
-## Example
+## Basic Use
 
 Here are some simulated data from 2 populations with theta logistic
 dynamics. The data contain some small lognormal process noise, and the
@@ -102,9 +102,14 @@ the dynamics are correlated (they are are rather dissimilar in this
 case). Since the simulated data don’t contain that much noise, the
 R-squared values are quite high.
 
-We can examine the observed and predicted values using `plot`. Standard
-error bands are included in the time series plots, although they’re a
-little hard to see in this example.
+### Plot observed and predicted values
+
+The observed and predicted values can be found under
+`model$insampresults` or `model$outsampresults`.
+
+We can make a quick plot of the observed and predicted values using
+`plot`. Standard error bands are included in the time series plots,
+although they’re a little hard to see in this example.
 
 ``` r
 plot(tlogtest)
@@ -134,7 +139,9 @@ ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
 #> Warning: Removed 3 rows containing missing values (geom_path).
 ```
 
-<img src="man/figures/README-ggplot timeseries-1.png" width="100%" />
+<img src="man/figures/README-ggplot-timeseries-1.png" width="100%" />
+
+### Plot conditional responses
 
 The function `getconditionals` will compute and plot conditional
 responses to each input variable (other input varibles set to their mean
@@ -165,25 +172,34 @@ ggplot(conlong,aes(x=xValue,y=yMean)) +
   theme_bw()
 ```
 
-<img src="man/figures/README-ggplot conditionals-1.png" width="100%" />
+<img src="man/figures/README-ggplot-conditionals-1.png" width="100%" />
 
-Make a plot of the inverse length scale parameters. Note that if you use
-`E` and `tau`, the names of the predictors in the input data frame will
-be stored under `xd_names`, and the names of the lagged predictors
-corresponding to the inverse length scales will be stored under
-`xd_names2`.
+### Plot inverse length scales
+
+The model hyperparameters are located under `model$pars`. If you have
+*n* predictors, the first *n* values of `pars` will be the length
+scales. Note that if you use `E` and `tau`, the names of the predictors
+in the input data frame will be stored under `model$inputs$xd_names`,
+and the names of the lagged predictors corresponding to the inverse
+length scales will be stored under `model$inputs$xd_names2`.
 
 ``` r
 predvars=tlogtest$inputs$xd_names2
 npreds=length(predvars)
 lscales=tlogtest$pars[1:npreds]
+par(mar=c(4,4,1,1))
 plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 ```
 
 <img src="man/figures/README-ls-1.png" width="100%" />
 
-We can use the `predict` function to get other types of predictions. The
-following obtains sequential predictions using the training data.
+### Other types of predictions
+
+We can use the `predict` function to get various types of predictions
+from a fitted model. Leave-one-out, `predictmethod = "loo"` is one
+option (above, we got these predictions at the same time we fit the
+model, but this is not necessary). The following obtains sequential
+(leave-future-out) predictions using the training data.
 
 ``` r
 #sequential predictions (they should improve over time)
@@ -195,8 +211,9 @@ plot(seqpred)
 <img src="man/figures/README-predict-1.png" width="100%" />
 
 You could, alternatively, supply new data for which to make predictions.
-In that case, you would supply a new data frame (`datanew`), which
-should contain columns `Abundance` and `Population`.
+In that case, you would supply a new data frame (`datanew`). In our
+example, this data frame which should contain columns `Abundance` and
+`Population`.
 
 A common approach when fitting these models is to split the available
 data into a training and test dataset. For instance, say we wanted a
@@ -452,20 +469,20 @@ pAmisslags=makelags(data=pAmiss, yd="Abundance", time="Time", E=2, tau=1, vtimes
 head(cbind(pAmiss,pAmisslags),15)
 #>    Time Population   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
 #> 1     1       PopA 1.562062989          NA          NA      NA      NA
-#> 2     2       PopA 0.016925286  1.56206299          NA       1      NA
-#> 3     3       PopA 0.058327231  0.01692529  1.56206299       1       1
-#> 4     4       PopA 0.187785349  0.05832723  0.01692529       1       1
-#> 5     5       PopA 0.645712644  0.18778535  0.05832723       1       1
-#> 6     6       PopA 1.518965494  0.64571264  0.18778535       1       1
-#> 7     7       PopA          NA          NA          NA      NA      NA
-#> 8     8       PopA 0.089612740  1.51896549  0.64571264       2       1
-#> 9     9       PopA 0.284009932  0.08961274  1.51896549       1       2
-#> 10   10       PopA          NA          NA          NA      NA      NA
-#> 11   11       PopA 1.155670141  0.28400993  0.08961274       2       1
-#> 12   12       PopA 0.542262071  1.15567014  0.28400993       1       2
-#> 13   13       PopA 1.696225429  0.54226207  1.15567014       1       1
-#> 14   14       PopA 0.002669515  1.69622543  0.54226207       1       1
-#> 15   15       PopA          NA          NA          NA      NA      NA
+#> 2     2       PopA 0.016925286          NA          NA      NA      NA
+#> 3     3       PopA 0.058327231 0.016925286  1.56206299       1       1
+#> 4     4       PopA 0.187785349 0.058327231  0.01692529       1       1
+#> 5     5       PopA 0.645712644 0.187785349  0.05832723       1       1
+#> 6     6       PopA 1.518965494 0.645712644  0.18778535       1       1
+#> 7     7       PopA          NA 1.518965494  0.64571264       1       1
+#> 8     8       PopA 0.089612740 1.518965494  0.64571264       2       1
+#> 9     9       PopA 0.284009932 0.089612740  1.51896549       1       2
+#> 10   10       PopA          NA 0.284009932  0.08961274       1       1
+#> 11   11       PopA 1.155670141 0.284009932  0.08961274       2       1
+#> 12   12       PopA 0.542262071 1.155670141  0.28400993       1       2
+#> 13   13       PopA 1.696225429 0.542262071  1.15567014       1       1
+#> 14   14       PopA 0.002669515 1.696225429  0.54226207       1       1
+#> 15   15       PopA          NA 0.002669515  1.69622543       1       1
 
 pAmissdata=cbind(pAmiss,pAmisslags)
 vtdemo=fitGP(data=pAmissdata, yd="Abundance", xd=colnames(pAmisslags), time="Time")
@@ -474,14 +491,14 @@ summary(vtdemo)
 #> Number of predictors: 4 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1       0.62014
+#> phi1 Abundance_1       0.62721
 #> phi2 Abundance_2       0.00000
-#> phi3     Tdiff_1       0.00032
+#> phi3     Tdiff_1       0.00029
 #> phi4     Tdiff_2       0.00000
 #> Process variance (ve): 0.01
-#> Pointwise prior variance (sigma2): 2.443753
+#> Pointwise prior variance (sigma2): 2.44616
 #> Number of populations: 1
-#> In-sample R-squared: 0.9960622
+#> In-sample R-squared: 0.996062
 
 ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
   geom_line() + 
@@ -521,6 +538,8 @@ ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
 ```
 
 <img src="man/figures/README-vtimestep2-1.png" width="100%" />
+
+### Using augmentation data
 
 ## References
 
