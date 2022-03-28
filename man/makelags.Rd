@@ -6,14 +6,14 @@
 \usage{
 makelags(
   data = NULL,
-  yd,
+  y,
   pop = NULL,
   E,
   tau,
   yname = NULL,
   forecast = FALSE,
   vtimestep = FALSE,
-  xd = NULL,
+  x = NULL,
   time = NULL,
   augment = FALSE,
   Tdiff_max = NULL,
@@ -25,7 +25,7 @@ makelags(
 \arguments{
 \item{data}{A data frame, or matrix with named columns.}
 
-\item{yd}{A vector containing a time series (usually the response variable).
+\item{y}{A vector containing a time series (usually the response variable).
 Alternatively, a matrix or data frame where each column is a time series
 (usually the response variable and covariates). In the case of multiple
 time series, lags will be generated for each variable. If \code{data} is
@@ -38,17 +38,17 @@ population). If \code{data} is supplied, the column name or index.}
 
 \item{tau}{Time delay. Required.}
 
-\item{yname}{Optional, name of the variable if \code{yd} is input as a vector, or variables
-if \code{yd} is a matrix with unnamed columns. Otherwise not used.
+\item{yname}{Optional, name of the variable if \code{y} is input as a vector, or variables
+if \code{y} is a matrix with unnamed columns. Otherwise not used.
 Defaults to "var" if NULL.}
 
 \item{forecast}{Produce a forecast matrix instead of the standard training/test matrix.}
 
 \item{vtimestep}{Use variable timestep method.}
 
-\item{xd}{If using \code{vtimestep=TRUE}, put the response variable under use \code{yd}, and
-covariates under \code{xd} (see details). If \code{vtimestep=FALSE}, will be appended
-to \code{yd}.}
+\item{x}{If using \code{vtimestep=TRUE}, put the response variable under use \code{y}, and
+covariates under \code{x} (see details). If \code{vtimestep=FALSE}, will be appended
+to \code{y}.}
 
 \item{time}{Used to generate forecast time if \code{forecast=TRUE} and to calculate
 Tdiff if \code{vtimestep=TRUE}. If not supplied and \code{vtimestep=TRUE}, a numeric index is used.}
@@ -70,7 +70,7 @@ relevant if \code{forecast=FALSE} and \code{augment=FALSE}.}
 }
 \value{
 A matrix with named columns, the appended number indicating the time lag. If
-\code{yd} has named columns, named columns in the lag matrix will match. If
+\code{y} has named columns, named columns in the lag matrix will match. If
 generating forecasts, the output matrix will include a column for
 population if there is more than one, and will include a time column if
 \code{time} is supplied. If using the variable timestep method, the output matrix
@@ -84,13 +84,13 @@ can be provided. Use \code{forecast=TRUE} to generate a forecast matrix. Use
 }
 \details{
 When using the standard (fixed timestep) method, the response variable and
-covariates can all be input under \code{yd}, and lags will be generated for
+covariates can all be input under \code{y}, and lags will be generated for
 all variables.
 
 When using the variable timestep method, it is necessary to differentiate
 between the response variable and covariates, as they are handled
-differently. The response variable should go under \code{yd} and the
-covariates should go under \code{xd}. The output matrix will include lags of
+differently. The response variable should go under \code{y} and the
+covariates should go under \code{x}. The output matrix will include lags of
 Tdiff (time difference).
 
 An augmentation matrix for use with the variable timestep method can be
@@ -113,13 +113,13 @@ can be provided under \code{Tdiff_fore}.
 yrand <- rnorm(20)
 site <- rep(c("a","b"),each=10)
 dfrand <- data.frame(firstvar=rnorm(20),secondvar=rnorm(20))
-makelags(yd=yrand,E=3,tau=1)
-makelags(yd=dfrand,E=2,tau=2)
-makelags(yd=dfrand,pop=site,E=2,tau=1)
-makelags(yd=yrand,pop=site,E=2,tau=3,forecast = TRUE, yname="SomeName",time=c(1:10,1:10))
+makelags(y=yrand,E=3,tau=1)
+makelags(y=dfrand,E=2,tau=2)
+makelags(y=dfrand,pop=site,E=2,tau=1)
+makelags(y=yrand,pop=site,E=2,tau=3,forecast = TRUE, yname="SomeName",time=c(1:10,1:10))
 dfrand2 <- cbind.data.frame(Time=c(1:10,1:10),Site=site,dfrand)
-makelags(data=dfrand2, yd=c("firstvar","secondvar"),pop="Site",E=2,tau=3)
-makelags(data=dfrand2, yd=c("firstvar","secondvar"),pop="Site",E=2,tau=3,
+makelags(data=dfrand2, y=c("firstvar","secondvar"),pop="Site",E=2,tau=3)
+makelags(data=dfrand2, y=c("firstvar","secondvar"),pop="Site",E=2,tau=3,
 forecast = TRUE,time="Time")
 
 }

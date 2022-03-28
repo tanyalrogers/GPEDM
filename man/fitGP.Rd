@@ -6,8 +6,8 @@
 \usage{
 fitGP(
   data = NULL,
-  yd,
-  xd = NULL,
+  y,
+  x = NULL,
   pop = NULL,
   time = NULL,
   E = NULL,
@@ -16,8 +16,10 @@ fitGP(
   initpars = NULL,
   modeprior = 1,
   rhofixed = NULL,
+  rhomatrix = NULL,
+  augdata = NULL,
   predictmethod = NULL,
-  datanew = NULL,
+  newdata = NULL,
   xnew = NULL,
   popnew = NULL,
   timenew = NULL,
@@ -27,12 +29,12 @@ fitGP(
 \arguments{
 \item{data}{A data frame, or matrix with named columns.}
 
-\item{yd}{The response variable (required). If \code{data} is supplied, a column name
+\item{y}{The response variable (required). If \code{data} is supplied, a column name
 (character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
 
-\item{xd}{Predictor variables. If \code{data} is supplied, column names
+\item{x}{Predictor variables. If \code{data} is supplied, column names
 (character vector) of indices (numeric vector). If \code{data} is not supplied, a numeric matrix
-(or vector, if there is only one predictor variable). If \code{xd} is not supplied,
+(or vector, if there is only one predictor variable). If \code{x} is not supplied,
 values for \code{E} and \code{tau} must be provided to construct it internally.}
 
 \item{pop}{Identifies separate populations (optional, if not supplied, defaults to 1
@@ -46,41 +48,45 @@ assumed to be evenly spaced) but supplying \code{time} will be add these values 
 which may be useful for later plotting purposes. If \code{data} is supplied, a column name
 (character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
 
-\item{E}{Embedding dimension. If supplied, will be used to constuct lags of \code{xd} (or
-lags of \code{yd} if \code{xd} is not supplied).}
+\item{E}{Embedding dimension. If supplied, will be used to constuct lags of \code{x} (or
+lags of \code{y} if \code{x} is not supplied).}
 
-\item{tau}{Time delay. If supplied, will be used to constuct lags of \code{xd} (or
-lags of \code{yd} if \code{xd} is not supplied).}
+\item{tau}{Time delay. If supplied, will be used to constuct lags of \code{x} (or
+lags of \code{y} if \code{x} is not supplied).}
 
 \item{scaling}{How the variables should be scaled (see Details). Scaling can be \code{"global"}
 (default), \code{"local"} (only applicable if more than 1 pop), or \code{"none"}. Scaling is applied
-to \code{yd} and each \code{xd}. For a mix of scalings, do it manually beforehand and
+to \code{y} and each \code{x}. For a mix of scalings, do it manually beforehand and
 set scaling to \code{"none"}. All outputs are backtransformed to original scale.}
 
 \item{initpars}{Starting values for hyperparameters (see Details) in the order
 \code{c(phi,ve,sigma2,rho)}, in constrained (non-transformed) space. Should be a numeric
-vector with length \code{ncol(xd)+3}. Defaults used if not supplied: \code{c(rep(0.1,ncol(xd)), 0.001, 1-0.001, 0.5)}}
+vector with length \code{ncol(x)+3}. Defaults used if not supplied: \code{c(rep(0.1,ncol(x)), 0.001, 1-0.001, 0.5)}}
 
 \item{modeprior}{This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.}
 
 \item{rhofixed}{Fixes the rho parameter, if desired (see Details).}
 
+\item{rhomatrix}{Matrix of fixed pairwise rho values to use (not yet implemented).}
+
+\item{augdata}{A data frame with augmentation data (see Details).}
+
 \item{predictmethod}{\code{loo} does leave-one-out prediction using
 the training data. \code{sequential} does sequential (leave-future-out)
 prediction using the training data.}
 
-\item{datanew}{Data frame containing the same columns supplied in the
+\item{newdata}{Data frame containing the same columns supplied in the
 original model.}
 
-\item{xnew}{New predictor matrix or vector. Not required if \code{datanew} is supplied.}
+\item{xnew}{New predictor matrix or vector. Not required if \code{newdata} is supplied.}
 
-\item{popnew}{New population vector. Not required if \code{datanew} is supplied.}
+\item{popnew}{New population vector. Not required if \code{newdata} is supplied.}
 
-\item{timenew}{New time vector. Not required if \code{datanew} is supplied.}
+\item{timenew}{New time vector. Not required if \code{newdata} is supplied.}
 
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
-lieu of \code{xd}. Not required if \code{datanew} is supplied.}
+lieu of \code{x}. Not required if \code{newdata} is supplied.}
 }
 \value{
 A list (class GP and GPpred) with the following elements:
@@ -91,8 +97,8 @@ A list (class GP and GPpred) with the following elements:
 \item{iter}{Number of iterations until convergence was reached. Currently fixed at a max of 200.}
 \item{inputs}{Inputs and scaled inputs. Note that if you use \code{E} and \code{tau},
 the names of the predictors in the input data frame will be stored under
-\code{xd_names}, and the names of the lagged predictors corresponding to the
-inverse length scales will be stored under \code{xd_names2}, provided these names exist.}
+\code{x_names}, and the names of the lagged predictors corresponding to the
+inverse length scales will be stored under \code{x_names2}, provided these names exist.}
 \item{scaling}{Scaling information.}
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
@@ -105,7 +111,7 @@ comparable to ln_post.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions (if requested).
-Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
+Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
 \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
 }
@@ -115,17 +121,17 @@ Also fits a hierarchical version of the GP model if distinct populations are ind
 using \code{pop}.
 There are several ways to specify the training data:
 \itemize{
-\item A. supply data frame \code{data}, plus column names or indices for \code{yd}, \code{xd}, \code{pop}, and \code{time}.
-\item B. supply vectors for \code{yd}, \code{pop}, and \code{time}, and a matrix or vector for \code{xd}.
+\item A. supply data frame \code{data}, plus column names or indices for \code{y}, \code{x}, \code{pop}, and \code{time}.
+\item B. supply vectors for \code{y}, \code{pop}, and \code{time}, and a matrix or vector for \code{x}.
 }
 For each of the above 2 options, there are 3 options for specifying the predictors.
 \enumerate{
-\item supplying \code{yd} and \code{xd} (omitting \code{E} and \code{tau}) will use the columns of \code{xd} as predictors. This allows
+\item supplying \code{y} and \code{x} (omitting \code{E} and \code{tau}) will use the columns of \code{x} as predictors. This allows
 for the most customization.
-\item supplying \code{yd}, \code{E}, and \code{tau} (omitting \code{xd}) will use \code{E} lags of \code{yd} (with spacing \code{tau}) as predictors.
-This is equivalent to option 3 with \code{xd}=\code{yd}.
-\item supplying \code{yd}, \code{xd}, \code{E}, and \code{tau} will use \code{E} lags of \emph{each column} of \code{xd} (with spacing \code{tau}) as predictors.
-Do not use this option if \code{xd} already contains lags, in that case use option 1.
+\item supplying \code{y}, \code{E}, and \code{tau} (omitting \code{x}) will use \code{E} lags of \code{y} (with spacing \code{tau}) as predictors.
+This is equivalent to option 3 with \code{x}=\code{y}.
+\item supplying \code{y}, \code{x}, \code{E}, and \code{tau} will use \code{E} lags of \emph{each column} of \code{x} (with spacing \code{tau}) as predictors.
+Do not use this option if \code{x} already contains lags, in that case use option 1.
 }
 Arguments \code{pop} and \code{time} are optional in all of the above cases.
 If \code{pop} and \code{time} are supplied, they should NOT contain missing values.
@@ -138,7 +144,7 @@ are supplied or \code{predictmethod="sequential"} is used.
 
 \strong{Missing values:}
 
-Missing values for \code{yd} and \code{xd} are allowed. Any rows containing
+Missing values for \code{y} and \code{x} are allowed. Any rows containing
 missing values will be excluded from the model fitting procedure (reinserted
 as NAs in the output). If \code{pop} and \code{time} are supplied, they
 should NOT contain missing values.
@@ -182,11 +188,11 @@ There are several options for producing predictions:
 \enumerate{
 \item Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
 \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
-\item If data frame \code{data} was supplied, supply data frame \code{datanew} containing same column names.
-Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
-\item If vectors/matrices were supplied for \code{yd}, \code{xd}, etc, equivalent vector/matrices \code{xnew},
+\item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names.
+Column for \code{y} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
+\item If vectors/matrices were supplied for \code{y}, \code{x}, etc, equivalent vector/matrices \code{xnew},
 \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
-\code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
+\code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
 }
 
 After fitting, predictions can also be made using \code{\link{predict.GP}}.
@@ -199,7 +205,7 @@ The same goes for \code{"sequential"}.
 }
 \examples{
 yrand=rnorm(20)
-testgp=fitGP(yd=yrand,E=2,tau=1,predictmethod = "loo")
+testgp=fitGP(y=yrand,E=2,tau=1,predictmethod = "loo")
 }
 \references{
 Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty:
