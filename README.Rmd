@@ -20,6 +20,8 @@ knitr::opts_chunk$set(
 
 **Disclaimer: This is a very much a work in progress. Use at your own risk.**
 
+This is version `r packageVersion("GPEDM")`
+
 This package contains functions for fiting hierarchical, separable length scale GP models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.  
 
 The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary.GP` to view a summary, `predict.GP` to generate other or additional predictions from a fitted model, `plot.GPpred` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See the (not yet created) vignette for more detailed instructions.

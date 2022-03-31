@@ -9,6 +9,8 @@
 **Disclaimer: This is a very much a work in progress. Use at your own
 risk.**
 
+This is version 0.0.0.9002
+
 This package contains functions for fiting hierarchical, separable
 length scale GP models with automatic relevance determination (ARD) for
 use in Empirical Dynamic Modeling (EDM) and other applications. This is
