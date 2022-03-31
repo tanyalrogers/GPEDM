@@ -9,6 +9,8 @@
 **Disclaimer: This is a very much a work in progress. Use at your own
 risk.**
 
+This is version 0.0.0.9002
+
 This package contains functions for fiting hierarchical, separable
 length scale GP models with automatic relevance determination (ARD) for
 use in Empirical Dynamic Modeling (EDM) and other applications. This is
@@ -36,7 +38,7 @@ If you are using Windows, you may need to install
 [Rtools](https://cran.r-project.org/bin/windows/Rtools/), which allows
 you to complile the C++ code.
 
-## Example
+## Basic Use
 
 Here are some simulated data from 2 populations with theta logistic
 dynamics. The data contain some small lognormal process noise, and the
@@ -61,8 +63,8 @@ plot(pB$Abundance[1:(N-1)],pB$Abundance[2:N],
 <img src="man/figures/README-data-1.png" width="100%" />
 
 Here is how you might set up a hierarchical time-delay embedding model.
-In this example, `Abundance` is the response variable (`yd`). We will
-use an embedding dimension (`E`) of 3 and time delay (`tau`) of 1.
+In this example, `Abundance` is the response variable (`y`). We will use
+an embedding dimension (`E`) of 3 and time delay (`tau`) of 1.
 `Population` indicates which population the data are from, so it is
 included under `pop`. Since the data are on somewhat different scales
 and don’t necessarily represent the same ‘units’, we will use local
@@ -70,7 +72,7 @@ and don’t necessarily represent the same ‘units’, we will use local
 will also request leave-one-out predictions.
 
 ``` r
-tlogtest=fitGP(data = thetalog2pop, yd = "Abundance", pop = "Population", E=3, tau=1, 
+tlogtest=fitGP(data = thetalog2pop, y = "Abundance", pop = "Population", E=3, tau=1, 
                scaling = "local", predictmethod = "loo")
 summary(tlogtest)
 #> Number of predictors: 3 
@@ -102,9 +104,14 @@ the dynamics are correlated (they are are rather dissimilar in this
 case). Since the simulated data don’t contain that much noise, the
 R-squared values are quite high.
 
-We can examine the observed and predicted values using `plot`. Standard
-error bands are included in the time series plots, although they’re a
-little hard to see in this example.
+### Plot observed and predicted values
+
+The observed and predicted values can be found under
+`model$insampresults` or `model$outsampresults`.
+
+We can make a quick plot of the observed and predicted values using
+`plot`. Standard error bands are included in the time series plots,
+although they’re a little hard to see in this example.
 
 ``` r
 plot(tlogtest)
@@ -134,7 +141,9 @@ ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
 #> Warning: Removed 3 rows containing missing values (geom_path).
 ```
 
-<img src="man/figures/README-ggplot timeseries-1.png" width="100%" />
+<img src="man/figures/README-ggplot-timeseries-1.png" width="100%" />
+
+### Plot conditional responses
 
 The function `getconditionals` will compute and plot conditional
 responses to each input variable (other input varibles set to their mean
@@ -165,25 +174,34 @@ ggplot(conlong,aes(x=xValue,y=yMean)) +
   theme_bw()
 ```
 
-<img src="man/figures/README-ggplot conditionals-1.png" width="100%" />
+<img src="man/figures/README-ggplot-conditionals-1.png" width="100%" />
 
-Make a plot of the inverse length scale parameters. Note that if you use
-`E` and `tau`, the names of the predictors in the input data frame will
-be stored under `xd_names`, and the names of the lagged predictors
-corresponding to the inverse length scales will be stored under
-`xd_names2`.
+### Plot inverse length scales
+
+The model hyperparameters are located under `model$pars`. If you have
+*n* predictors, the first *n* values of `pars` will be the length
+scales. Note that if you use `E` and `tau`, the names of the predictors
+in the input data frame will be stored under `model$inputs$x_names`, and
+the names of the lagged predictors corresponding to the inverse length
+scales will be stored under `model$inputs$x_names2`.
 
 ``` r
-predvars=tlogtest$inputs$xd_names2
+predvars=tlogtest$inputs$x_names2
 npreds=length(predvars)
 lscales=tlogtest$pars[1:npreds]
+par(mar=c(4,4,1,1))
 plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 ```
 
 <img src="man/figures/README-ls-1.png" width="100%" />
 
-We can use the `predict` function to get other types of predictions. The
-following obtains sequential predictions using the training data.
+### Other types of predictions
+
+We can use the `predict` function to get various types of predictions
+from a fitted model. Leave-one-out, `predictmethod = "loo"` is one
+option (above, we got these predictions at the same time we fit the
+model, but this is not necessary). The following obtains sequential
+(leave-future-out) predictions using the training data.
 
 ``` r
 #sequential predictions (they should improve over time)
@@ -195,8 +213,9 @@ plot(seqpred)
 <img src="man/figures/README-predict-1.png" width="100%" />
 
 You could, alternatively, supply new data for which to make predictions.
-In that case, you would supply a new data frame (`datanew`), which
-should contain columns `Abundance` and `Population`.
+In that case, you would supply a new data frame (`newdata`). In our
+example, this data frame which should contain columns `Abundance` and
+`Population`.
 
 A common approach when fitting these models is to split the available
 data into a training and test dataset. For instance, say we wanted a
@@ -207,8 +226,8 @@ test data. For that we could do the following.
 ``` r
 pAtrain=pA[1:40,]
 pAtest=pA[41:50,]
-tlogtest2=fitGP(data = pAtrain, yd = "Abundance", E=2, tau=1,
-                datanew = pAtest)
+tlogtest2=fitGP(data = pAtrain, y = "Abundance", E=2, tau=1,
+                newdata = pAtest)
 plot(tlogtest2)
 #> Plotting out of sample results.
 ```
@@ -221,12 +240,12 @@ test data, generate the lags beforehand, then split the data (don’t use
 (option 1).
 
 ``` r
-pAlags=makelags(pA, yd = "Abundance", E=2, tau=1)
+pAlags=makelags(pA, y = "Abundance", E=2, tau=1)
 pAdata=cbind(pA,pAlags)
 pAtrain=pAdata[1:40,]
 pAtest=pAdata[41:50,]
-tlogtest3=fitGP(data = pAtrain, yd = "Abundance", xd=colnames(pAlags),
-                datanew = pAtest)
+tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags),
+                newdata = pAtest)
 plot(tlogtest3)
 #> Plotting out of sample results.
 ```
@@ -236,7 +255,7 @@ plot(tlogtest3)
 ### Making forecasts
 
 You can construct a forecast matrix using `makelags` by setting
-`forecast=T` and supplying this as `datanew`. In order to do this (as
+`forecast=T` and supplying this as `newdata`. In order to do this (as
 the code is currently written), you have to generate the lags beforehand
 for *both* the training data and the forecast (you cannot use `E` and
 `tau` in `fitGP`, you have to use `makelags` for both, and the settings
@@ -245,12 +264,12 @@ training data** option 1). It is a good idea to include the `time`
 argument when doing this.
 
 ``` r
-lags1=makelags(thetalog2pop,yd=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
-fore1=makelags(thetalog2pop,yd=c("Abundance"),pop="Population",time="Time",E=3,tau=1,forecast = T)
+lags1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
+fore1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1,forecast = T)
 data1=cbind(thetalog2pop, lags1)
 
-tlogfore=fitGP(data = data1, yd = "Abundance", xd=c("Abundance_1","Abundance_2","Abundance_3"), 
-               pop = "Population", time = "Time", scaling = "local", datanew = fore1)
+tlogfore=fitGP(data = data1, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
+               pop = "Population", time = "Time", scaling = "local", newdata = fore1)
 
 ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
   facet_wrap(pop~., scales = "free") +
@@ -270,22 +289,21 @@ ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
 There are several ways that the training data for a model can be
 specified.
 
-A. supply data frame `data`, plus column names or indices for `yd` and
-`xd`.  
-B. supply a vector for `yd` and a vector or matrix for `xd`.
+A. supply data frame `data`, plus column names or indices for `y` and
+`x`.  
+B. supply a vector for `y` and a vector or matrix for `x`.
 
 For each of the above 2 options, there are 3 options for specifying the
 predictors.
 
-1.  supplying `yd` and `xd` (omitting `E` and `tau`) will use the
-    columns of `xd` as predictors. This allows for the most
-    customization.  
-2.  supplying `yd`, `E`, and `tau` (omitting `xd`) will use `E` lags of
-    `yd` (with spacing `tau`) as predictors. This is equivalent to
-    option 3 with `xd`=`yd`.  
-3.  supplying `yd`, `xd`, `E`, and `tau` will use `E` lags of *each
-    column* of `xd` (with spacing `tau`) as predictors. Do not use this
-    option if `xd` already contains lags, in that case use option 1.
+1.  supplying `y` and `x` (omitting `E` and `tau`) will use the columns
+    of `x` as predictors. This allows for the most customization.  
+2.  supplying `y`, `E`, and `tau` (omitting `x`) will use `E` lags of
+    `y` (with spacing `tau`) as predictors. This is equivalent to option
+    3 with `x`=`y`.  
+3.  supplying `y`, `x`, `E`, and `tau` will use `E` lags of *each
+    column* of `x` (with spacing `tau`) as predictors. Do not use this
+    option if `x` already contains lags, in that case use option 1.
 
 The above example is method A2. Method A1/B1 allows for the most
 customization of response and predictor variables including mixed
@@ -309,24 +327,24 @@ yvec=thetalog2pop$Abundance
 popvec=thetalog2pop$Population
 #function 'makelags' can be used to generate a lag matrix
 #be sure to include 'pop' if data contain multiple pops to prevent crossover
-xmat=makelags(yd=thetalog2pop[,c("Abundance","othervar")],pop=popvec,E=2,tau=1)
+xmat=makelags(y=thetalog2pop[,c("Abundance","othervar")],pop=popvec,E=2,tau=1)
 thetalog2pop2=cbind(thetalog2pop,xmat)
 
 #Method A1
-ma1=fitGP(data=thetalog2pop2,yd="Abundance",xd=c("Abundance_1","othervar"),
+ma1=fitGP(data=thetalog2pop2,y="Abundance",x=c("Abundance_1","othervar"),
          pop="Population",scaling="local")
 
 #Method B1
 #like A1, but your data aren't in a data frame
-mb1=fitGP(yd=yvec,xd=xmat,pop=popvec,scaling="local")
+mb1=fitGP(y=yvec,x=xmat,pop=popvec,scaling="local")
 
 #Method B2
 #like A2, but your data aren't in a data frame
-mb2=fitGP(yd=yvec,pop=popvec,E=2,tau=1,scaling="local")
+mb2=fitGP(y=yvec,pop=popvec,E=2,tau=1,scaling="local")
 
 #Method A3
 #generate lags of multiple predictors internally
-ma3=fitGP(data=thetalog2pop2,yd="Abundance",xd=c("Abundance","othervar"),
+ma3=fitGP(data=thetalog2pop2,y="Abundance",x=c("Abundance","othervar"),
          pop="Population",E=2,tau=1,scaling="local")
 
 
@@ -418,7 +436,9 @@ an option for the variable timestep method (`vtimestep=TRUE`) that will
 generate the time difference lags automatically. Including the `time`
 argument is strongly recommended, and you definitely need to include it
 if the rows with missing values have already been removed and/or the
-timesteps are uneven.
+timesteps are uneven. Argument `Tdiff_max` can be used to set the max
+time difference value considered (e.g. if you have one large time gap
+that you don’t want to use this method for).
 
 ``` r
 #just using one population for now, it will also work with multiple populations
@@ -428,7 +448,7 @@ pAmiss=pA
 pAmiss[c(7,10,15,23,30,40),"Abundance"]=NA
 
 #standard method
-pAmisslags=makelags(data=pAmiss, yd="Abundance", time="Time", E=2, tau=1)
+pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1)
 head(cbind(pAmiss,pAmisslags),15)
 #>    Time Population   Abundance Abundance_1 Abundance_2
 #> 1     1       PopA 1.562062989          NA          NA
@@ -448,40 +468,40 @@ head(cbind(pAmiss,pAmisslags),15)
 #> 15   15       PopA          NA 0.002669515  1.69622543
 
 #variable timestep method
-pAmisslags=makelags(data=pAmiss, yd="Abundance", time="Time", E=2, tau=1, vtimestep=T)
+pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T)
 head(cbind(pAmiss,pAmisslags),15)
 #>    Time Population   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
 #> 1     1       PopA 1.562062989          NA          NA      NA      NA
-#> 2     2       PopA 0.016925286  1.56206299          NA       1      NA
-#> 3     3       PopA 0.058327231  0.01692529  1.56206299       1       1
-#> 4     4       PopA 0.187785349  0.05832723  0.01692529       1       1
-#> 5     5       PopA 0.645712644  0.18778535  0.05832723       1       1
-#> 6     6       PopA 1.518965494  0.64571264  0.18778535       1       1
-#> 7     7       PopA          NA          NA          NA      NA      NA
-#> 8     8       PopA 0.089612740  1.51896549  0.64571264       2       1
-#> 9     9       PopA 0.284009932  0.08961274  1.51896549       1       2
-#> 10   10       PopA          NA          NA          NA      NA      NA
-#> 11   11       PopA 1.155670141  0.28400993  0.08961274       2       1
-#> 12   12       PopA 0.542262071  1.15567014  0.28400993       1       2
-#> 13   13       PopA 1.696225429  0.54226207  1.15567014       1       1
-#> 14   14       PopA 0.002669515  1.69622543  0.54226207       1       1
-#> 15   15       PopA          NA          NA          NA      NA      NA
+#> 2     2       PopA 0.016925286          NA          NA      NA      NA
+#> 3     3       PopA 0.058327231 0.016925286  1.56206299       1       1
+#> 4     4       PopA 0.187785349 0.058327231  0.01692529       1       1
+#> 5     5       PopA 0.645712644 0.187785349  0.05832723       1       1
+#> 6     6       PopA 1.518965494 0.645712644  0.18778535       1       1
+#> 7     7       PopA          NA 1.518965494  0.64571264       1       1
+#> 8     8       PopA 0.089612740 1.518965494  0.64571264       2       1
+#> 9     9       PopA 0.284009932 0.089612740  1.51896549       1       2
+#> 10   10       PopA          NA 0.284009932  0.08961274       1       1
+#> 11   11       PopA 1.155670141 0.284009932  0.08961274       2       1
+#> 12   12       PopA 0.542262071 1.155670141  0.28400993       1       2
+#> 13   13       PopA 1.696225429 0.542262071  1.15567014       1       1
+#> 14   14       PopA 0.002669515 1.696225429  0.54226207       1       1
+#> 15   15       PopA          NA 0.002669515  1.69622543       1       1
 
 pAmissdata=cbind(pAmiss,pAmisslags)
-vtdemo=fitGP(data=pAmissdata, yd="Abundance", xd=colnames(pAmisslags), time="Time")
+vtdemo=fitGP(data=pAmissdata, y="Abundance", x=colnames(pAmisslags), time="Time")
 
 summary(vtdemo)
 #> Number of predictors: 4 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1       0.62014
+#> phi1 Abundance_1       0.62721
 #> phi2 Abundance_2       0.00000
-#> phi3     Tdiff_1       0.00032
+#> phi3     Tdiff_1       0.00029
 #> phi4     Tdiff_2       0.00000
 #> Process variance (ve): 0.01
-#> Pointwise prior variance (sigma2): 2.443753
+#> Pointwise prior variance (sigma2): 2.44616
 #> Number of populations: 1
-#> In-sample R-squared: 0.9960622
+#> In-sample R-squared: 0.996062
 
 ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
   geom_line() + 
@@ -499,14 +519,14 @@ method. The number of timesteps to forecast can be specified with
 `Tdiff_fore`.
 
 ``` r
-pAmissfore=makelags(data=pAmiss, yd="Abundance", E=2, tau=1, time="Time", vtimestep=T,  
+pAmissfore=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1,vtimestep=T,  
                     forecast=T, Tdiff_fore=c(1,2))
 pAmissfore
 #>   Time Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
 #> 1   51  0.01543102    1.574257       1       1
 #> 2   52  0.01543102    1.574257       2       1
 
-vtpred=predict(vtdemo, datanew = pAmissfore)
+vtpred=predict(vtdemo, newdata = pAmissfore)
 
 ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
   geom_line() + 
@@ -521,6 +541,80 @@ ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
 ```
 
 <img src="man/figures/README-vtimestep2-1.png" width="100%" />
+
+### Using augmentation data
+
+When using the variable timestep method, the function `makelags` can
+also be used to generate an augmentation data matrix that can be passed
+to `fitGP`. This should work as long as the settings in `makelags`
+match, except use `augment=TRUE`. When the augmentation table is
+generated, `makelags` will print a table showing the original number of
+each Tdiff combination in the original dataset (Freq), and the total
+number of with the augmentation data included (Freq\_new). Combinations
+are added up to `nreps`, if possible (currently defaults to 10). By
+default, only Tdiff combinations that appear in the original dataset are
+used, however, if you supply a vector `Tdiff_fore`, then the
+augmentation matrix will include or all possible combinations of the
+Tdiff values supplied in `Tdiff_fore`.
+
+``` r
+pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T)
+pAaug=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T,  
+               augment=T)
+#> defaulting to nreps=10
+#> Population  1 
+#>   Tdiff_1 Tdiff_2 Freq Freq_new
+#> 1       1       1   30       30
+#> 2       1       2    6       10
+#> 3       2       1    6       10
+pAaug
+#>   Time   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
+#> 1   45 1.459292768   0.4638699  0.04423792       1       2
+#> 2   49 1.574257196   0.7120728  0.05738582       1       2
+#> 3   27 1.632670925   0.7130621  0.05990108       1       2
+#> 4    6 1.518965494   0.6457126  0.05832723       1       2
+#> 5   39 1.666716539   0.2085535  0.06524985       2       1
+#> 6   28 0.006731426   0.7130621  0.20609102       2       1
+#> 7   34 0.006165824   0.7362201  0.20850963       2       1
+#> 8   29 0.020612906   1.6326709  0.71306214       2       1
+
+pAmissdata=cbind(pAmiss,pAmisslags)
+vtdemo_aug=fitGP(data=pAmissdata, y="Abundance", x=colnames(pAmisslags), time="Time",
+                 augdata=pAaug,newdata=pAmissfore)
+summary(vtdemo_aug)
+#> Number of predictors: 4 
+#> Length scale parameters:
+#>        predictor posteriormode
+#> phi1 Abundance_1       2.47035
+#> phi2 Abundance_2       0.00000
+#> phi3     Tdiff_1       0.29540
+#> phi4     Tdiff_2       0.00000
+#> Process variance (ve): 0.01
+#> Pointwise prior variance (sigma2): 3.006319
+#> Number of populations: 1
+#> In-sample R-squared: 0.9965409
+
+ggplot(vtdemo_aug$insampresults,aes(x=timestep,y=predmean)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
+  geom_point(aes(y=obs)) +
+  geom_point(data=vtdemo_aug$outsampresults, aes(y=predmean), color="red") +
+  geom_errorbar(data=vtdemo_aug$outsampresults,
+                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
+  theme_bw()
+#> Warning: Removed 2 rows containing missing values (geom_path).
+#> Warning: Removed 6 rows containing missing values (geom_point).
+```
+
+<img src="man/figures/README-aug-1.png" width="100%" />
+
+``` r
+vtaloo=predict(vtdemo_aug,predictmethod = "loo")
+vtaseq=predict(vtdemo_aug,predictmethod = "sequential")
+vtloo=predict(vtdemo,predictmethod = "loo")
+vtseq=predict(vtdemo,predictmethod = "sequential")
+vtanew=predict(vtdemo_aug,newdata=pAmissfore)
+```
 
 ## References
 

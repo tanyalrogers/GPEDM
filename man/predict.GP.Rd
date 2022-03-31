@@ -7,7 +7,7 @@
 \method{predict}{GP}(
   object,
   predictmethod = "loo",
-  datanew = NULL,
+  newdata = NULL,
   xnew = NULL,
   popnew = NULL,
   timenew = NULL,
@@ -21,24 +21,24 @@
 the training data. \code{sequential} does sequential (leave-future-out)
 prediction using the training data.}
 
-\item{datanew}{Data frame containing the same columns supplied in the
+\item{newdata}{Data frame containing the same columns supplied in the
 original model.}
 
-\item{xnew}{New predictor matrix or vector. Not required if \code{datanew} is supplied.}
+\item{xnew}{New predictor matrix or vector. Not required if \code{newdata} is supplied.}
 
-\item{popnew}{New population vector. Not required if \code{datanew} is supplied.}
+\item{popnew}{New population vector. Not required if \code{newdata} is supplied.}
 
-\item{timenew}{New time vector. Not required if \code{datanew} is supplied.}
+\item{timenew}{New time vector. Not required if \code{newdata} is supplied.}
 
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
-lieu of \code{xd}. Not required if \code{datanew} is supplied.}
+lieu of \code{x}. Not required if \code{newdata} is supplied.}
 }
 \value{
 A list (class GPpred) with the following elements:
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
-Only computed if using \code{"loo"} or \code{"sequential"}, if \code{yd} is found in \code{datanew},
+Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
 \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
 }
@@ -47,11 +47,11 @@ Obtain predictions from a fitted GP model. There are several options:
 \enumerate{
 \item (Default) Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
 \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
-\item If data frame \code{data} was supplied, supply data frame \code{datanew} containing same column names.
-Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
-\item If vectors/matrices were supplied for \code{yd}, \code{xd}, etc, equivalent vector/matrices \code{xnew},
+\item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names.
+Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
+\item If vectors/matrices were supplied for \code{y}, \code{x}, etc, equivalent vector/matrices \code{xnew},
 \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
-\code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{xd}.
+\code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
 }
 It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
 made by removing one of the training points, the hyperparameters are fit using all of the training data.

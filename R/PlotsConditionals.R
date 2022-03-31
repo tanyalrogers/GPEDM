@@ -10,10 +10,10 @@ summary.GP=function(object) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
   cat("Length scale parameters:\n")
-  if(!is.null(object$inputs$xd_names2)) {
-    print(data.frame(predictor=object$inputs$xd_names2,posteriormode=round(object$pars[1:d],5)))
-  } else if(!is.null(object$inputs$xd_names)) {
-    print(data.frame(predictor=object$inputs$xd_names,posteriormode=round(object$pars[1:d],5)))
+  if(!is.null(object$inputs$x_names2)) {
+    print(data.frame(predictor=object$inputs$x_names2,posteriormode=round(object$pars[1:d],5)))
+  } else if(!is.null(object$inputs$x_names)) {
+    print(data.frame(predictor=object$inputs$x_names,posteriormode=round(object$pars[1:d],5)))
   } else {
     print(data.frame(posteriormode=round(object$pars[1:d],5)))
   }
@@ -62,13 +62,13 @@ plot.GPpred=function(x, plotinsamp=F) {
   up=unique(dplot$pop)
   np=length(up)  
   
-  if(!is.null(x$inputs$yd_names)) {
-    yl=x$inputs$yd_names
+  if(!is.null(x$inputs$y_names)) {
+    yl=x$inputs$y_names
   } else {
     yl="y"
   }
   
-  # par(mfrow=c(np,ifelse((ncol(x$inputs$xd)==1 | is.null(x$inputs)),3,2)),mar=c(5,4,2,2))
+  # par(mfrow=c(np,ifelse((ncol(x$inputs$x)==1 | is.null(x$inputs)),3,2)),mar=c(5,4,2,2))
   old.par <- par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
   on.exit(par(old.par),add = T,after = F)
 
@@ -157,9 +157,9 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
       } else {
         xgi=seq((1-extrap)*min(X[,i]),(1+extrap)*max(X[,i]),length.out = Tslp)
       }
-      xdp=xg
-      xdp[,i]=xgi
-      covmnew=getcov(phi,sigma2,rho,X,xdp,Pop,poppred)
+      xp=xg
+      xp[,i]=xgi
+      covmnew=getcov(phi,sigma2,rho,X,xp,Pop,poppred)
       Cs=covmnew$Cd #covariance matrix
       predmean[,i]=Cs%*%(iKVs%*%Y)
       predvar=numeric(length = Tslp)
@@ -196,8 +196,8 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
     }
   }
 
-  if(!is.null(fit$inputs$xd_names2)) { xlabels=fit$inputs$xd_names2 } 
-  else if(!is.null(fit$inputs$xd_names)) { xlabels=fit$inputs$xd_names }
+  if(!is.null(fit$inputs$x_names2)) { xlabels=fit$inputs$x_names2 } 
+  else if(!is.null(fit$inputs$x_names)) { xlabels=fit$inputs$x_names }
   else { xlabels= paste0("x",1:d) }
   
   #combine into dataframe  #this needs work, put in longer format*****
@@ -209,8 +209,8 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
   out=do.call("rbind",out)
   
   if(plot) {
-    if(!is.null(fit$inputs$yd_names)) {
-      yl=fit$inputs$yd_names
+    if(!is.null(fit$inputs$y_names)) {
+      yl=fit$inputs$y_names
     } else {
       yl="y"
     }
