@@ -332,6 +332,8 @@ vtanew=predict(vtdemo_aug,newdata=pAmissfore)
 
 Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32:134.
 
+Johnson, B., and Munch, S. B. 2022. An empirical dynamic modeling framework for missing or irregular samples. Ecological Modelling, 468:109948.
+
 
 *Any advice on improving this package is appreciated.*
 
