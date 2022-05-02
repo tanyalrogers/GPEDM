@@ -7,12 +7,12 @@ Authors@R:
            family = "Munch",
            role = c("aut"),
            email = "smunch@ucsc.edu",
-           comment = c(ORCID = "0000-0003-1253-9903")),
+           comment = c(ORCID = "0000-0001-7471-5429")),
       person(given = "Tanya",
            family = "Rogers",
            role = c("aut", "cre"),
            email = "tanya.rogers@noaa.gov",
-           comment = c(ORCID = "0000-0001-7471-5429")))     
+           comment = c(ORCID = "0000-0003-1253-9903")))     
 Description: Functions for fiting hierarchical, separable length scale GP models with
   automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) 
   and other applications.
