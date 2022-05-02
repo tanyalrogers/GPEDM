@@ -23,3 +23,4 @@ pairs with missing values are removed before computations are done.
 Returned R-squared might be negative. This indicates that the prediction is
 worse than using the mean.
 }
+\keyword{functions}

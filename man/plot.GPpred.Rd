@@ -17,3 +17,4 @@ Plots observed and predicted values from a GP model. If the model includes
 multiple populations, separate plots are produced for each population. The
 standard deviations plotted are predfsd.
 }
+\keyword{functions}

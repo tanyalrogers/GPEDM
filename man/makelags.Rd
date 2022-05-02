@@ -110,6 +110,7 @@ timestep method, a vector of time units to forecast beyond the last timestep
 can be provided under \code{Tdiff_fore}.
 }
 \examples{
+set.seed(1)
 yrand <- rnorm(20)
 site <- rep(c("a","b"),each=10)
 dfrand <- data.frame(firstvar=rnorm(20),secondvar=rnorm(20))
@@ -121,5 +122,5 @@ dfrand2 <- cbind.data.frame(Time=c(1:10,1:10),Site=site,dfrand)
 makelags(data=dfrand2, y=c("firstvar","secondvar"),pop="Site",E=2,tau=3)
 makelags(data=dfrand2, y=c("firstvar","secondvar"),pop="Site",E=2,tau=3,
 forecast = TRUE,time="Time")
-
 }
+\keyword{functions}

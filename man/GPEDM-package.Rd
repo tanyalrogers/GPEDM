@@ -26,15 +26,12 @@ Maintainer: Tanya Rogers <tanya.rogers@noaa.gov>
 \references{
 Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty:
 a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32:134.
+
+Johnson, B., and Munch, S. B. 2022. An empirical dynamic modeling framework for missing or 
+irregular samples. Ecological Modelling, 468:109948.
 }
 \keyword{ package }
 \seealso{
   \code{\link{fitGP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, 
   \code{\link{makelags}}
-}
-\examples{
-  \dontrun{
-     ## Optional simple examples of the most important functions
-     ## These can be in \dontrun{} and \donttest{} blocks.   
-  }
 }

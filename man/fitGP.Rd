@@ -214,3 +214,4 @@ a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexi
 \seealso{
 \code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}
 }
+\keyword{functions}

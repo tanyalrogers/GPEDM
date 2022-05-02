@@ -57,3 +57,4 @@ It should be noted that \code{"loo"} is not a "true" leave-one-out, for although
 made by removing one of the training points, the hyperparameters are fit using all of the training data.
 The same goes for \code{"sequential"}.
 }
+\keyword{functions}

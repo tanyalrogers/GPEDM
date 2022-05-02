@@ -156,6 +156,7 @@
 #' @export
 #' @importFrom laGP distance
 #' @import Matrix
+#' @keywords functions
 
 fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
@@ -672,6 +673,7 @@ getcovinv=function(Sigma) {
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
 #' @export
+#' @keywords functions
 predict.GP=function(object,predictmethod="loo",newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) { 
   
   iKVs=object$covm$iKVs
@@ -960,6 +962,7 @@ logit=function(x) {
 #' @param pred Vector of predicted values.
 #' @return The R-squared value.
 #' @export
+#' @keywords functions
 getR2=function(obs, pred) {
   d=na.omit(cbind(obs, pred))
   R2=1-sum((d[,1]-d[,2])^2)/sum((d[,1]-mean(d[,1]))^2)
@@ -1040,6 +1043,7 @@ getR2=function(obs, pred) {
 #'   will include lags of Tdiff (time difference).
 #' @export
 #' @examples
+#' set.seed(1)
 #' yrand <- rnorm(20)
 #' site <- rep(c("a","b"),each=10)
 #' dfrand <- data.frame(firstvar=rnorm(20),secondvar=rnorm(20))
@@ -1051,7 +1055,7 @@ getR2=function(obs, pred) {
 #' makelags(data=dfrand2, y=c("firstvar","secondvar"),pop="Site",E=2,tau=3)
 #' makelags(data=dfrand2, y=c("firstvar","secondvar"),pop="Site",E=2,tau=3,
 #' forecast = TRUE,time="Time")
-#' 
+#' @keywords functions
 makelags=function(data=NULL,y,pop=NULL,E,tau,yname=NULL,
                   forecast=FALSE,vtimestep=FALSE,x=NULL,time=NULL,
                   augment=FALSE,Tdiff_max=NULL,Tdiff_fore=NULL,nreps=NULL,

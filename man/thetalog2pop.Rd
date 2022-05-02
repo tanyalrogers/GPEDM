@@ -20,8 +20,8 @@ thetalog2pop
 }
 \description{
 Contains time series simulated from the discrete time theta-logisic model with noise:
-\deqn{x_{t+1}=x_{t}e^{r(1-x_t^\theta)}e^{s\epsilon)}}
-\deqn{\epsilon ~ N(0,1)}
+\deqn{x_{t+1}=x_{t}e^{r(1-x_t^\theta)}e^{s\epsilon}}
+\deqn{\epsilon \sim N(0,1)}
 PopA has \eqn{\theta=3.5} and PopB has \eqn{\theta=2.5}.
 Both have \eqn{r=1.2} and \eqn{s=0.05} and time series length of 50,
 with random starting values and the first 200 iterates discarded.

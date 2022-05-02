@@ -12,3 +12,4 @@
 \description{
 Prints out some key information including hyperparameters and fit stats.
 }
+\keyword{functions}

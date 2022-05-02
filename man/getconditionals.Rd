@@ -40,3 +40,4 @@ used, predictors and responses are backtransformed to their original scale.
 If the model includes multiple populations, responses are obtained for each
 population.
 }
+\keyword{functions}

@@ -5,7 +5,7 @@
 #' @param object Output from \code{fitGP}.
 #' @method summary GP
 #' @export
-#' 
+#' @keywords functions
 summary.GP=function(object) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
@@ -48,6 +48,7 @@ summary.GP=function(object) {
 #' @param plotinsamp Plot the in-sample results. Defaults to out-of-sample
 #'   results if available.
 #' @export
+#' @keywords functions
 
 plot.GPpred=function(x, plotinsamp=F) {
   
@@ -118,6 +119,7 @@ plot.GPpred=function(x, plotinsamp=F) {
 #' @return Returns (invisibly) a data frame containing the predictor values and conditional responses 
 #'   (means and standard deviations).
 #' @export
+#' @keywords functions
 getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
 
   #need to add 2d option*****

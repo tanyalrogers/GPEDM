@@ -1,1 +1,30 @@
 url: https://tanyalrogers.github.io/GPEDM
+
+navbar:
+  structure:
+    left:
+    - reference
+    - sourcecode
+    - news
+    right: github
+    
+  components:
+
+    reference:
+      text: Reference
+      href: reference/index.html
+
+    sourcecode:
+      text: Source Code
+      href: https://github.com/tanyalrogers/GPEDM
+
+reference:
+- title: Package Info
+  contents:
+  - starts_with("GPEDM")
+- title: Functions
+  contents:
+  - has_keyword("functions")
+- title: Datasets
+  contents:
+  - has_keyword("datasets")
