@@ -45,6 +45,9 @@
   <a href="reference/index.html">Reference</a>
 </li>
 <li>
+  <a href="articles/index.html">Vignettes</a>
+</li>
+<li>
   <a href="https://github.com/tanyalrogers/GPEDM" class="external-link">Source Code</a>
 </li>
 <li>
@@ -69,7 +72,7 @@
 <!-- badges: start --><!-- badges: end --><p><strong>Disclaimer: This is a very much a work in progress. Use at your own risk.</strong></p>
 <p>This is version 0.0.0.9002</p>
 <p>This package contains functions for fiting hierarchical, separable length scale GP models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.</p>
-<p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary.GP</code> to view a summary, <code>predict.GP</code> to generate other or additional predictions from a fitted model, <code>plot.GPpred</code> to plot observed and predicted values and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See the (not yet created) vignette for more detailed instructions.</p>
+<p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary.GP</code> to view a summary, <code>predict.GP</code> to generate other or additional predictions from a fitted model, <code>plot.GPpred</code> to plot observed and predicted values and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See the <a href="#specifying-training-data">Specifying training data</a> and the vignettes for more detailed instructions.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -141,11 +144,11 @@
 <p>If you prefer ggplot:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">tlogtest</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu">aes</span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">facet_wrap</span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">.</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu">geom_ribbon</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predfsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predfsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span>
+<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">tlogtest</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">.</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predfsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predfsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt; Warning: Removed 3 rows containing missing values (geom_path).</span></code></pre></div>
 <p><img src="reference/figures/README-ggplot-timeseries-1.png" width="100%"></p>
 </div>
@@ -166,10 +169,10 @@
 <span class="va">conlong2</span><span class="op">=</span><span class="fu">gather</span><span class="op">(</span><span class="va">con</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="op">(</span><span class="va">npreds</span><span class="op">+</span><span class="fl">2</span><span class="op">)</span><span class="op">:</span><span class="op">(</span><span class="fl">2</span><span class="op">*</span><span class="va">npreds</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>,<span class="va">ym</span>,<span class="va">yMean</span>,<span class="fl">2</span><span class="op">:</span><span class="op">(</span><span class="va">npreds</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>
 <span class="va">conlong3</span><span class="op">=</span><span class="fu">gather</span><span class="op">(</span><span class="va">con</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="op">(</span><span class="fl">2</span><span class="op">*</span><span class="va">npreds</span><span class="op">+</span><span class="fl">2</span><span class="op">)</span><span class="op">:</span><span class="op">(</span><span class="fl">3</span><span class="op">*</span><span class="va">npreds</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>,<span class="va">ys</span>,<span class="va">ySD</span>,<span class="fl">2</span><span class="op">:</span><span class="op">(</span><span class="va">npreds</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>
 <span class="va">conlong</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind.data.frame</a></span><span class="op">(</span><span class="va">conlong1</span>,yMean<span class="op">=</span><span class="va">conlong2</span><span class="op">$</span><span class="va">yMean</span>,ySD<span class="op">=</span><span class="va">conlong3</span><span class="op">$</span><span class="va">ySD</span><span class="op">)</span>
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">conlong</span>,<span class="fu">aes</span><span class="op">(</span>x<span class="op">=</span><span class="va">xValue</span>,y<span class="op">=</span><span class="va">yMean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">facet_grid</span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">x</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu">geom_ribbon</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">yMean</span><span class="op">-</span><span class="va">ySD</span>,ymax<span class="op">=</span><span class="va">yMean</span><span class="op">+</span><span class="va">ySD</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">conlong</span>,<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">xValue</span>,y<span class="op">=</span><span class="va">yMean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid</a></span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">x</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin<span class="op">=</span><span class="va">yMean</span><span class="op">-</span><span class="va">ySD</span>,ymax<span class="op">=</span><span class="va">yMean</span><span class="op">+</span><span class="va">ySD</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <p><img src="reference/figures/README-ggplot-conditionals-1.png" width="100%"></p>
 </div>
 <div class="section level3">
@@ -204,7 +207,7 @@
 <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tlogtest2</span><span class="op">)</span>
 <span class="co">#&gt; Plotting out of sample results.</span></code></pre></div>
 <p><img src="reference/figures/README-predict2-1.png" width="100%"></p>
-<p>If you don’t want the first <code>E*tau</code> points getting excluded from your test data, generate the lags beforehand, then split the data (don’t use <code>E</code> and <code>tau</code> options in <code>fitGP</code>). See <strong>Specifying training data</strong> (option 1).</p>
+<p>If you don’t want the first <code>E*tau</code> points getting excluded from your test data, generate the lags beforehand, then split the data (don’t use <code>E</code> and <code>tau</code> options in <code>fitGP</code>). See <a href="#specifying-training-data">Specifying training data</a> (option 1).</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">pAlags</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">pA</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">pAdata</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pA</span>,<span class="va">pAlags</span><span class="op">)</span>
@@ -219,7 +222,7 @@
 <div class="section level3">
 <h3 id="making-forecasts">Making forecasts<a class="anchor" aria-label="anchor" href="#making-forecasts"></a>
 </h3>
-<p>You can construct a forecast matrix using <code>makelags</code> by setting <code>forecast=T</code> and supplying this as <code>newdata</code>. In order to do this (as the code is currently written), you have to generate the lags beforehand for <em>both</em> the training data and the forecast (you cannot use <code>E</code> and <code>tau</code> in <code>fitGP</code>, you have to use <code>makelags</code> for both, and the settings in <code>makelags</code> should match, other than <code>forecast</code>, See <strong>Specifying training data</strong> option 1). It is a good idea to include the <code>time</code> argument when doing this.</p>
+<p>You can construct a forecast matrix using <code>makelags</code> by setting <code>forecast=T</code> and supplying this as <code>newdata</code>. In order to do this (as the code is currently written), you have to generate the lags beforehand for <em>both</em> the training data and the forecast (you cannot use <code>E</code> and <code>tau</code> in <code>fitGP</code>, you have to use <code>makelags</code> for both, and the settings in <code>makelags</code> should match, other than <code>forecast</code>, See <a href="#specifying-training-data">Specifying training data</a> option 1). It is a good idea to include the <code>time</code> argument when doing this.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">lags1</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">thetalog2pop</span>,y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Abundance"</span><span class="op">)</span>,pop<span class="op">=</span><span class="st">"Population"</span>,time<span class="op">=</span><span class="st">"Time"</span>,E<span class="op">=</span><span class="fl">3</span>,tau<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
 <span class="va">fore1</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">thetalog2pop</span>,y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Abundance"</span><span class="op">)</span>,pop<span class="op">=</span><span class="st">"Population"</span>,time<span class="op">=</span><span class="st">"Time"</span>,E<span class="op">=</span><span class="fl">3</span>,tau<span class="op">=</span><span class="fl">1</span>,forecast <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>
@@ -228,14 +231,14 @@
 <span class="va">tlogfore</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">data1</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Abundance_1"</span>,<span class="st">"Abundance_2"</span>,<span class="st">"Abundance_3"</span><span class="op">)</span>, 
                pop <span class="op">=</span> <span class="st">"Population"</span>, time <span class="op">=</span> <span class="st">"Time"</span>, scaling <span class="op">=</span> <span class="st">"local"</span>, newdata <span class="op">=</span> <span class="va">fore1</span><span class="op">)</span>
 
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu">aes</span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">facet_wrap</span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">.</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu">geom_ribbon</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span>data<span class="op">=</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_errorbar</span><span class="op">(</span>data<span class="op">=</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">outsampresults</span>,
-                <span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>,color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span>
+<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">.</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_errorbar</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">outsampresults</span>,
+                <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>,color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt; Warning: Removed 3 rows containing missing values (geom_path).</span></code></pre></div>
 <p><img src="reference/figures/README-forecast-1.png" width="100%"></p>
 </div>
@@ -356,160 +359,7 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 <div class="section level2">
 <h2 id="variable-timestep-method-for-missing-data">Variable Timestep Method (for missing data)<a class="anchor" aria-label="anchor" href="#variable-timestep-method-for-missing-data"></a>
 </h2>
-<p>By default, <code>fitGP</code> excludes any rows that contain missing values (NAs) in either the response or predictor variables. Thus, in a delay embedding model, a missing datapoint in the middle of a time series will be excluded as will the following <code>E</code> values (assuming <code>tau</code> is 1). Stephan Munch and Bethany Johnson developed a method whereby using the time spacing between a value and its lagged predictors as another predictor, we can exclude less data, generate predictions for all non-missing timepoints, and by adjusting the spacing in the forecast matrix, generate forecasts multiple timesteps into the future. The forthcoming paper will contain more details.</p>
-<p>Using this method requires that lag predictors be generated beforehand (option 1 in <strong>Specifying training data</strong>). The <code>makelags</code> function has an option for the variable timestep method (<code>vtimestep=TRUE</code>) that will generate the time difference lags automatically. Including the <code>time</code> argument is strongly recommended, and you definitely need to include it if the rows with missing values have already been removed and/or the timesteps are uneven. Argument <code>Tdiff_max</code> can be used to set the max time difference value considered (e.g. if you have one large time gap that you don’t want to use this method for).</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">#just using one population for now, it will also work with multiple populations</span>
-
-<span class="co">#add some missing values</span>
-<span class="va">pAmiss</span><span class="op">=</span><span class="va">pA</span>
-<span class="va">pAmiss</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span>,<span class="fl">10</span>,<span class="fl">15</span>,<span class="fl">23</span>,<span class="fl">30</span>,<span class="fl">40</span><span class="op">)</span>,<span class="st">"Abundance"</span><span class="op">]</span><span class="op">=</span><span class="cn">NA</span>
-
-<span class="co">#standard method</span>
-<span class="va">pAmisslags</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmiss</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, time<span class="op">=</span><span class="st">"Time"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pAmiss</span>,<span class="va">pAmisslags</span><span class="op">)</span>,<span class="fl">15</span><span class="op">)</span>
-<span class="co">#&gt;    Time Population   Abundance Abundance_1 Abundance_2</span>
-<span class="co">#&gt; 1     1       PopA 1.562062989          NA          NA</span>
-<span class="co">#&gt; 2     2       PopA 0.016925286 1.562062989          NA</span>
-<span class="co">#&gt; 3     3       PopA 0.058327231 0.016925286  1.56206299</span>
-<span class="co">#&gt; 4     4       PopA 0.187785349 0.058327231  0.01692529</span>
-<span class="co">#&gt; 5     5       PopA 0.645712644 0.187785349  0.05832723</span>
-<span class="co">#&gt; 6     6       PopA 1.518965494 0.645712644  0.18778535</span>
-<span class="co">#&gt; 7     7       PopA          NA 1.518965494  0.64571264</span>
-<span class="co">#&gt; 8     8       PopA 0.089612740          NA  1.51896549</span>
-<span class="co">#&gt; 9     9       PopA 0.284009932 0.089612740          NA</span>
-<span class="co">#&gt; 10   10       PopA          NA 0.284009932  0.08961274</span>
-<span class="co">#&gt; 11   11       PopA 1.155670141          NA  0.28400993</span>
-<span class="co">#&gt; 12   12       PopA 0.542262071 1.155670141          NA</span>
-<span class="co">#&gt; 13   13       PopA 1.696225429 0.542262071  1.15567014</span>
-<span class="co">#&gt; 14   14       PopA 0.002669515 1.696225429  0.54226207</span>
-<span class="co">#&gt; 15   15       PopA          NA 0.002669515  1.69622543</span>
-
-<span class="co">#variable timestep method</span>
-<span class="va">pAmisslags</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmiss</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, time<span class="op">=</span><span class="st">"Time"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span>, vtimestep<span class="op">=</span><span class="cn">T</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pAmiss</span>,<span class="va">pAmisslags</span><span class="op">)</span>,<span class="fl">15</span><span class="op">)</span>
-<span class="co">#&gt;    Time Population   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2</span>
-<span class="co">#&gt; 1     1       PopA 1.562062989          NA          NA      NA      NA</span>
-<span class="co">#&gt; 2     2       PopA 0.016925286          NA          NA      NA      NA</span>
-<span class="co">#&gt; 3     3       PopA 0.058327231 0.016925286  1.56206299       1       1</span>
-<span class="co">#&gt; 4     4       PopA 0.187785349 0.058327231  0.01692529       1       1</span>
-<span class="co">#&gt; 5     5       PopA 0.645712644 0.187785349  0.05832723       1       1</span>
-<span class="co">#&gt; 6     6       PopA 1.518965494 0.645712644  0.18778535       1       1</span>
-<span class="co">#&gt; 7     7       PopA          NA 1.518965494  0.64571264       1       1</span>
-<span class="co">#&gt; 8     8       PopA 0.089612740 1.518965494  0.64571264       2       1</span>
-<span class="co">#&gt; 9     9       PopA 0.284009932 0.089612740  1.51896549       1       2</span>
-<span class="co">#&gt; 10   10       PopA          NA 0.284009932  0.08961274       1       1</span>
-<span class="co">#&gt; 11   11       PopA 1.155670141 0.284009932  0.08961274       2       1</span>
-<span class="co">#&gt; 12   12       PopA 0.542262071 1.155670141  0.28400993       1       2</span>
-<span class="co">#&gt; 13   13       PopA 1.696225429 0.542262071  1.15567014       1       1</span>
-<span class="co">#&gt; 14   14       PopA 0.002669515 1.696225429  0.54226207       1       1</span>
-<span class="co">#&gt; 15   15       PopA          NA 0.002669515  1.69622543       1       1</span>
-
-<span class="va">pAmissdata</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pAmiss</span>,<span class="va">pAmisslags</span><span class="op">)</span>
-<span class="va">vtdemo</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmissdata</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pAmisslags</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span><span class="op">)</span>
-
-<span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">vtdemo</span><span class="op">)</span>
-<span class="co">#&gt; Number of predictors: 4 </span>
-<span class="co">#&gt; Length scale parameters:</span>
-<span class="co">#&gt;        predictor posteriormode</span>
-<span class="co">#&gt; phi1 Abundance_1       0.62721</span>
-<span class="co">#&gt; phi2 Abundance_2       0.00000</span>
-<span class="co">#&gt; phi3     Tdiff_1       0.00029</span>
-<span class="co">#&gt; phi4     Tdiff_2       0.00000</span>
-<span class="co">#&gt; Process variance (ve): 0.01</span>
-<span class="co">#&gt; Pointwise prior variance (sigma2): 2.44616</span>
-<span class="co">#&gt; Number of populations: 1</span>
-<span class="co">#&gt; In-sample R-squared: 0.996062</span>
-
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">vtdemo</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu">aes</span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_ribbon</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, color<span class="op">=</span><span class="st">"black"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning: Removed 2 rows containing missing values (geom_path).</span>
-<span class="co">#&gt; Warning: Removed 6 rows containing missing values (geom_point).</span></code></pre></div>
-<p><img src="reference/figures/README-vtimestep-1.png" width="100%"></p>
-<p>You can also generate a forecast matrix using the variable timestep method. The number of timesteps to forecast can be specified with <code>Tdiff_fore</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">pAmissfore</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmiss</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, time<span class="op">=</span><span class="st">"Time"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span>,vtimestep<span class="op">=</span><span class="cn">T</span>,  
-                    forecast<span class="op">=</span><span class="cn">T</span>, Tdiff_fore<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span>
-<span class="va">pAmissfore</span>
-<span class="co">#&gt;   Time Abundance_1 Abundance_2 Tdiff_1 Tdiff_2</span>
-<span class="co">#&gt; 1   51  0.01543102    1.574257       1       1</span>
-<span class="co">#&gt; 2   52  0.01543102    1.574257       2       1</span>
-
-<span class="va">vtpred</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo</span>, newdata <span class="op">=</span> <span class="va">pAmissfore</span><span class="op">)</span>
-
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">vtdemo</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu">aes</span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_ribbon</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, color<span class="op">=</span><span class="st">"black"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span>data<span class="op">=</span><span class="va">vtpred</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_errorbar</span><span class="op">(</span>data<span class="op">=</span><span class="va">vtpred</span><span class="op">$</span><span class="va">outsampresults</span>,
-                <span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>,color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning: Removed 2 rows containing missing values (geom_path).</span>
-<span class="co">#&gt; Warning: Removed 6 rows containing missing values (geom_point).</span></code></pre></div>
-<p><img src="reference/figures/README-vtimestep2-1.png" width="100%"></p>
-<div class="section level3">
-<h3 id="using-augmentation-data">Using augmentation data<a class="anchor" aria-label="anchor" href="#using-augmentation-data"></a>
-</h3>
-<p>When using the variable timestep method, the function <code>makelags</code> can also be used to generate an augmentation data matrix that can be passed to <code>fitGP</code>. This should work as long as the settings in <code>makelags</code> match, except use <code>augment=TRUE</code>. When the augmentation table is generated, <code>makelags</code> will print a table showing the original number of each Tdiff combination in the original dataset (Freq), and the total number of with the augmentation data included (Freq_new). Combinations are added up to <code>nreps</code>, if possible (currently defaults to 10). By default, only Tdiff combinations that appear in the original dataset are used, however, if you supply a vector <code>Tdiff_fore</code>, then the augmentation matrix will include or all possible combinations of the Tdiff values supplied in <code>Tdiff_fore</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">pAmisslags</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmiss</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, time<span class="op">=</span><span class="st">"Time"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span>, vtimestep<span class="op">=</span><span class="cn">T</span><span class="op">)</span>
-<span class="va">pAaug</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmiss</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, time<span class="op">=</span><span class="st">"Time"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span>, vtimestep<span class="op">=</span><span class="cn">T</span>,  
-               augment<span class="op">=</span><span class="cn">T</span><span class="op">)</span>
-<span class="co">#&gt; defaulting to nreps=10</span>
-<span class="co">#&gt; Population  1 </span>
-<span class="co">#&gt;   Tdiff_1 Tdiff_2 Freq Freq_new</span>
-<span class="co">#&gt; 1       1       1   30       30</span>
-<span class="co">#&gt; 2       1       2    6       10</span>
-<span class="co">#&gt; 3       2       1    6       10</span>
-<span class="va">pAaug</span>
-<span class="co">#&gt;   Time   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2</span>
-<span class="co">#&gt; 1   45 1.459292768   0.4638699  0.04423792       1       2</span>
-<span class="co">#&gt; 2   49 1.574257196   0.7120728  0.05738582       1       2</span>
-<span class="co">#&gt; 3   27 1.632670925   0.7130621  0.05990108       1       2</span>
-<span class="co">#&gt; 4    6 1.518965494   0.6457126  0.05832723       1       2</span>
-<span class="co">#&gt; 5   39 1.666716539   0.2085535  0.06524985       2       1</span>
-<span class="co">#&gt; 6   28 0.006731426   0.7130621  0.20609102       2       1</span>
-<span class="co">#&gt; 7   34 0.006165824   0.7362201  0.20850963       2       1</span>
-<span class="co">#&gt; 8   29 0.020612906   1.6326709  0.71306214       2       1</span>
-
-<span class="va">pAmissdata</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pAmiss</span>,<span class="va">pAmisslags</span><span class="op">)</span>
-<span class="va">vtdemo_aug</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">pAmissdata</span>, y<span class="op">=</span><span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pAmisslags</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>,
-                 augdata<span class="op">=</span><span class="va">pAaug</span>,newdata<span class="op">=</span><span class="va">pAmissfore</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">vtdemo_aug</span><span class="op">)</span>
-<span class="co">#&gt; Number of predictors: 4 </span>
-<span class="co">#&gt; Length scale parameters:</span>
-<span class="co">#&gt;        predictor posteriormode</span>
-<span class="co">#&gt; phi1 Abundance_1       2.47035</span>
-<span class="co">#&gt; phi2 Abundance_2       0.00000</span>
-<span class="co">#&gt; phi3     Tdiff_1       0.29540</span>
-<span class="co">#&gt; phi4     Tdiff_2       0.00000</span>
-<span class="co">#&gt; Process variance (ve): 0.01</span>
-<span class="co">#&gt; Pointwise prior variance (sigma2): 3.006319</span>
-<span class="co">#&gt; Number of populations: 1</span>
-<span class="co">#&gt; In-sample R-squared: 0.9965409</span>
-
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">vtdemo_aug</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu">aes</span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_ribbon</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, color<span class="op">=</span><span class="st">"black"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span>data<span class="op">=</span><span class="va">vtdemo_aug</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu">aes</span><span class="op">(</span>y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_errorbar</span><span class="op">(</span>data<span class="op">=</span><span class="va">vtdemo_aug</span><span class="op">$</span><span class="va">outsampresults</span>,
-                <span class="fu">aes</span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>,color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning: Removed 2 rows containing missing values (geom_path).</span>
-<span class="co">#&gt; Warning: Removed 6 rows containing missing values (geom_point).</span></code></pre></div>
-<p><img src="reference/figures/README-aug-1.png" width="100%"></p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">vtaloo</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo_aug</span>,predictmethod <span class="op">=</span> <span class="st">"loo"</span><span class="op">)</span>
-<span class="va">vtaseq</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo_aug</span>,predictmethod <span class="op">=</span> <span class="st">"sequential"</span><span class="op">)</span>
-<span class="va">vtloo</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo</span>,predictmethod <span class="op">=</span> <span class="st">"loo"</span><span class="op">)</span>
-<span class="va">vtseq</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo</span>,predictmethod <span class="op">=</span> <span class="st">"sequential"</span><span class="op">)</span>
-<span class="va">vtanew</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo_aug</span>,newdata<span class="op">=</span><span class="va">pAmissfore</span><span class="op">)</span></code></pre></div>
-</div>
+<p>See the <a href="https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html">vignette</a> for more detail about the variable timestep method (VS-EDM) for missing data.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -517,11 +367,12 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 <p>Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32:134.</p>
 <p>Johnson, B., and Munch, S. B. 2022. An empirical dynamic modeling framework for missing or irregular samples. Ecological Modelling, 468:109948.</p>
 <p><em>Any advice on improving this package is appreciated.</em></p>
+<hr>
 </div>
 <div class="section level2">
-<h2 id="github-disclaimer">Github Disclaimer<a class="anchor" aria-label="anchor" href="#github-disclaimer"></a>
+<h2 id="disclaimer">Disclaimer<a class="anchor" aria-label="anchor" href="#disclaimer"></a>
 </h2>
-<p><em>This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.</em></p>
+<p>The United States Department of Commerce (DOC) GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. DOC has relinquished control of the information and no longer has responsibility to protect the integrity, confidentiality, or availability of the information. Any claims against the Department of Commerce stemming from the use of its GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.”</p>
 </div>
 </div>
   </div>

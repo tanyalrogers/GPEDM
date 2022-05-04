@@ -7,6 +7,12 @@
     <loc>https://tanyalrogers.github.io/GPEDM/LICENSE-text.html</loc>
   </url>
   <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html</loc>
+  </url>
+  <url>
     <loc>https://tanyalrogers.github.io/GPEDM/authors.html</loc>
   </url>
   <url>
@@ -17,6 +23,9 @@
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/GPEDM-package.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/HastPow3sp.html</loc>
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/fitGP.html</loc>
