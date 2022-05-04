@@ -33,6 +33,33 @@ plot(tlogtest)
 
 usethis::use_data(thetalog2pop, overwrite = TRUE)
 
+## Hastings-Powell 3 species model
+library(deSolve)
+
+parms=list(a=5.0, b=3.0, c=0.1, d=2.0, m=0.4, mu=0.01)
+Y0=c(0.8, 0.1, 9)
+times=seq(0,500,1)
+
+solve.HP=function(t, y, parms) {
+  a=parms$a; b=parms$b; c=parms$c; d=parms$d; m=parms$m; mu=parms$mu
+  X=y[1]
+  Y=y[2]
+  Z=y[3]
+  dX=X*(1-X)-a*X*Y/(1+b*X)
+  dY=a*X*Y/(1+b*X)-c*Y*Z/(1+d*Y)-m*Y
+  dZ=c*Y*Z/(1+d*Y)-mu*Z
+  return(list(c(dX, dY, dZ)))
+}
+HPsim <- ode(y = Y0, times=times, func=solve.HP, parms, method="ode45")
+
+plot(HPsim[,1],HPsim[,2], type="l")
+plot(HPsim[,1],HPsim[,3], type="l")
+plot(HPsim[,1],HPsim[,4], type="l")
+
+HastPow3sp=as.data.frame(HPsim)
+colnames(HastPow3sp)=c("Time","X","Y","Z")
+
+usethis::use_data(HastPow3sp, overwrite = TRUE)
 
 # Other models (not used)
 

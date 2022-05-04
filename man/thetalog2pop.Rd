@@ -7,9 +7,9 @@
 \format{
 A data frame with 100 rows and 3 variables:
 \describe{
-\item{Time}{Time index.}
-\item{Population}{Population ID.}
-\item{Abundance}{Abundance value.}
+\item{Time}{Time index}
+\item{Population}{Population ID}
+\item{Abundance}{Abundance value}
 }
 }
 \source{

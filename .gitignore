@@ -5,3 +5,4 @@
 .DS_Store
 docs
 src-i386
+inst/doc

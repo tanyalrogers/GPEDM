@@ -22,8 +22,9 @@ also produce predictions if desired. Use `summary.GP` to view a summary,
 model, `plot.GPpred` to plot observed and predicted values and
 `getconditionals` to obtain conditional reponses. Also available for use
 are the functions `makelags` which can be used to create delay vectors,
-and `getR2` for getting R2 values. See the (not yet created) vignette
-for more detailed instructions.
+and `getR2` for getting R2 values. See the [Specifying training
+data](#specifying-training-data) and the vignettes for more detailed
+instructions.
 
 ## Installation
 
@@ -236,8 +237,8 @@ plot(tlogtest2)
 
 If you don’t want the first `E*tau` points getting excluded from your
 test data, generate the lags beforehand, then split the data (don’t use
-`E` and `tau` options in `fitGP`). See **Specifying training data**
-(option 1).
+`E` and `tau` options in `fitGP`). See [Specifying training
+data](#specifying-training-data) (option 1).
 
 ``` r
 pAlags=makelags(pA, y = "Abundance", E=2, tau=1)
@@ -259,9 +260,9 @@ You can construct a forecast matrix using `makelags` by setting
 the code is currently written), you have to generate the lags beforehand
 for *both* the training data and the forecast (you cannot use `E` and
 `tau` in `fitGP`, you have to use `makelags` for both, and the settings
-in `makelags` should match, other than `forecast`, See **Specifying
-training data** option 1). It is a good idea to include the `time`
-argument when doing this.
+in `makelags` should match, other than `forecast`, See [Specifying
+training data](#specifying-training-data) option 1). It is a good idea
+to include the `time` argument when doing this.
 
 ``` r
 lags1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
@@ -419,202 +420,10 @@ summary(ma3)
 
 ## Variable Timestep Method (for missing data)
 
-By default, `fitGP` excludes any rows that contain missing values (NAs)
-in either the response or predictor variables. Thus, in a delay
-embedding model, a missing datapoint in the middle of a time series will
-be excluded as will the following `E` values (assuming `tau` is 1).
-Stephan Munch and Bethany Johnson developed a method whereby using the
-time spacing between a value and its lagged predictors as another
-predictor, we can exclude less data, generate predictions for all
-non-missing timepoints, and by adjusting the spacing in the forecast
-matrix, generate forecasts multiple timesteps into the future. The
-forthcoming paper will contain more details.
-
-Using this method requires that lag predictors be generated beforehand
-(option 1 in **Specifying training data**). The `makelags` function has
-an option for the variable timestep method (`vtimestep=TRUE`) that will
-generate the time difference lags automatically. Including the `time`
-argument is strongly recommended, and you definitely need to include it
-if the rows with missing values have already been removed and/or the
-timesteps are uneven. Argument `Tdiff_max` can be used to set the max
-time difference value considered (e.g. if you have one large time gap
-that you don’t want to use this method for).
-
-``` r
-#just using one population for now, it will also work with multiple populations
-
-#add some missing values
-pAmiss=pA
-pAmiss[c(7,10,15,23,30,40),"Abundance"]=NA
-
-#standard method
-pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1)
-head(cbind(pAmiss,pAmisslags),15)
-#>    Time Population   Abundance Abundance_1 Abundance_2
-#> 1     1       PopA 1.562062989          NA          NA
-#> 2     2       PopA 0.016925286 1.562062989          NA
-#> 3     3       PopA 0.058327231 0.016925286  1.56206299
-#> 4     4       PopA 0.187785349 0.058327231  0.01692529
-#> 5     5       PopA 0.645712644 0.187785349  0.05832723
-#> 6     6       PopA 1.518965494 0.645712644  0.18778535
-#> 7     7       PopA          NA 1.518965494  0.64571264
-#> 8     8       PopA 0.089612740          NA  1.51896549
-#> 9     9       PopA 0.284009932 0.089612740          NA
-#> 10   10       PopA          NA 0.284009932  0.08961274
-#> 11   11       PopA 1.155670141          NA  0.28400993
-#> 12   12       PopA 0.542262071 1.155670141          NA
-#> 13   13       PopA 1.696225429 0.542262071  1.15567014
-#> 14   14       PopA 0.002669515 1.696225429  0.54226207
-#> 15   15       PopA          NA 0.002669515  1.69622543
-
-#variable timestep method
-pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T)
-head(cbind(pAmiss,pAmisslags),15)
-#>    Time Population   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
-#> 1     1       PopA 1.562062989          NA          NA      NA      NA
-#> 2     2       PopA 0.016925286          NA          NA      NA      NA
-#> 3     3       PopA 0.058327231 0.016925286  1.56206299       1       1
-#> 4     4       PopA 0.187785349 0.058327231  0.01692529       1       1
-#> 5     5       PopA 0.645712644 0.187785349  0.05832723       1       1
-#> 6     6       PopA 1.518965494 0.645712644  0.18778535       1       1
-#> 7     7       PopA          NA 1.518965494  0.64571264       1       1
-#> 8     8       PopA 0.089612740 1.518965494  0.64571264       2       1
-#> 9     9       PopA 0.284009932 0.089612740  1.51896549       1       2
-#> 10   10       PopA          NA 0.284009932  0.08961274       1       1
-#> 11   11       PopA 1.155670141 0.284009932  0.08961274       2       1
-#> 12   12       PopA 0.542262071 1.155670141  0.28400993       1       2
-#> 13   13       PopA 1.696225429 0.542262071  1.15567014       1       1
-#> 14   14       PopA 0.002669515 1.696225429  0.54226207       1       1
-#> 15   15       PopA          NA 0.002669515  1.69622543       1       1
-
-pAmissdata=cbind(pAmiss,pAmisslags)
-vtdemo=fitGP(data=pAmissdata, y="Abundance", x=colnames(pAmisslags), time="Time")
-
-summary(vtdemo)
-#> Number of predictors: 4 
-#> Length scale parameters:
-#>        predictor posteriormode
-#> phi1 Abundance_1       0.62721
-#> phi2 Abundance_2       0.00000
-#> phi3     Tdiff_1       0.00029
-#> phi4     Tdiff_2       0.00000
-#> Process variance (ve): 0.01
-#> Pointwise prior variance (sigma2): 2.44616
-#> Number of populations: 1
-#> In-sample R-squared: 0.996062
-
-ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
-  geom_point(aes(y=obs)) +
-  theme_bw()
-#> Warning: Removed 2 rows containing missing values (geom_path).
-#> Warning: Removed 6 rows containing missing values (geom_point).
-```
-
-<img src="man/figures/README-vtimestep-1.png" width="100%" />
-
-You can also generate a forecast matrix using the variable timestep
-method. The number of timesteps to forecast can be specified with
-`Tdiff_fore`.
-
-``` r
-pAmissfore=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1,vtimestep=T,  
-                    forecast=T, Tdiff_fore=c(1,2))
-pAmissfore
-#>   Time Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
-#> 1   51  0.01543102    1.574257       1       1
-#> 2   52  0.01543102    1.574257       2       1
-
-vtpred=predict(vtdemo, newdata = pAmissfore)
-
-ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
-  geom_point(aes(y=obs)) +
-  geom_point(data=vtpred$outsampresults, aes(y=predmean), color="red") +
-  geom_errorbar(data=vtpred$outsampresults,
-                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
-  theme_bw()
-#> Warning: Removed 2 rows containing missing values (geom_path).
-#> Warning: Removed 6 rows containing missing values (geom_point).
-```
-
-<img src="man/figures/README-vtimestep2-1.png" width="100%" />
-
-### Using augmentation data
-
-When using the variable timestep method, the function `makelags` can
-also be used to generate an augmentation data matrix that can be passed
-to `fitGP`. This should work as long as the settings in `makelags`
-match, except use `augment=TRUE`. When the augmentation table is
-generated, `makelags` will print a table showing the original number of
-each Tdiff combination in the original dataset (Freq), and the total
-number of with the augmentation data included (Freq\_new). Combinations
-are added up to `nreps`, if possible (currently defaults to 10). By
-default, only Tdiff combinations that appear in the original dataset are
-used, however, if you supply a vector `Tdiff_fore`, then the
-augmentation matrix will include or all possible combinations of the
-Tdiff values supplied in `Tdiff_fore`.
-
-``` r
-pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T)
-pAaug=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T,  
-               augment=T)
-#> defaulting to nreps=10
-#> Population  1 
-#>   Tdiff_1 Tdiff_2 Freq Freq_new
-#> 1       1       1   30       30
-#> 2       1       2    6       10
-#> 3       2       1    6       10
-pAaug
-#>   Time   Abundance Abundance_1 Abundance_2 Tdiff_1 Tdiff_2
-#> 1   45 1.459292768   0.4638699  0.04423792       1       2
-#> 2   49 1.574257196   0.7120728  0.05738582       1       2
-#> 3   27 1.632670925   0.7130621  0.05990108       1       2
-#> 4    6 1.518965494   0.6457126  0.05832723       1       2
-#> 5   39 1.666716539   0.2085535  0.06524985       2       1
-#> 6   28 0.006731426   0.7130621  0.20609102       2       1
-#> 7   34 0.006165824   0.7362201  0.20850963       2       1
-#> 8   29 0.020612906   1.6326709  0.71306214       2       1
-
-pAmissdata=cbind(pAmiss,pAmisslags)
-vtdemo_aug=fitGP(data=pAmissdata, y="Abundance", x=colnames(pAmisslags), time="Time",
-                 augdata=pAaug,newdata=pAmissfore)
-summary(vtdemo_aug)
-#> Number of predictors: 4 
-#> Length scale parameters:
-#>        predictor posteriormode
-#> phi1 Abundance_1       2.47035
-#> phi2 Abundance_2       0.00000
-#> phi3     Tdiff_1       0.29540
-#> phi4     Tdiff_2       0.00000
-#> Process variance (ve): 0.01
-#> Pointwise prior variance (sigma2): 3.006319
-#> Number of populations: 1
-#> In-sample R-squared: 0.9965409
-
-ggplot(vtdemo_aug$insampresults,aes(x=timestep,y=predmean)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
-  geom_point(aes(y=obs)) +
-  geom_point(data=vtdemo_aug$outsampresults, aes(y=predmean), color="red") +
-  geom_errorbar(data=vtdemo_aug$outsampresults,
-                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
-  theme_bw()
-#> Warning: Removed 2 rows containing missing values (geom_path).
-#> Warning: Removed 6 rows containing missing values (geom_point).
-```
-
-<img src="man/figures/README-aug-1.png" width="100%" />
-
-``` r
-vtaloo=predict(vtdemo_aug,predictmethod = "loo")
-vtaseq=predict(vtdemo_aug,predictmethod = "sequential")
-vtloo=predict(vtdemo,predictmethod = "loo")
-vtseq=predict(vtdemo,predictmethod = "sequential")
-vtanew=predict(vtdemo_aug,newdata=pAmissfore)
-```
+See the
+[vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
+for more detail about the variable timestep method (VS-EDM) for missing
+data.
 
 ## References
 
@@ -628,18 +437,20 @@ framework for missing or irregular samples. Ecological Modelling,
 
 *Any advice on improving this package is appreciated.*
 
-## Github Disclaimer
+------------------------------------------------------------------------
 
-*This repository is a scientific product and is not official
-communication of the National Oceanic and Atmospheric Administration, or
-the United States Department of Commerce. All NOAA GitHub project code
-is provided on an ‘as is’ basis and the user assumes responsibility for
-its use. Any claims against the Department of Commerce or Department of
-Commerce bureaus stemming from the use of this GitHub project will be
-governed by all applicable Federal law. Any reference to specific
-commercial products, processes, or services by service mark, trademark,
+## Disclaimer
+
+The United States Department of Commerce (DOC) GitHub project code is
+provided on an ‘as is’ basis and the user assumes responsibility for its
+use. DOC has relinquished control of the information and no longer has
+responsibility to protect the integrity, confidentiality, or
+availability of the information. Any claims against the Department of
+Commerce stemming from the use of its GitHub project will be governed by
+all applicable Federal law. Any reference to specific commercial
+products, processes, or services by service mark, trademark,
 manufacturer, or otherwise, does not constitute or imply their
 endorsement, recommendation or favoring by the Department of Commerce.
 The Department of Commerce seal and logo, or the seal and logo of a DOC
 bureau, shall not be used in any manner to imply endorsement of any
-commercial product or activity by DOC or the United States Government.*
+commercial product or activity by DOC or the United States Government.”

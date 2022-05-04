@@ -24,7 +24,7 @@ This is version `r packageVersion("GPEDM")`
 
 This package contains functions for fiting hierarchical, separable length scale GP models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.  
 
-The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary.GP` to view a summary, `predict.GP` to generate other or additional predictions from a fitted model, `plot.GPpred` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See the (not yet created) vignette for more detailed instructions.
+The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary.GP` to view a summary, `predict.GP` to generate other or additional predictions from a fitted model, `plot.GPpred` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See the [Specifying training data] and the vignettes for more detailed instructions.
 
 ## Installation
 
@@ -152,7 +152,7 @@ tlogtest2=fitGP(data = pAtrain, y = "Abundance", E=2, tau=1,
 plot(tlogtest2)
 ```
 
-If you don't want the first `E*tau` points getting excluded from your test data, generate the lags beforehand, then split the data (don't use `E` and `tau` options in `fitGP`). See **Specifying training data** (option 1).
+If you don't want the first `E*tau` points getting excluded from your test data, generate the lags beforehand, then split the data (don't use `E` and `tau` options in `fitGP`). See [Specifying training data] (option 1).
 
 ```{r predict3, fig.height=3}
 pAlags=makelags(pA, y = "Abundance", E=2, tau=1)
@@ -167,7 +167,7 @@ plot(tlogtest3)
 
 ### Making forecasts
 
-You can construct a forecast matrix using `makelags` by setting `forecast=T` and supplying this as `newdata`. In order to do this (as the code is currently written), you have to generate the lags beforehand for *both* the training data and the forecast (you cannot use `E` and `tau` in `fitGP`, you have to use `makelags` for both, and the settings in `makelags` should match, other than `forecast`, See **Specifying training data** option 1). It is a good idea to include the `time` argument when doing this.
+You can construct a forecast matrix using `makelags` by setting `forecast=T` and supplying this as `newdata`. In order to do this (as the code is currently written), you have to generate the lags beforehand for *both* the training data and the forecast (you cannot use `E` and `tau` in `fitGP`, you have to use `makelags` for both, and the settings in `makelags` should match, other than `forecast`, See [Specifying training data] option 1). It is a good idea to include the `time` argument when doing this.
 
 ```{r forecast, fig.height=3}
 lags1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
@@ -246,87 +246,7 @@ summary(ma3)
 
 ## Variable Timestep Method (for missing data)
 
-By default, `fitGP` excludes any rows that contain missing values (NAs) in either the response or predictor variables. Thus, in a delay embedding model, a missing datapoint in the middle of a time series will be excluded as will the following `E` values (assuming `tau` is 1). Stephan Munch and Bethany Johnson developed a method whereby using the time spacing between a value and its lagged predictors as another predictor, we can exclude less data, generate predictions for all non-missing timepoints, and by adjusting the spacing in the forecast matrix, generate forecasts multiple timesteps into the future. The forthcoming paper will contain more details.  
-
-Using this method requires that lag predictors be generated beforehand (option 1 in **Specifying training data**). The `makelags` function has an option for the variable timestep method (`vtimestep=TRUE`) that will generate the time difference lags automatically. Including the `time` argument is strongly recommended, and you definitely need to include it if the rows with missing values have already been removed and/or the timesteps are uneven. Argument `Tdiff_max` can be used to set the max time difference value considered (e.g. if you have one large time gap that you don't want to use this method for).
-
-```{r vtimestep, fig.height=3}
-#just using one population for now, it will also work with multiple populations
-
-#add some missing values
-pAmiss=pA
-pAmiss[c(7,10,15,23,30,40),"Abundance"]=NA
-
-#standard method
-pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1)
-head(cbind(pAmiss,pAmisslags),15)
-
-#variable timestep method
-pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T)
-head(cbind(pAmiss,pAmisslags),15)
-
-pAmissdata=cbind(pAmiss,pAmisslags)
-vtdemo=fitGP(data=pAmissdata, y="Abundance", x=colnames(pAmisslags), time="Time")
-
-summary(vtdemo)
-
-ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
-  geom_point(aes(y=obs)) +
-  theme_bw()
-```
-
-You can also generate a forecast matrix using the variable timestep method. The number of timesteps to forecast can be specified with `Tdiff_fore`.
-
-```{r vtimestep2, fig.height=3}
-pAmissfore=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1,vtimestep=T,  
-                    forecast=T, Tdiff_fore=c(1,2))
-pAmissfore
-
-vtpred=predict(vtdemo, newdata = pAmissfore)
-
-ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
-  geom_point(aes(y=obs)) +
-  geom_point(data=vtpred$outsampresults, aes(y=predmean), color="red") +
-  geom_errorbar(data=vtpred$outsampresults,
-                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
-  theme_bw()
-```
-
-### Using augmentation data
-
-When using the variable timestep method, the function `makelags` can also be used to generate an augmentation data matrix that can be passed to `fitGP`. This should work as long as the settings in `makelags` match, except use `augment=TRUE`. When the augmentation table is generated, `makelags` will print a table showing the original number of each Tdiff combination in the original dataset (Freq), and the total number of with the augmentation data included (Freq_new). Combinations are added up to `nreps`, if possible (currently defaults to 10). By default, only Tdiff combinations that appear in the original dataset are used, however, if you supply a vector `Tdiff_fore`, then the augmentation matrix will include or all possible combinations of the Tdiff values supplied in `Tdiff_fore`.
-
-```{r aug, fig.height=3}
-pAmisslags=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T)
-pAaug=makelags(data=pAmiss, y="Abundance", time="Time", E=2, tau=1, vtimestep=T,  
-               augment=T)
-pAaug
-
-pAmissdata=cbind(pAmiss,pAmisslags)
-vtdemo_aug=fitGP(data=pAmissdata, y="Abundance", x=colnames(pAmisslags), time="Time",
-                 augdata=pAaug,newdata=pAmissfore)
-summary(vtdemo_aug)
-
-ggplot(vtdemo_aug$insampresults,aes(x=timestep,y=predmean)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
-  geom_point(aes(y=obs)) +
-  geom_point(data=vtdemo_aug$outsampresults, aes(y=predmean), color="red") +
-  geom_errorbar(data=vtdemo_aug$outsampresults,
-                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
-  theme_bw()
-
-vtaloo=predict(vtdemo_aug,predictmethod = "loo")
-vtaseq=predict(vtdemo_aug,predictmethod = "sequential")
-vtloo=predict(vtdemo,predictmethod = "loo")
-vtseq=predict(vtdemo,predictmethod = "sequential")
-vtanew=predict(vtdemo_aug,newdata=pAmissfore)
-```
-
+See the [vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html) for more detail about the variable timestep method (VS-EDM) for missing data. 
 
 ## References
 
@@ -337,6 +257,10 @@ Johnson, B., and Munch, S. B. 2022. An empirical dynamic modeling framework for 
 
 *Any advice on improving this package is appreciated.*
 
-## Github Disclaimer
+****
 
-_This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government._
+```{r add-disclaimer, echo=FALSE, results='asis'}
+url <- "https://raw.githubusercontent.com/nmfs-fish-tools/Resources/master/Disclaimer.md"
+childtext <- readLines(url,encoding = "UTF-8")
+cat(childtext, sep="\n")
+```

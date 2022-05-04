@@ -1,0 +1,132 @@
+---
+title: "Variable Timestep Method"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Variable Timestep Method}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(GPEDM)
+library(ggplot2)
+```
+
+## Introduction
+
+By default, `fitGP` excludes any rows that contain missing values (NAs) in either the response or predictor variables. Thus, in a delay embedding model, a missing datapoint in the middle of a time series will be excluded as will the following `E` values (assuming `tau` is 1). Stephan Munch and Bethany Johnson developed a method whereby using the time spacing between a value and its lagged predictors as another predictor, we can exclude less data, generate predictions for all non-missing timepoints, and by adjusting the spacing in the forecast matrix, generate forecasts multiple timesteps into the future. The forthcoming paper will contain more details.  
+
+Using this method requires that lag predictors be generated beforehand (option 1 in [Specifying training data](https://tanyalrogers.github.io/GPEDM/index.html#specifying-training-data)). The `makelags` function has an option for the variable timestep method (`vtimestep=TRUE`) that will generate the time difference lags automatically. Including the `time` argument is strongly recommended, and you definitely need to include it if the rows with missing values have already been removed and/or the timesteps are uneven. Argument `Tdiff_max` can be used to set the max time difference value considered (e.g. if you have one large time gap that you don't want to use this method for).
+
+```{r vtimestep, fig.height=3}
+data(HastPow3sp)
+
+#add some missing values for variable X
+set.seed(20)
+HPmiss=HastPow3sp[,c("Time","X")]
+HPmiss[sample(1:nrow(HPmiss),100),"X"]=NA
+ggplot(HPmiss,aes(x=Time,y=X)) +
+  geom_line() +  geom_point() + theme_bw()
+
+#standard method
+HPmisslags=makelags(data=HPmiss, y="X", time="Time", E=2, tau=1)
+head(cbind(HPmiss,HPmisslags),15)
+
+#variable timestep method
+HPmisslags=makelags(data=HPmiss, y="X", time="Time", E=2, tau=1, vtimestep=T)
+head(cbind(HPmiss,HPmisslags),15)
+
+HPmissdata=cbind(HPmiss,HPmisslags)
+vtdemo=fitGP(data=HPmissdata, y="X", x=colnames(HPmisslags), time="Time")
+
+summary(vtdemo)
+
+basepredplot=ggplot(vtdemo$insampresults,aes(x=timestep,y=predmean)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
+  geom_point(aes(y=obs)) +
+  theme_bw()
+basepredplot
+```
+
+## Interpolation
+
+Generate predictions where an observed value is missing.
+
+```{r interp, fig.height=3}
+HPmissinterp=HPmissdata[is.na(HPmissdata$X),]
+#reinsert true values to get fit statistics
+HPmissinterp$X=HastPow3sp$X[is.na(HPmissdata$X)]
+
+vtinterp=predict(vtdemo, newdata = HPmissinterp)
+vtinterp$outsampfitstats
+
+basepredplot +
+  geom_point(data=vtinterp$outsampresults, aes(y=predmean), color="red") +
+  geom_errorbar(data=vtinterp$outsampresults,
+                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red")
+
+```
+
+## Forecasting
+
+You can also generate a forecast matrix using the variable timestep method. The number of timesteps to forecast can be specified with `Tdiff_fore`.
+
+```{r forecast, fig.height=3}
+HPmissfore=makelags(data=HPmiss, y="X", time="Time", E=2, tau=1,vtimestep=T,  
+                    forecast=T, Tdiff_fore=c(1,2,3))
+HPmissfore
+
+vtpred=predict(vtdemo, newdata = HPmissfore)
+
+basepredplot + 
+  geom_point(data=vtpred$outsampresults, aes(y=predmean), color="red") +
+  geom_errorbar(data=vtpred$outsampresults,
+                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red")
+```
+
+## Using augmentation data
+
+When using the variable timestep method, the function `makelags` can also be used to generate an augmentation data matrix that can be passed to `fitGP`. This should work as long as the settings in `makelags` match, except use `augment=TRUE`. When the augmentation table is generated, `makelags` will print a table showing the original number of each Tdiff combination in the original dataset (Freq), and the total number of with the augmentation data included (Freq_new). Combinations are added up to `nreps`, if possible (currently defaults to 10). By default, only Tdiff combinations that appear in the original dataset are used, however, if you supply a vector `Tdiff_fore`, then the augmentation matrix will include or all possible combinations of the Tdiff values supplied in `Tdiff_fore`.
+
+```{r aug, fig.height=3}
+HPmisslags=makelags(data=HPmiss, y="X", time="Time", E=2, tau=1, vtimestep=T)
+HPaug=makelags(data=HPmiss, y="X", time="Time", E=2, tau=1, vtimestep=T,augment=T)
+head(HPaug,15)
+
+HPmissdata=cbind(HPmiss,HPmisslags)
+vtdemo_aug=fitGP(data=HPmissdata, y="X", x=colnames(HPmisslags), time="Time",
+                 augdata=HPaug)
+summary(vtdemo_aug)
+
+vtapred=predict(vtdemo_aug,newdata=HPmissfore)
+vtainterp=predict(vtdemo_aug, newdata = HPmissinterp)
+vtainterp$outsampfitstats
+
+ggplot(vtdemo_aug$insampresults,aes(x=timestep,y=predmean)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin=predmean-predsd,ymax=predmean+predsd), alpha=0.4, color="black") +
+  geom_point(aes(y=obs)) +
+  theme_bw() +  
+  geom_point(data=vtapred$outsampresults, aes(y=predmean), color="red") +
+  geom_errorbar(data=vtapred$outsampresults,
+                aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red")
+
+#vtaloo=predict(vtdemo_aug,predictmethod = "loo")
+#vtaseq=predict(vtdemo_aug,predictmethod = "sequential")
+#vtloo=predict(vtdemo,predictmethod = "loo")
+#vtseq=predict(vtdemo,predictmethod = "sequential")
+```
+
+## References
+
+Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32:134.
+
+Johnson, B., and Munch, S. B. 2022. An empirical dynamic modeling framework for missing or irregular samples. Ecological Modelling, 468:109948.

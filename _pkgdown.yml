@@ -4,6 +4,7 @@ navbar:
   structure:
     left:
     - reference
+    - articles
     - sourcecode
     - news
     right: github
@@ -13,7 +14,11 @@ navbar:
     reference:
       text: Reference
       href: reference/index.html
-
+      
+    articles:
+      text: Vignettes
+      href: articles/index.html
+      
     sourcecode:
       text: Source Code
       href: https://github.com/tanyalrogers/GPEDM
