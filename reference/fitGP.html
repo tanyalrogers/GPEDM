@@ -33,7 +33,7 @@ See Details for more information."><!-- mathjax --><script src="https://cdnjs.cl
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9003</span>
       </span>
     </div>
 
@@ -150,7 +150,11 @@ Defaults to 1.</p></dd>
 <dt>rhofixed</dt>
 <dd><p>Fixes the rho parameter, if desired (see Details).</p></dd>
 <dt>rhomatrix</dt>
-<dd><p>Matrix of fixed pairwise rho values to use (not yet implemented).</p></dd>
+<dd><p>Symmetrical square matrix of fixed pairwise rho values to use, with 1's on the diagonal.
+The rows and columns should be named with the population identifier.
+The output of <code><a href="getrhomatrix.html">getrhomatrix</a></code> can be used here.
+All populations in the dataset must appear in <code>rhomatrix</code>. Populations in
+<code>rhomatrix</code> that are not in the dataset are allowed and will not be used.</p></dd>
 <dt>augdata</dt>
 <dd><p>A data frame with augmentation data (see Details).</p></dd>
 <dt>predictmethod</dt>
@@ -233,8 +237,12 @@ Higher values of <code>phi</code> indicate greater nonlinearity.</p>
 model, indicating similarity of dynamics across populations. If there is only
 1 population (e.g. if <code>pop</code> is not supplied), <code>rho</code> is irrelevant
 (not used by the model) and will revert to the mode of its prior (~0.5). The
-value of <code>rho</code> can be fixed to any value from 0.0001 to 1 using
-<code>rhofixed</code>, otherwise it is estimated from the data.</p>
+value of <code>rho</code> can be fixed to any value from 0.0001 to 0.9999 using
+<code>rhofixed</code>, otherwise it is estimated from the data. Alternative, a matrix
+of fixed pairwise rho values can be supplied using <code>rhomatrix</code>. In this case,
+the single rho parameter will also not be used and will revert to the mode of the
+prior (~0.5). A pairwise rho matrix can be generated using <code><a href="getrhomatrix.html">getrhomatrix</a></code>,
+or you can create a custom one (e.g. based on geographical distance).</p>
 <p><strong>Scaling:</strong></p>
 <p>The model priors assume the response variable and all predictor variables
 have approximately zero mean and unit variance, therefore it is important to
@@ -268,7 +276,7 @@ a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexi
     </div>
     <div id="see-also">
     <h2>See also</h2>
-    <div class="dont-index"><p><code><a href="predict.GP.html">predict.GP</a></code>, <code><a href="plot.GPpred.html">plot.GPpred</a></code>, <code><a href="getconditionals.html">getconditionals</a></code></p></div>
+    <div class="dont-index"><p><code><a href="predict.GP.html">predict.GP</a></code>, <code><a href="plot.GPpred.html">plot.GPpred</a></code>, <code><a href="getconditionals.html">getconditionals</a></code>, <code><a href="getrhomatrix.html">getrhomatrix</a></code></p></div>
     </div>
 
     <div id="ref-examples">

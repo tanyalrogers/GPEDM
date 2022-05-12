@@ -27,7 +27,7 @@ The same goes for "sequential".'><!-- mathjax --><script src="https://cdnjs.clou
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9003</span>
       </span>
     </div>
 
@@ -75,12 +75,13 @@ The same goes for <code>"sequential"</code>.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># S3 method for GP</span>
 <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span>
   <span class="va">object</span>,
-  predictmethod <span class="op">=</span> <span class="st">"loo"</span>,
+  predictmethod <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"loo"</span>, <span class="st">"sequential"</span><span class="op">)</span>,
   newdata <span class="op">=</span> <span class="cn">NULL</span>,
   xnew <span class="op">=</span> <span class="cn">NULL</span>,
   popnew <span class="op">=</span> <span class="cn">NULL</span>,
   timenew <span class="op">=</span> <span class="cn">NULL</span>,
-  ynew <span class="op">=</span> <span class="cn">NULL</span>
+  ynew <span class="op">=</span> <span class="cn">NULL</span>,
+  <span class="va">...</span>
 <span class="op">)</span></code></pre></div>
     </div>
 
@@ -104,6 +105,8 @@ original model.</p></dd>
 <dt>ynew</dt>
 <dd><p>New response vector. Optional, unless <code>E</code> and <code>tau</code> were supplied in
 lieu of <code>x</code>. Not required if <code>newdata</code> is supplied.</p></dd>
+<dt>...</dt>
+<dd><p>Other args (not used).</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
