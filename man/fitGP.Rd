@@ -68,7 +68,11 @@ Defaults to 1.}
 
 \item{rhofixed}{Fixes the rho parameter, if desired (see Details).}
 
-\item{rhomatrix}{Matrix of fixed pairwise rho values to use (not yet implemented).}
+\item{rhomatrix}{Symmetrical square matrix of fixed pairwise rho values to use, with 1's on the diagonal.
+The rows and columns should be named with the population identifier.
+The output of \code{\link{getrhomatrix}} can be used here.
+All populations in the dataset must appear in \code{rhomatrix}. Populations in
+\code{rhomatrix} that are not in the dataset are allowed and will not be used.}
 
 \item{augdata}{A data frame with augmentation data (see Details).}
 
@@ -166,8 +170,12 @@ Hyperparameter \code{rho} is the dynamic correlation in the hierarchical GP
 model, indicating similarity of dynamics across populations. If there is only
 1 population (e.g. if \code{pop} is not supplied), \code{rho} is irrelevant
 (not used by the model) and will revert to the mode of its prior (~0.5). The
-value of \code{rho} can be fixed to any value from 0.0001 to 1 using
-\code{rhofixed}, otherwise it is estimated from the data.
+value of \code{rho} can be fixed to any value from 0.0001 to 0.9999 using
+\code{rhofixed}, otherwise it is estimated from the data. Alternative, a matrix
+of fixed pairwise rho values can be supplied using \code{rhomatrix}. In this case,
+the single rho parameter will also not be used and will revert to the mode of the
+prior (~0.5). A pairwise rho matrix can be generated using \code{\link{getrhomatrix}},
+or you can create a custom one (e.g. based on geographical distance).
 
 \strong{Scaling:}
 
@@ -212,6 +220,6 @@ Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural unce
 a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
 }
 \seealso{
-\code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}
+\code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, \code{\link{getrhomatrix}}
 }
 \keyword{functions}

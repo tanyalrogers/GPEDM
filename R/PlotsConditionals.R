@@ -3,10 +3,11 @@
 #' Prints out some key information including hyperparameters and fit stats.
 #'
 #' @param object Output from \code{fitGP}.
+#' @param ... Other args (not used).
 #' @method summary GP
 #' @export
 #' @keywords functions
-summary.GP=function(object) {
+summary.GP=function(object, ...) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
   cat("Length scale parameters:\n")
@@ -22,7 +23,11 @@ summary.GP=function(object) {
   np=length(unique(object$inputs$pop))
   cat("\nNumber of populations:",np)
   if(np>1) {
-    cat("\nDynamic correlation (rho):",object$pars["rho"])
+    if(!is.null(object$inputs$rhomatrix)) {
+      cat("\nDynamic correlation (rho):","rhomatrix")
+    } else {
+      cat("\nDynamic correlation (rho):",object$pars["rho"])
+    }
   }
   cat("\nIn-sample R-squared:",object$insampfitstats["R2"],"\n")
   if(np>1) {
@@ -47,10 +52,11 @@ summary.GP=function(object) {
 #' @param x Output from \code{fitGP} or \code{predict.GP}.
 #' @param plotinsamp Plot the in-sample results. Defaults to out-of-sample
 #'   results if available.
+#' @param ... Other args (not used).
 #' @export
 #' @keywords functions
 
-plot.GPpred=function(x, plotinsamp=F) {
+plot.GPpred=function(x, plotinsamp=F, ...) {
   
   if(is.null(x$outsampresults) | plotinsamp) {
     dplot=x$insampresults

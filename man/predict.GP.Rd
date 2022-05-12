@@ -6,12 +6,13 @@
 \usage{
 \method{predict}{GP}(
   object,
-  predictmethod = "loo",
+  predictmethod = c("loo", "sequential"),
   newdata = NULL,
   xnew = NULL,
   popnew = NULL,
   timenew = NULL,
-  ynew = NULL
+  ynew = NULL,
+  ...
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ original model.}
 
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
 lieu of \code{x}. Not required if \code{newdata} is supplied.}
+
+\item{...}{Other args (not used).}
 }
 \value{
 A list (class GPpred) with the following elements:

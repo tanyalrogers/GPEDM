@@ -4,13 +4,15 @@
 \alias{plot.GPpred}
 \title{Plot predictions from a GP model}
 \usage{
-\method{plot}{GPpred}(x, plotinsamp = F)
+\method{plot}{GPpred}(x, plotinsamp = F, ...)
 }
 \arguments{
 \item{x}{Output from \code{fitGP} or \code{predict.GP}.}
 
 \item{plotinsamp}{Plot the in-sample results. Defaults to out-of-sample
 results if available.}
+
+\item{...}{Other args (not used).}
 }
 \description{
 Plots observed and predicted values from a GP model. If the model includes

@@ -4,10 +4,12 @@
 \alias{summary.GP}
 \title{Print a summary of a GP model}
 \usage{
-\method{summary}{GP}(object)
+\method{summary}{GP}(object, ...)
 }
 \arguments{
 \item{object}{Output from \code{fitGP}.}
+
+\item{...}{Other args (not used).}
 }
 \description{
 Prints out some key information including hyperparameters and fit stats.

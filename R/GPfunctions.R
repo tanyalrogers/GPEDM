@@ -51,8 +51,12 @@
 #' model, indicating similarity of dynamics across populations. If there is only
 #' 1 population (e.g. if \code{pop} is not supplied), \code{rho} is irrelevant
 #' (not used by the model) and will revert to the mode of its prior (~0.5). The
-#' value of \code{rho} can be fixed to any value from 0.0001 to 1 using
-#' \code{rhofixed}, otherwise it is estimated from the data. 
+#' value of \code{rho} can be fixed to any value from 0.0001 to 0.9999 using
+#' \code{rhofixed}, otherwise it is estimated from the data. Alternative, a matrix
+#' of fixed pairwise rho values can be supplied using \code{rhomatrix}. In this case,
+#' the single rho parameter will also not be used and will revert to the mode of the
+#' prior (~0.5). A pairwise rho matrix can be generated using \code{\link{getrhomatrix}},
+#' or you can create a custom one (e.g. based on geographical distance).
 #'  
 #' \strong{Scaling:} 
 #' 
@@ -118,7 +122,11 @@
 #' @param modeprior This value is used by the phi prior and sets the expected number of modes over the unit interval. 
 #'   Defaults to 1.
 #' @param rhofixed Fixes the rho parameter, if desired (see Details).
-#' @param rhomatrix Matrix of fixed pairwise rho values to use (not yet implemented).
+#' @param rhomatrix Symmetrical square matrix of fixed pairwise rho values to use, with 1's on the diagonal. 
+#'   The rows and columns should be named with the population identifier. 
+#'   The output of \code{\link{getrhomatrix}} can be used here.
+#'   All populations in the dataset must appear in \code{rhomatrix}. Populations in 
+#'   \code{rhomatrix} that are not in the dataset are allowed and will not be used.
 #' @param augdata A data frame with augmentation data (see Details).
 #' @inheritParams predict.GP
 #'
@@ -147,7 +155,7 @@
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
-#' @seealso \code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}
+#' @seealso \code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, \code{\link{getrhomatrix}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
 #'   a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
 #' @examples 
@@ -170,6 +178,19 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   }
   if(is.null(x) & (is.null(E) | is.null(tau))) {
     stop("x and/or E and tau must be supplied")
+  }
+  if(!is.null(rhofixed)) {
+    if(!is.null(rhomatrix)) {
+      stop("Supply either rhofixed or rhomatrix, not both")
+    }
+    if(rhofixed<0.0001) {
+      rhofixed=0.0001
+      message("rhofixed must between 0.0001 and 0.9999, setting to 0.0001")
+    }
+    if(rhofixed>0.9999) {
+      rhofixed=0.9999
+      message("rhofixed must between 0.0001 and 0.9999, setting to 0.9999")
+    }
   }
   scaling <- match.arg(scaling)
   
@@ -314,6 +335,20 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   #if only one population, set transformed rho to 0
   if(length(unique(pop))==1) {initparst[d+3]=0}
   
+  #store rhomatrix if supplied, check formatting, pop representation
+  if(!is.null(rhomatrix)) {
+    inputs$rhomatrix=rhomatrix
+    up=unique(pop)
+    if(is.null(colnames(rhomatrix)) | is.null(rownames(rhomatrix))) {
+      colnames(rhomatrix)=up
+      rownames(rhomatrix)=up
+      message("rhomatrix entries assumed in order: ", paste(up, collapse = " "), "\nName rows and columns to eliminate ambiguity.")
+    }
+    if(!all(as.character(up) %in% colnames(rhomatrix))) {
+      stop("Population names are not all present in rhomatrix.")
+    }
+  }
+  
   #remove missing values
   completerows=complete.cases(cbind(yds,xds))
   Y=yds[completerows]
@@ -323,7 +358,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   Primary=primary[completerows]
   
   #optimize model
-  output=fmingrad_Rprop(initparst,Y,X,Pop,modeprior,rhofixed)
+  output=fmingrad_Rprop(initparst,Y,X,Pop,modeprior,rhofixed,rhomatrix)
   # contains: list(parst,pars,nllpost,grad,lnL_LOO,df,mean,cov,covm,iter)
   
   #backfill missing values
@@ -389,7 +424,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   return(output)
 }
 
-fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed) {
+fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix) {
   
   #this uses the sign of the gradient to determine descent directions 
   #and an adaptive step size - supposedly smoother convergence than
@@ -412,7 +447,7 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed) {
   }  
   
   #initialize 
-  output=getlikegrad(initparst,Y,X,pop,modeprior,rhofixed,D,returngradonly=T)
+  output=getlikegrad(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly=T)
   nllpost=output$nllpost
   grad=output$grad
   s=drop(sqrt(grad%*%grad))
@@ -427,7 +462,7 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed) {
     
     #step 1-move
     panew=pa-sign(grad)*del
-    output_new=getlikegrad(panew,Y,X,pop,modeprior,rhofixed,D,returngradonly=T)
+    output_new=getlikegrad(panew,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly=T)
     nllpost_new=output_new$nllpost
     grad_new=output_new$grad
     s=drop(sqrt(grad_new%*%grad_new))
@@ -446,13 +481,13 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed) {
   
   #print(iter)
   paopt=pa
-  output_new=getlikegrad(paopt,Y,X,pop,modeprior,rhofixed,D,returngradonly=F)
+  output_new=getlikegrad(paopt,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly=F)
   output_new$iter=iter
   
   return(output_new)
 }
 
-getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
+getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly) {
   
   d=ncol(X) #embedding dimension
   
@@ -466,7 +501,7 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   rho=(rhomax-rhomin)/(1+exp(-parst[d+3]))+rhomin
   
   if (!is.null(rhofixed)) {rho=rhofixed}
-  
+
   #derivative for rescaled parameters wrt inputs -- for gradient calculation
   dpars=c(phi,(ve-vemin)*(1-(ve-vemin)/(vemax-vemin)),
           (sigma2-sigma2min)*(1-(sigma2-sigma2min)/(sigma2max-sigma2min)),
@@ -478,9 +513,8 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   dlp=priors$dlp #derivative of log prior
   
   #get covariance matrix
-  covm=getcov(phi,sigma2,rho,X,X,pop,pop)
+  covm=getcov(phi,sigma2,rho,X,X,pop,pop,rhomatrix)
   #D=covm$D #distance matrices
-  popsame=covm$popsame #population simularity matrix
   Cd=covm$Cd #covariance matrix
   Id=diag(ncol(Cd))
   Sigma=Cd+ve*Id #covariance matrix with process noise
@@ -531,11 +565,18 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,D,returngradonly) {
   vdC=matrix2vector(Cd/sigma2)
   # dl[d+2]=vQ%*%vdC
   dl[d+2]=innerProd(vQ,vdC)
-  dC=Cd*(1-popsame)/rho
-  vdC=matrix2vector(dC)
-  # dl[d+3]=vQ%*%vdC
-  dl[d+3]=innerProd(vQ,vdC)
   
+  #if rhofixed exists, rhomatrix exists, or only 1 population, don't compute grad for rho
+  if(!is.null(rhofixed) | !is.null(rhomatrix) | length(unique(pop))==1) {
+    dl[d+3]=0
+  } else {
+    popsame=covm$popsame #population simularity matrix
+    dC=Cd*(1-popsame)/rho
+    vdC=matrix2vector(dC)
+    # dl[d+3]=vQ%*%vdC
+    dl[d+3]=innerProd(vQ,vdC)
+  }
+
   # dC[[d+1]]=Id
   # dl[d+1]=vQ%*%as.vector(dC[[d+1]])
   # dC[[d+2]]=Cd/sigma2
@@ -600,7 +641,7 @@ getpriors=function(phi,ve,sigma2,rho,modeprior,sigma2max,vemax){
   return(list(lp=lp,dlp=dlp))
 }
 
-getcov=function(phi,sigma2,rho,X,X2,pop,pop2) {
+getcov=function(phi,sigma2,rho,X,X2,pop,pop2,rhomat=NULL) {
   #construct base covariance matrix
   Tsl=nrow(X) #time series length
   Tslp=nrow(X2)
@@ -618,7 +659,22 @@ getcov=function(phi,sigma2,rho,X,X2,pop,pop2) {
   # }
   
   popsame=(outer(pop2,pop,"=="))*1 #should work for numeric, chr, or factor
-  Cd=sigma2*exp(lC0)*(popsame+rho*(1-popsame)) #covariance matrix without obs noise
+  
+  if(!is.null(rhomat)) { #use fixed rhomatrix (assumes rows/cols are named)
+    up=unique(pop)
+    np=length(up)
+    Rmat=matrix(1,nrow=Tsl,ncol=Tslp)
+    for(i in 1:np) {
+      for(j in 1:np) {
+        indi=which(pop==up[i])
+        indj=which(pop2==up[j])
+        Rmat[indi,indj]=rhomat[as.character(up[i]),as.character(up[j])]
+      }
+    }
+    Cd=sigma2*exp(lC0)*Rmat
+  } else { #use single rho
+    Cd=sigma2*exp(lC0)*(popsame+rho*(1-popsame)) #covariance matrix without obs noise
+  }
   
   # return(list(D=D,popsame=popsame,Cd=Cd))
   return(list(popsame=popsame,Cd=Cd))
@@ -665,6 +721,7 @@ getcovinv=function(Sigma) {
 #' @param timenew New time vector. Not required if \code{newdata} is supplied.
 #' @param ynew New response vector. Optional, unless \code{E} and \code{tau} were supplied in 
 #'   lieu of \code{x}. Not required if \code{newdata} is supplied.
+#' @param ... Other args (not used).
 #' @return A list (class GPpred) with the following elements:
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
@@ -674,7 +731,7 @@ getcovinv=function(Sigma) {
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
 #' @export
 #' @keywords functions
-predict.GP=function(object,predictmethod="loo",newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) { 
+predict.GP=function(object,predictmethod=c("loo","sequential"),newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) { 
   
   iKVs=object$covm$iKVs
   phi=object$pars[grepl("phi",names(object$pars))]
@@ -684,6 +741,7 @@ predict.GP=function(object,predictmethod="loo",newdata=NULL,xnew=NULL,popnew=NUL
   X=object$inputs$X
   Y=object$inputs$Y
   y=object$inputs$y
+  rhomatrix=object$inputs$rhomatrix
   Pop=object$inputs$Pop
   scaling=object$scaling$scaling
   ymeans=object$scaling$ymeans
@@ -760,7 +818,7 @@ predict.GP=function(object,predictmethod="loo",newdata=NULL,xnew=NULL,popnew=NUL
     Popnew=popnew[completerowsnew]
     
     #get covariance matrix
-    covmnew=getcov(phi,sigma2,rho,X,Xnew,Pop,Popnew)
+    covmnew=getcov(phi,sigma2,rho,X,Xnew,Pop,Popnew,rhomatrix)
     Cs=covmnew$Cd #covariance matrix
     
     #get predictions
@@ -777,6 +835,8 @@ predict.GP=function(object,predictmethod="loo",newdata=NULL,xnew=NULL,popnew=NUL
     ysd[completerowsnew]=sqrt(yvar+ve)
     
   } else {
+    
+    predictmethod=match.arg(predictmethod)
     
     if(predictmethod=="loo") {
       Cd=object$covm$Cd
@@ -810,38 +870,38 @@ predict.GP=function(object,predictmethod="loo",newdata=NULL,xnew=NULL,popnew=NUL
     }
     
     #for lfo, need to exclude aug values with future time index
-    if(predictmethod=="lfo") {
-      Time=object$inputs$Time #time index
-      timevals=unique(Time) #assuming timepoints are in order
-      nt=length(timevals) #number of timepoints
-      Cd=object$covm$Cd
-      Sigma=object$covm$Sigma
-      Primary=object$inputs$Primary
-      nd=length(which(Primary))
-      ymean=numeric(length=nd)*NA
-      yvar=numeric(length=nd)*NA
-      for(i in 3:nt) {
-        ind=which(Time[Primary]==timevals[i])
-        train=which(Time<timevals[i])
-        Cdi=Cd[ind,train,drop=F]
-        S_noi=Sigma[train,train]
-        Y_noi=Y[train]
-        icov_noi=getcovinv(S_noi)
-        iKVs_noi=icov_noi$iKVs
-        ymean[ind]=Cdi%*%iKVs_noi%*%Y_noi
-        yvar[ind]=diag(sigma2-Cdi%*%iKVs_noi%*%t(Cdi))
-      }
-      
-      #backfill missing values
-      ypred<-ysd<-yfsd<-y*NA
-      ypred[object$inputs$completerows[1:length(y)]]=ymean
-      yfsd[object$inputs$completerows[1:length(y)]]=sqrt(yvar)
-      ysd[object$inputs$completerows[1:length(y)]]=sqrt(yvar+ve)
-      
-      popnew=object$inputs$pop
-      timenew=object$inputs$time
-      ynew=y
-    }
+    # if(predictmethod=="lfo") {
+    #   Time=object$inputs$Time #time index
+    #   timevals=unique(Time) #assuming timepoints are in order
+    #   nt=length(timevals) #number of timepoints
+    #   Cd=object$covm$Cd
+    #   Sigma=object$covm$Sigma
+    #   Primary=object$inputs$Primary
+    #   nd=length(which(Primary))
+    #   ymean=numeric(length=nd)*NA
+    #   yvar=numeric(length=nd)*NA
+    #   for(i in 3:nt) {
+    #     ind=which(Time[Primary]==timevals[i])
+    #     train=which(Time<timevals[i])
+    #     Cdi=Cd[ind,train,drop=F]
+    #     S_noi=Sigma[train,train]
+    #     Y_noi=Y[train]
+    #     icov_noi=getcovinv(S_noi)
+    #     iKVs_noi=icov_noi$iKVs
+    #     ymean[ind]=Cdi%*%iKVs_noi%*%Y_noi
+    #     yvar[ind]=diag(sigma2-Cdi%*%iKVs_noi%*%t(Cdi))
+    #   }
+    #   
+    #   #backfill missing values
+    #   ypred<-ysd<-yfsd<-y*NA
+    #   ypred[object$inputs$completerows[1:length(y)]]=ymean
+    #   yfsd[object$inputs$completerows[1:length(y)]]=sqrt(yvar)
+    #   ysd[object$inputs$completerows[1:length(y)]]=sqrt(yvar+ve)
+    #   
+    #   popnew=object$inputs$pop
+    #   timenew=object$inputs$time
+    #   ynew=y
+    # }
     
     if(predictmethod=="sequential") {
       
