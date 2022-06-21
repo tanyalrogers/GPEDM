@@ -76,6 +76,9 @@
 #' There are several options for producing predictions:
 #' \enumerate{
 #'   \item Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
+#'   \item Use \code{predictmethod="lto"} for leave-timepoint-out prediction using the training data. This will leave
+#'   out values with the same time index across multiple populations, rather than each individual datapoint. 
+#'   If there is only one population, \code{"lto"} will be equivalent to \code{"loo"}.
 #'   \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
 #'   \item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names. 
 #'   Column for \code{y} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
@@ -699,21 +702,24 @@ getcovinv=function(Sigma) {
 #' Obtain predictions from a fitted GP model. There are several options:
 #' \enumerate{
 #'   \item (Default) Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
+#'   \item Use \code{predictmethod="lto"} for leave-timepoint-out prediction using the training data. This will leave
+#'   out values with the same time index across multiple populations, rather than each individual datapoint. 
+#'   If there is only one population, \code{"lto"} will be equivalent to \code{"loo"}.
 #'   \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
 #'   \item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names. 
-#'   Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
+#'   Column for \code{y} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
 #'   \item If vectors/matrices were supplied for \code{y}, \code{x}, etc, equivalent vector/matrices \code{xnew}, 
 #'   \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
 #'   \code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
 #' }
 #' It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
 #' made by removing one of the training points, the hyperparameters are fit using all of the training data.
-#' The same goes for \code{"sequential"}.
+#' The same goes for \code{"sequential"} and \code{"lto"}.
 #'
 #' @param object Output from \code{fitGP}.
-#' @param predictmethod \code{loo} does leave-one-out prediction using
-#'   the training data. \code{sequential} does sequential (leave-future-out)
-#'   prediction using the training data.
+#' @param predictmethod Using the training data, \code{loo} does leave-one-out prediction, \code{lto} does 
+#'   leave-timepoint-out prediction, and \code{sequential} does sequential (leave-future-out)
+#'   prediction.
 #' @param newdata Data frame containing the same columns supplied in the
 #'   original model.
 #' @param xnew New predictor matrix or vector. Not required if \code{newdata} is supplied.
@@ -731,7 +737,7 @@ getcovinv=function(Sigma) {
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
 #' @export
 #' @keywords functions
-predict.GP=function(object,predictmethod=c("loo","sequential"),newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) { 
+predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) { 
   
   iKVs=object$covm$iKVs
   phi=object$pars[grepl("phi",names(object$pars))]
@@ -902,6 +908,39 @@ predict.GP=function(object,predictmethod=c("loo","sequential"),newdata=NULL,xnew
     #   timenew=object$inputs$time
     #   ynew=y
     # }
+    
+    if(predictmethod=="lto") {
+      Time=object$inputs$Time #time index
+      timevals=unique(Time) #assuming timepoints are in order
+      nt=length(timevals) #number of timepoints
+      Cd=object$covm$Cd
+      Sigma=object$covm$Sigma
+      Primary=object$inputs$Primary
+      nd=length(which(Primary))
+      ymean=numeric(length=nd)*NA
+      yvar=numeric(length=nd)*NA
+      for(i in 1:nt) {
+        ind=which(Time[Primary]==timevals[i])
+        train=which(Time!=timevals[i]) #this should also exclude any dups in the aug data
+        Cdi=Cd[ind,train,drop=F]
+        S_noi=Sigma[train,train]
+        Y_noi=Y[train]
+        icov_noi=getcovinv(S_noi)
+        iKVs_noi=icov_noi$iKVs
+        ymean[ind]=Cdi%*%iKVs_noi%*%Y_noi
+        yvar[ind]=diag(sigma2-Cdi%*%iKVs_noi%*%t(Cdi))
+      }
+      
+      #backfill missing values
+      ypred<-ysd<-yfsd<-y*NA
+      ypred[object$inputs$completerows[1:length(y)]]=ymean
+      yfsd[object$inputs$completerows[1:length(y)]]=sqrt(yvar)
+      ysd[object$inputs$completerows[1:length(y)]]=sqrt(yvar+ve)
+      
+      popnew=object$inputs$pop
+      timenew=object$inputs$time
+      ynew=y
+    }
     
     if(predictmethod=="sequential") {
       

@@ -76,9 +76,9 @@ All populations in the dataset must appear in \code{rhomatrix}. Populations in
 
 \item{augdata}{A data frame with augmentation data (see Details).}
 
-\item{predictmethod}{\code{loo} does leave-one-out prediction using
-the training data. \code{sequential} does sequential (leave-future-out)
-prediction using the training data.}
+\item{predictmethod}{Using the training data, \code{loo} does leave-one-out prediction, \code{lto} does
+leave-timepoint-out prediction, and \code{sequential} does sequential (leave-future-out)
+prediction.}
 
 \item{newdata}{Data frame containing the same columns supplied in the
 original model.}
@@ -195,6 +195,9 @@ case, you will obviously have to do the backtransformation yourself.
 There are several options for producing predictions:
 \enumerate{
 \item Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
+\item Use \code{predictmethod="lto"} for leave-timepoint-out prediction using the training data. This will leave
+out values with the same time index across multiple populations, rather than each individual datapoint.
+If there is only one population, \code{"lto"} will be equivalent to \code{"loo"}.
 \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
 \item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names.
 Column for \code{y} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.

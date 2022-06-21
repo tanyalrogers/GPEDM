@@ -6,7 +6,7 @@
 \usage{
 \method{predict}{GP}(
   object,
-  predictmethod = c("loo", "sequential"),
+  predictmethod = c("loo", "lto", "sequential"),
   newdata = NULL,
   xnew = NULL,
   popnew = NULL,
@@ -18,9 +18,9 @@
 \arguments{
 \item{object}{Output from \code{fitGP}.}
 
-\item{predictmethod}{\code{loo} does leave-one-out prediction using
-the training data. \code{sequential} does sequential (leave-future-out)
-prediction using the training data.}
+\item{predictmethod}{Using the training data, \code{loo} does leave-one-out prediction, \code{lto} does
+leave-timepoint-out prediction, and \code{sequential} does sequential (leave-future-out)
+prediction.}
 
 \item{newdata}{Data frame containing the same columns supplied in the
 original model.}
@@ -49,15 +49,18 @@ or if \code{ynew} supplied (i.e. if the observed values are known).}
 Obtain predictions from a fitted GP model. There are several options:
 \enumerate{
 \item (Default) Use \code{predictmethod="loo"} for leave-one-out prediction using the training data.
+\item Use \code{predictmethod="lto"} for leave-timepoint-out prediction using the training data. This will leave
+out values with the same time index across multiple populations, rather than each individual datapoint.
+If there is only one population, \code{"lto"} will be equivalent to \code{"loo"}.
 \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
 \item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names.
-Column for \code{yd} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
+Column for \code{y} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
 \item If vectors/matrices were supplied for \code{y}, \code{x}, etc, equivalent vector/matrices \code{xnew},
 \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
 \code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
 }
 It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
 made by removing one of the training points, the hyperparameters are fit using all of the training data.
-The same goes for \code{"sequential"}.
+The same goes for \code{"sequential"} and \code{"lto"}.
 }
 \keyword{functions}
