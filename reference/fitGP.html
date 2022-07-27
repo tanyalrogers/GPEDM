@@ -33,7 +33,7 @@ See Details for more information."><!-- mathjax --><script src="https://cdnjs.cl
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9003</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9005</span>
       </span>
     </div>
 
@@ -83,137 +83,189 @@ See Details for more information.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">fitGP</span><span class="op">(</span>
-  data <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">y</span>,
-  x <span class="op">=</span> <span class="cn">NULL</span>,
-  pop <span class="op">=</span> <span class="cn">NULL</span>,
-  time <span class="op">=</span> <span class="cn">NULL</span>,
-  E <span class="op">=</span> <span class="cn">NULL</span>,
-  tau <span class="op">=</span> <span class="cn">NULL</span>,
-  scaling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"global"</span>, <span class="st">"local"</span>, <span class="st">"none"</span><span class="op">)</span>,
-  initpars <span class="op">=</span> <span class="cn">NULL</span>,
-  modeprior <span class="op">=</span> <span class="fl">1</span>,
-  rhofixed <span class="op">=</span> <span class="cn">NULL</span>,
-  rhomatrix <span class="op">=</span> <span class="cn">NULL</span>,
-  augdata <span class="op">=</span> <span class="cn">NULL</span>,
-  predictmethod <span class="op">=</span> <span class="cn">NULL</span>,
-  newdata <span class="op">=</span> <span class="cn">NULL</span>,
-  xnew <span class="op">=</span> <span class="cn">NULL</span>,
-  popnew <span class="op">=</span> <span class="cn">NULL</span>,
-  timenew <span class="op">=</span> <span class="cn">NULL</span>,
-  ynew <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fitGP</span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  time <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  E <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tau <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  scaling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"global"</span>, <span class="st">"local"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  initpars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  modeprior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  rhofixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rhomatrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  augdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  predictmethod <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  xnew <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  popnew <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timenew <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ynew <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>A data frame, or matrix with named columns.</p></dd>
+
+
 <dt>y</dt>
 <dd><p>The response variable (required). If <code>data</code> is supplied, a column name
 (character) of index (numeric). If <code>data</code> is not supplied, a numeric vector.</p></dd>
+
+
 <dt>x</dt>
 <dd><p>Predictor variables. If <code>data</code> is supplied, column names
 (character vector) of indices (numeric vector). If <code>data</code> is not supplied, a numeric matrix
 (or vector, if there is only one predictor variable). If <code>x</code> is not supplied,
 values for <code>E</code> and <code>tau</code> must be provided to construct it internally.</p></dd>
+
+
 <dt>pop</dt>
 <dd><p>Identifies separate populations (optional, if not supplied, defaults to 1
 population). Population values can be either numeric, character, or factor.
 If <code>data</code> is supplied, a column name (character) of index (numeric).
 If <code>data</code> is not supplied, a vector (numeric, character, or factor).</p></dd>
+
+
 <dt>time</dt>
 <dd><p>A time index (optional, if not supplied, defaults to a numeric index).
 Important: The time index is not used for model fitting (timesteps are
 assumed to be evenly spaced) but supplying <code>time</code> will be add these values to the output table,
 which may be useful for later plotting purposes. If <code>data</code> is supplied, a column name
 (character) of index (numeric). If <code>data</code> is not supplied, a numeric vector.</p></dd>
+
+
 <dt>E</dt>
 <dd><p>Embedding dimension. If supplied, will be used to constuct lags of <code>x</code> (or
 lags of <code>y</code> if <code>x</code> is not supplied).</p></dd>
+
+
 <dt>tau</dt>
 <dd><p>Time delay. If supplied, will be used to constuct lags of <code>x</code> (or
 lags of <code>y</code> if <code>x</code> is not supplied).</p></dd>
+
+
 <dt>scaling</dt>
 <dd><p>How the variables should be scaled (see Details). Scaling can be <code>"global"</code>
 (default), <code>"local"</code> (only applicable if more than 1 pop), or <code>"none"</code>. Scaling is applied
 to <code>y</code> and each <code>x</code>. For a mix of scalings, do it manually beforehand and
 set scaling to <code>"none"</code>. All outputs are backtransformed to original scale.</p></dd>
+
+
 <dt>initpars</dt>
 <dd><p>Starting values for hyperparameters (see Details) in the order
 <code>c(phi,ve,sigma2,rho)</code>, in constrained (non-transformed) space. Should be a numeric
 vector with length <code>ncol(x)+3</code>. Defaults used if not supplied: <code>c(rep(0.1,ncol(x)), 0.001, 1-0.001, 0.5)</code></p></dd>
+
+
 <dt>modeprior</dt>
 <dd><p>This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.</p></dd>
+
+
 <dt>rhofixed</dt>
 <dd><p>Fixes the rho parameter, if desired (see Details).</p></dd>
+
+
 <dt>rhomatrix</dt>
 <dd><p>Symmetrical square matrix of fixed pairwise rho values to use, with 1's on the diagonal.
 The rows and columns should be named with the population identifier.
 The output of <code><a href="getrhomatrix.html">getrhomatrix</a></code> can be used here.
 All populations in the dataset must appear in <code>rhomatrix</code>. Populations in
 <code>rhomatrix</code> that are not in the dataset are allowed and will not be used.</p></dd>
+
+
 <dt>augdata</dt>
 <dd><p>A data frame with augmentation data (see Details).</p></dd>
+
+
 <dt>predictmethod</dt>
-<dd><p><code>loo</code> does leave-one-out prediction using
-the training data. <code>sequential</code> does sequential (leave-future-out)
-prediction using the training data.</p></dd>
+<dd><p>Using the training data, <code>loo</code> does leave-one-out prediction, <code>lto</code> does
+leave-timepoint-out prediction, and <code>sequential</code> does sequential (leave-future-out)
+prediction.</p></dd>
+
+
 <dt>newdata</dt>
 <dd><p>Data frame containing the same columns supplied in the
 original model.</p></dd>
+
+
 <dt>xnew</dt>
 <dd><p>New predictor matrix or vector. Not required if <code>newdata</code> is supplied.</p></dd>
+
+
 <dt>popnew</dt>
 <dd><p>New population vector. Not required if <code>newdata</code> is supplied.</p></dd>
+
+
 <dt>timenew</dt>
 <dd><p>New time vector. Not required if <code>newdata</code> is supplied.</p></dd>
+
+
 <dt>ynew</dt>
 <dd><p>New response vector. Optional, unless <code>E</code> and <code>tau</code> were supplied in
 lieu of <code>x</code>. Not required if <code>newdata</code> is supplied.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list (class GP and GPpred) with the following elements:</p>
+    
+
+<p>A list (class GP and GPpred) with the following elements:</p>
 <dl><dt>pars</dt>
 <dd><p>Posterior mode of hyperparameters (named vector).</p></dd>
+
 <dt>parst</dt>
 <dd><p>Posterior mode of hyperparameters (named vector), transformed to real line (used for optimization).</p></dd>
+
 <dt>grad</dt>
 <dd><p>Likelihood gradients of hyperparameters at posterior mode. Can be used to assess convergence.</p></dd>
+
 <dt>covm</dt>
 <dd><p>List containing various covariance matrices and the inverse covariance matrix.</p></dd>
+
 <dt>iter</dt>
 <dd><p>Number of iterations until convergence was reached. Currently fixed at a max of 200.</p></dd>
+
 <dt>inputs</dt>
 <dd><p>Inputs and scaled inputs. Note that if you use <code>E</code> and <code>tau</code>,
 the names of the predictors in the input data frame will be stored under
 <code>x_names</code>, and the names of the lagged predictors corresponding to the
 inverse length scales will be stored under <code>x_names2</code>, provided these names exist.</p></dd>
+
 <dt>scaling</dt>
 <dd><p>Scaling information.</p></dd>
+
 <dt>insampresults</dt>
 <dd><p>Data frame with in-sample predictions. <code>predfsd</code> is the standard
 deviation of the GP function, <code>predsd</code> includes process error.</p></dd>
+
 <dt>insampfitstats</dt>
 <dd><p>Fit statistics for in-sample predictions. Includes R2, rmse, ln_post
 (log posterior evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
 the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
 comparable to ln_post.</p></dd>
+
 <dt>insampfitstatspop</dt>
 <dd><p>If &gt;1 population, fit statistics (R2 and rmse) for in-sample predictions by population.</p></dd>
+
 <dt>outsampresults</dt>
 <dd><p>Data frame with out-of-sample predictions (if requested). <code>predfsd</code> is the standard
 deviation of the GP function, <code>predsd</code> includes process error.</p></dd>
+
 <dt>outsampfitstats</dt>
 <dd><p>Fit statistics for out-of-sample predictions (if requested).
 Only computed if using <code>"loo"</code> or <code>"sequential"</code>, if <code>y</code> is found in <code>newdata</code>,
 or if <code>ynew</code> supplied (i.e. if the observed values are known).</p></dd>
+
 <dt>outsampfitstatspop</dt>
 <dd><p>If &gt;1 population, fit statistics for out-of-sample predictions (if requested) by population.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -256,6 +308,9 @@ beforehand in whatever manner you wish and set <code>scaling="none"</code>. In t
 case, you will obviously have to do the backtransformation yourself.</p>
 <p><strong>Predictions:</strong></p>
 <p>There are several options for producing predictions:</p><ol><li><p>Use <code>predictmethod="loo"</code> for leave-one-out prediction using the training data.</p></li>
+<li><p>Use <code>predictmethod="lto"</code> for leave-timepoint-out prediction using the training data. This will leave
+out values with the same time index across multiple populations, rather than each individual datapoint.
+If there is only one population, <code>"lto"</code> will be equivalent to <code>"loo"</code>.</p></li>
 <li><p>Use <code>predictmethod="sequential"</code> for sequential (leave-future-out) prediction using the training data.</p></li>
 <li><p>If data frame <code>data</code> was supplied, supply data frame <code>newdata</code> containing same column names.
 Column for <code>y</code> is optional, unless <code>E</code> and <code>tau</code> were supplied in lieu of <code>x</code>.</p></li>
@@ -281,8 +336,8 @@ a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexi
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">yrand</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">testgp</span><span class="op">=</span><span class="fu">fitGP</span><span class="op">(</span>y<span class="op">=</span><span class="va">yrand</span>,E<span class="op">=</span><span class="fl">2</span>,tau<span class="op">=</span><span class="fl">1</span>,predictmethod <span class="op">=</span> <span class="st">"loo"</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">yrand</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">testgp</span><span class="op">=</span><span class="fu">fitGP</span><span class="op">(</span>y<span class="op">=</span><span class="va">yrand</span>,E<span class="op">=</span><span class="fl">2</span>,tau<span class="op">=</span><span class="fl">1</span>,predictmethod <span class="op">=</span> <span class="st">"loo"</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -297,7 +352,7 @@ a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexi
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

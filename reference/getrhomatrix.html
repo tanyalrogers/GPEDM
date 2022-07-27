@@ -19,7 +19,7 @@ under argument rhomatrix."><!-- mathjax --><script src="https://cdnjs.cloudflare
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9003</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9005</span>
       </span>
     </div>
 
@@ -57,68 +57,91 @@ under argument <code>rhomatrix</code>.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">getrhomatrix</span><span class="op">(</span>
-  data <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">y</span>,
-  x <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">pop</span>,
-  time <span class="op">=</span> <span class="cn">NULL</span>,
-  E <span class="op">=</span> <span class="cn">NULL</span>,
-  tau <span class="op">=</span> <span class="cn">NULL</span>,
-  scaling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"global"</span>, <span class="st">"local"</span>, <span class="st">"none"</span><span class="op">)</span>,
-  initpars <span class="op">=</span> <span class="cn">NULL</span>,
-  modeprior <span class="op">=</span> <span class="fl">1</span>,
-  augdata <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getrhomatrix</span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">pop</span>,</span>
+<span>  time <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  E <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tau <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  scaling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"global"</span>, <span class="st">"local"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  initpars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  modeprior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  augdata <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>A data frame, or matrix with named columns.</p></dd>
+
+
 <dt>y</dt>
 <dd><p>The response variable (required). If <code>data</code> is supplied, a column name
 (character) of index (numeric). If <code>data</code> is not supplied, a numeric vector.</p></dd>
+
+
 <dt>x</dt>
 <dd><p>Predictor variables. If <code>data</code> is supplied, column names
 (character vector) of indices (numeric vector). If <code>data</code> is not supplied, a numeric matrix
 (or vector, if there is only one predictor variable). If <code>x</code> is not supplied,
 values for <code>E</code> and <code>tau</code> must be provided to construct it internally.</p></dd>
+
+
 <dt>pop</dt>
 <dd><p>Identifies separate populations (optional, if not supplied, defaults to 1
 population). Population values can be either numeric, character, or factor.
 If <code>data</code> is supplied, a column name (character) of index (numeric).
 If <code>data</code> is not supplied, a vector (numeric, character, or factor).</p></dd>
+
+
 <dt>time</dt>
 <dd><p>A time index (optional, if not supplied, defaults to a numeric index).
 Important: The time index is not used for model fitting (timesteps are
 assumed to be evenly spaced) but supplying <code>time</code> will be add these values to the output table,
 which may be useful for later plotting purposes. If <code>data</code> is supplied, a column name
 (character) of index (numeric). If <code>data</code> is not supplied, a numeric vector.</p></dd>
+
+
 <dt>E</dt>
 <dd><p>Embedding dimension. If supplied, will be used to constuct lags of <code>x</code> (or
 lags of <code>y</code> if <code>x</code> is not supplied).</p></dd>
+
+
 <dt>tau</dt>
 <dd><p>Time delay. If supplied, will be used to constuct lags of <code>x</code> (or
 lags of <code>y</code> if <code>x</code> is not supplied).</p></dd>
+
+
 <dt>scaling</dt>
 <dd><p>How the variables should be scaled (see Details). Scaling can be <code>"global"</code>
 (default), <code>"local"</code> (only applicable if more than 1 pop), or <code>"none"</code>. Scaling is applied
 to <code>y</code> and each <code>x</code>. For a mix of scalings, do it manually beforehand and
 set scaling to <code>"none"</code>. All outputs are backtransformed to original scale.</p></dd>
+
+
 <dt>initpars</dt>
 <dd><p>Starting values for hyperparameters (see Details) in the order
 <code>c(phi,ve,sigma2,rho)</code>, in constrained (non-transformed) space. Should be a numeric
 vector with length <code>ncol(x)+3</code>. Defaults used if not supplied: <code>c(rep(0.1,ncol(x)), 0.001, 1-0.001, 0.5)</code></p></dd>
+
+
 <dt>modeprior</dt>
 <dd><p>This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.</p></dd>
+
+
 <dt>augdata</dt>
 <dd><p>A data frame with augmentation data (see Details).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A square matrix of pairwise dynamic correlations between all populations. Rows
+    
+
+<p>A square matrix of pairwise dynamic correlations between all populations. Rows
 and columns are named with population names.</p>
     </div>
     <div id="details">
@@ -149,7 +172,7 @@ Sciences 117(1):479-485</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

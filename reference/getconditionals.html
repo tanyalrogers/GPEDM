@@ -22,7 +22,7 @@ population."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9003</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9005</span>
       </span>
     </div>
 
@@ -63,13 +63,15 @@ population.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">getconditionals</span><span class="op">(</span><span class="va">fit</span>, xrange <span class="op">=</span> <span class="st">"default"</span>, extrap <span class="op">=</span> <span class="fl">0.01</span>, nvals <span class="op">=</span> <span class="fl">25</span>, plot <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getconditionals</span><span class="op">(</span><span class="va">fit</span>, xrange <span class="op">=</span> <span class="st">"default"</span>, extrap <span class="op">=</span> <span class="fl">0.01</span>, nvals <span class="op">=</span> <span class="fl">25</span>, plot <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>fit</dt>
 <dd><p>Output from <code>fitGP</code>.</p></dd>
+
+
 <dt>xrange</dt>
 <dd><p>The range of <em>scaled</em> predictor values over which responses
 should be evaluated. Options are <code>"local"</code> (the range observed within
@@ -79,20 +81,29 @@ will be <code>"local"</code> if <code>scaling="local"</code> was used, and
 <code>"global"</code> if <code>scaling="global"</code> or <code>scaling="none"</code> was
 used. This option can useful for either preventing or allowing for
 extrapolation beyond the range of the data in a given population.</p></dd>
+
+
 <dt>extrap</dt>
 <dd><p>Percentage to extrapolate beyond the predictor range for each
 population (i.e. predictor values will range from <code>(1-extrap)*min(X)</code>
 to <code>(1+extrap)*max(X)</code> Defaults to 0.01.</p></dd>
+
+
 <dt>nvals</dt>
 <dd><p>The number of values to evaluate across the predictor range for
 each population. Defaults to 25, which should be fine for most
 applications.</p></dd>
+
+
 <dt>plot</dt>
 <dd><p>Produce a plot, or not (logical, defaults to TRUE).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Returns (invisibly) a data frame containing the predictor values and conditional responses
+    
+
+<p>Returns (invisibly) a data frame containing the predictor values and conditional responses
 (means and standard deviations).</p>
     </div>
 
@@ -108,7 +119,7 @@ applications.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>
