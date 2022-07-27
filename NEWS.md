@@ -1,3 +1,7 @@
+# GPEDM 0.0.0.9005
+
+* Fixed bugs discovered by Vadim, related to prediction with `newdata`. This now works with (1) rhomatrix, (2) a single prediction row, (3) column numbers specified instead of names.
+
 # GPEDM 0.0.0.9004
 
 * Added `predictmethod="lto"` option to `predict.GP`, which leaves out points with the same time index (relevant for multi-population models).

@@ -9,7 +9,7 @@
 **Disclaimer: This is a very much a work in progress. Use at your own
 risk.**
 
-This is version 0.0.0.9003
+This is version 0.0.0.9005
 
 This package contains functions for fiting hierarchical, separable
 length scale GP models with automatic relevance determination (ARD) for

@@ -355,7 +355,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   #remove missing values
   completerows=complete.cases(cbind(yds,xds))
   Y=yds[completerows]
-  X=as.matrix(xds[completerows,])
+  X=as.matrix(xds[completerows,,drop=FALSE])
   Pop=popd[completerows]
   Time=timed[completerows]
   Primary=primary[completerows]
@@ -666,11 +666,11 @@ getcov=function(phi,sigma2,rho,X,X2,pop,pop2,rhomat=NULL) {
   if(!is.null(rhomat)) { #use fixed rhomatrix (assumes rows/cols are named)
     up=unique(pop)
     np=length(up)
-    Rmat=matrix(1,nrow=Tsl,ncol=Tslp)
+    Rmat=matrix(1,nrow=Tslp,ncol=Tsl)
     for(i in 1:np) {
       for(j in 1:np) {
-        indi=which(pop==up[i])
-        indj=which(pop2==up[j])
+        indi=which(pop2==up[i])
+        indj=which(pop==up[j])
         Rmat[indi,indj]=rhomat[as.character(up[i]),as.character(up[j])]
       }
     }
@@ -759,7 +759,12 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     
     #if data frame is supplied, take columns from it
     if(!is.null(newdata)) {
-      if(object$inputs$y_names %in% colnames(newdata)) { ynew=newdata[,object$inputs$y_names] }
+      if(is.character(object$inputs$y_names)) {
+        if(object$inputs$y_names %in% colnames(newdata)) { ynew=newdata[,object$inputs$y_names] }
+      }
+      if(is.numeric(object$inputs$y_names)) {
+        if(object$inputs$y_names <= ncol(newdata)) { ynew=newdata[,object$inputs$y_names] }
+      }
       if(!is.null(object$inputs$x_names)) { xnew=newdata[,object$inputs$x_names] }
       if(!is.null(object$inputs$pop_names)) { popnew=newdata[,object$inputs$pop_names] }
       if(!is.null(object$inputs$time_names)) { timenew=newdata[,object$inputs$time_names] }
@@ -820,7 +825,7 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     
     #remove missing values
     completerowsnew=complete.cases(xnews)
-    Xnew=as.matrix(xnews[completerowsnew,])
+    Xnew=as.matrix(xnews[completerowsnew,,drop=F])
     Popnew=popnew[completerowsnew]
     
     #get covariance matrix
