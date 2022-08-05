@@ -135,6 +135,7 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
   phi=fit$pars[grepl("phi",names(fit$pars))]
   sigma2=fit$pars[names(fit$pars)=="sigma2"]
   rho=fit$pars[names(fit$pars)=="rho"]
+  rhomatrix=fit$inputs$rhomatrix
   X=fit$inputs$X
   Y=fit$inputs$Y
   Pop=fit$inputs$Pop
@@ -167,7 +168,7 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
       }
       xp=xg
       xp[,i]=xgi
-      covmnew=getcov(phi,sigma2,rho,X,xp,Pop,poppred)
+      covmnew=getcov(phi,sigma2,rho,X,xp,Pop,poppred,rhomatrix)
       Cs=covmnew$Cd #covariance matrix
       predmean[,i]=Cs%*%(iKVs%*%Y)
       predvar=numeric(length = Tslp)
