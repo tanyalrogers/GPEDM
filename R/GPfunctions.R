@@ -825,6 +825,15 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     
     #remove missing values
     completerowsnew=complete.cases(xnews)
+    #exit if no valid rows
+    if(all(completerowsnew==FALSE)) {
+      out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=NA,predfsd=NA,predsd=NA))
+      if(!is.null(ynew)) {
+        out$outsampresults$obs=ynew
+      }
+      class(out)="GPpred"
+      return(out)
+    }
     Xnew=as.matrix(xnews[completerowsnew,,drop=F])
     Popnew=popnew[completerowsnew]
     
