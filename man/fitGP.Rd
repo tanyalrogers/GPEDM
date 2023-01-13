@@ -171,7 +171,7 @@ model, indicating similarity of dynamics across populations. If there is only
 1 population (e.g. if \code{pop} is not supplied), \code{rho} is irrelevant
 (not used by the model) and will revert to the mode of its prior (~0.5). The
 value of \code{rho} can be fixed to any value from 0.0001 to 0.9999 using
-\code{rhofixed}, otherwise it is estimated from the data. Alternative, a matrix
+\code{rhofixed}, otherwise it is estimated from the data. Alternatively, a matrix
 of fixed pairwise rho values can be supplied using \code{rhomatrix}. In this case,
 the single rho parameter will also not be used and will revert to the mode of the
 prior (~0.5). A pairwise rho matrix can be generated using \code{\link{getrhomatrix}},

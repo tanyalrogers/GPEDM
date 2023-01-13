@@ -52,7 +52,7 @@
 #' 1 population (e.g. if \code{pop} is not supplied), \code{rho} is irrelevant
 #' (not used by the model) and will revert to the mode of its prior (~0.5). The
 #' value of \code{rho} can be fixed to any value from 0.0001 to 0.9999 using
-#' \code{rhofixed}, otherwise it is estimated from the data. Alternative, a matrix
+#' \code{rhofixed}, otherwise it is estimated from the data. Alternatively, a matrix
 #' of fixed pairwise rho values can be supplied using \code{rhomatrix}. In this case,
 #' the single rho parameter will also not be used and will revert to the mode of the
 #' prior (~0.5). A pairwise rho matrix can be generated using \code{\link{getrhomatrix}},
@@ -524,6 +524,7 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
   covm$Sigma=Sigma
 
   #get inverse covariance
+  Sigma=(Sigma+t(Sigma))/2
   icov=getcovinv(Sigma)
   iKVs=icov$iKVs
   L=icov$L
@@ -872,6 +873,7 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         Cdi=Cd[i,-c(i,dups),drop=F]
         S_noi=Sigma[-c(i,dups),-c(i,dups)]
         Y_noi=Y[-c(i,dups)]
+        S_noi=(S_noi+t(S_noi))/2
         icov_noi=getcovinv(S_noi)
         iKVs_noi=icov_noi$iKVs
         ymean[i]=Cdi%*%iKVs_noi%*%Y_noi
@@ -939,6 +941,7 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         Cdi=Cd[ind,train,drop=F]
         S_noi=Sigma[train,train]
         Y_noi=Y[train]
+        S_noi=(S_noi+t(S_noi))/2
         icov_noi=getcovinv(S_noi)
         iKVs_noi=icov_noi$iKVs
         ymean[ind]=Cdi%*%iKVs_noi%*%Y_noi
@@ -983,7 +986,7 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         ind=which(Time==timevals[i])
         I=diag(length(ind))
         SS=S[ind,ind]+ve*I;
-        SS=round(SS,7) #prevents Matrix from thinking it's not symmetric, numerical issue possibly
+        SS=(SS+t(SS))/2 #prevents Matrix from thinking it's not symmetric, numerical issue possibly
         icov_ss=getcovinv(SS)
         iK=icov_ss$iKVs
         k=iK%*%(Y[ind]-ymean1[ind,i])

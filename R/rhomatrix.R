@@ -184,3 +184,25 @@ getrhomatrix=function(data=NULL,y,x=NULL,pop,time=NULL,E=NULL,tau=NULL,
   rhomatrix=rhomat+t(rhomat)+diag(np)
   return(rhomatrix)
 }
+
+#' Make a matrix postive definite
+#'
+#' If the output matrix from \code{\link{getrhomatrix}} is not positive
+#' definite, this will convert it to a matrix that is.
+#' 
+#' @param mat A symmetrical square matrix.
+#'
+#' @return A version of `mat` that is positive definite.
+#' @seealso \code{\link{getrhomatrix}}
+#' @export
+#' @keywords functions
+
+posdef=function(mat) {
+  eigd=eigen(t(mat)%*%mat)
+  L=eigd$values
+  V=eigd$vectors
+  matpd=V%*%diag(sqrt(L))%*%t(V)
+  colnames(matpd)=colnames(mat)
+  rownames(matpd)=rownames(mat)
+  return(matpd)
+}
