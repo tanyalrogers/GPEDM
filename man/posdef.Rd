@@ -2,19 +2,20 @@
 % Please edit documentation in R/rhomatrix.R
 \name{posdef}
 \alias{posdef}
-\title{Make a matrix postive definite}
+\title{Find nearest positive definite matrix}
 \usage{
 posdef(mat)
 }
 \arguments{
-\item{mat}{A symmetrical square matrix.}
+\item{mat}{A symmetrical square matrix with 1's on diagonal.}
 }
 \value{
-A version of \code{mat} that is positive definite.
+An approximate version of \code{mat} that is positive definite. Row and column names are retained.
 }
 \description{
 If the output matrix from \code{\link{getrhomatrix}} is not positive
-definite, this will convert it to a matrix that is.
+definite, this will find an approximate matrix that is using \code{\link{Matrix::nearPD()}}
+with \code{corr=TRUE}.
 }
 \seealso{
 \code{\link{getrhomatrix}}

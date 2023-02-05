@@ -22,6 +22,9 @@
 Original MATLAB code by Stephan Munch, adapted to R by Tanya Rogers.
 
 Maintainer: Tanya Rogers <tanya.rogers@noaa.gov>
+
+We thank Bethany Johnson, Lucas Medeiros, and Vadim Karatayev for beta testing and 
+improvement suggestions.
 }
 \references{
 Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty:

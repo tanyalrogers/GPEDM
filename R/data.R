@@ -38,3 +38,46 @@
 #' @source The simulation code is in data-raw on the GPEDM Github page.
 #' @keywords datasets
 "HastPow3sp"
+
+#' NEFSC Fall Bottom Trawl Data (subset)
+#' 
+#' Catch-per-unit effort data for 3 species from the NOAA Northeast 
+#' Fisheries Science Center Fall Bottom Trawl Survey for 4 regions
+#' from 1973 to 2016 (44 years).
+#' 
+#' @format A data frame with 176 rows and 5 variables:
+#' \describe{
+#'   \item{YEAR}{Time index}
+#'   \item{REGION}{Region: GME = Gulf of Maine, GEO = George's Bank,
+#'      SNE = Southern New England, MAB = Mid-Atlantic Bight. This is 
+#'      formatted as a factor (north to south).}
+#'   \item{shortfin_squid}{CPUE of northern shortfin squid (*Illex illecebrosus*)}
+#'   \item{longfin_squid}{CPUE of longfin squid (*Loligo pealeii*)}
+#'   \item{silver_hake}{CPUE of silver hake (*Merluccius bilinearis*)}
+#' }
+#' @source https://www.fisheries.noaa.gov/inport/item/22560
+#' @keywords datasets
+"trawl"
+
+#' Brown shrimp in the Gulf of Mexico
+#' 
+#' Annual catch-per-unit effort data for brown shrimp in the Gulf of Mexico from
+#' the Southeast Area Monitoring and Assessment Program (SEAMAP) Summer
+#' Groundfish Trawl Survey for 9 different statistical zones from 1987 to 2019
+#' (33 years).
+#' 
+#' @format A data frame with 297 rows and 3 variables:
+#' \describe{
+#'   \item{year}{Time index}
+#'   \item{zone}{Statistical zone (region)}
+#'   \item{cpue}{Catch per unit effort}
+#' }
+#' 
+#' @source SEAMAP Summer Groundfish Trawl Survey
+#' @references 
+#' Tsai CH, Munch SB, Masi MD, and Pollack AG. 2022. Predicting
+#' nonlinear dynamics of short-lived penaeid shrimp species in the Gulf of
+#' Mexico. Canadian Journal of Fisheries and Aquatic Sciences.
+#' https://doi.org/10.1139/cjfas-2022-0029
+#' @keywords datasets
+"shrimp"

@@ -1,0 +1,246 @@
+---
+title: "Hierarchical Models and Dynamic Correlation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Hierarchical Models and Dynamic Correlation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, warning=FALSE}
+library(GPEDM)
+library(ggplot2)
+```
+
+## Introduction
+
+Many ecological time series are short relative to the timescale of the system, which presents a major obstacle to the successful application of EDM: if the time series does not adequately cover the range of possible dynamics and make a sufficient number of 'cycles' around the attractor, it can be difficult for EDM to make reliable predictions.
+
+One solution is to leverage multiple (potential short) time series from replicates with similar dynamics. These could be multiple replicates in an experiment, populations of the same species from multiple locations, different life history stages of the same species, or potentially even multiple species that are suspected to have similar dynamics. The most common case is likely to be replicate time series collected for multiple populations of the same species over space, so we'll be referring to the replicates as 'populations' but these replicates can represent other things as well.
+
+If you have time series data from multiple populations, `GPEDM` includes several options for integrating the data into a common model, which can potentially lead to better predictions than models fit to each short time series independently. This approach requires that the delay embedding maps are similar across populations (usually a reasonable assumption for populations of the same species) but not strongly synchronized (i.e. each series provides some independent information). 
+
+The hyperparameter `rho` is the *dynamic correlation* in the hierarchical GP model, indicating similarity of dynamics across populations. In contrast to traditional correlation metrics (e.g. Pearson correlation), which quantify the similarity of population fluctuations over time (i.e. synchrony), the dynamic correlation quantifies the similarity of population responses across predictor space. The value of `rho` can be fixed to any value from 0.0001 to 0.9999 using `rhofixed`, otherwise it is estimated from the data. All populations are assumed to have the same `rho` value relative to one another. Alternatively, one can estimate pairwise values of `rho` between populations and supply a fixed matrix of `rho` values (`rhomatrix`) to use, rather than a single value.
+
+## Scaling considerations
+
+Before fitting any models, you should think about how you want to standardize the data. When you have multiple populations, scaling the data within populations (`scaling=local`) vs. across populations (`scaling=global`) can lead to very different model fits and performance, so it is worth putting some thought into this. Generally speaking, if the variable has the same units across populations, you will probably want to use global scaling. If the variable has different units, you will probably want to use local scaling. However, you may have valid reasons to deviate from this, and trying both might be worthwhile if in doubt. For instance, if the species of interest has different carrying capacities in different regions, local scaling of dynamics might make more sense, even if the units are the same. If you have covariates, you might choose to use different scalings for different variables. (Note `scaling=global` and `scaling=local` apply to all predictors, whether they're lags, covariates, or lags of covariates, and they all are scaled independently of each other.) To use a mix of scalings, you need to scale the data yourself beforehand and set `scaling="none"`. You might get warnings that values are not scaled properly, which is because generating lags elimiates some data, so the mean and sd of each predictor may deviate somewhat from 0 and 1. They should not be too far off though, so this warning can usually be ignored. Note that if unspecified, scaling in `fitGP` defaults to `"global"`. See the documentation for `fitGP` for more information about scaling.
+
+## Embedding considerations
+
+For a single population, the maximum value of $E$ considered should not be much larger than the square root of the time series length. When combining data from multiple populations, you have more data at your disposal to reconstruct dynamics, and can use potentially higher values of $E$ than you could for a single population. However, $E\tau$ cannot be greater than the shortest within-population time series length, so you may wish to constrain $E$ in some way to ensure sufficient training data across populations. Note than when using hierarchical models, all populations will use the same $E$ and $\tau$.
+
+## Model evaluation considerations
+
+When using multiple populations, there are a few additional things you need to consider when evaluating model performance. The built-in leave-one-out routine, `predictmethod="loo"`, leaves out each individual datapoint, so datapoints taken at the same time but in a different location might be included in the training set. If this is of concern, there is another routine, `predictmethod="lto"`, which leaves out all datapoints taken at the same time across all locations. If there is only one population, these are obviously equivalent. The routine `predictmethod="sequential"` leaves out all future timepoints across all locations. If you decide to use a training/test split, take care to split each population, not the stacked series. Predictions cannot be made for populations which do not appear in the training data.
+
+In addition to comparing different hierarchical structures (described below), you might also wish to compare the results from models fit to each population separately. Note that as with all hierarchical models, the hierarchical structure is a constraint that forces some similarity of dynamics across populations. Populations in the same hierarchical model will share the same embedding parameters ($E$ and $\tau$) and the same inverse length scale parameters (this includes models with `rho=0`). This means the hierarchical model is inherently less flexible than if you were to fit separate models to each population individually. If each population has a lot of data, *the hierarchical fit might be poorer than fitting a model to each population individually, due to this decreased flexibility*. On the flip side, if each population does not have much data, or the data are very noisy, the constraints and pooled information in a hierarchical model can lead to better performance than individual fits.
+
+Beware of local minima. If the relative performance of models seems off, or better results are obtained using a fixed `rho` than a fitted one, then the model might be getting stuck in a local minima. One could try using different values of `initpars`. 
+
+It might also be that some populations have very different dynamics than the others, and you might get better performance by spliting the populations up into different hierarchical models. This situation might also contribute to local minima. The pairwise `rhomatrix` might be informative here. 
+
+## Example dataset
+
+In our example, we will use log-transformed catch-per-unit-effort (CPUE) time series for brown shrimp from 9 different regions (statistical zones) in the Gulf of Mexico. These are annual time series from the SEAMAP Summer Groundfish Trawl Survey, spanning 33 years. Plotting the time series, fluctuations in shrimp abundance in each region appear roughly similar, but have different means, so we decided to use local scaling in this case. Trying both scalings also showed that local scaling led to better performance.
+
+In this example, we only use lags of CPUE, but we note that in the publication from which these data were taken (Tsai et al. 2022), better predictions were obtained by using environmental and fishery catch data as covariates. The results here deviate from the results in the paper because of the absence of these covariates.
+
+When using the hierarchical models, the data must be in long format with a column for population identifier. Note that populations *do not* need to have the same number of observations, or overlapping time indices, as in this example.
+
+```{r}
+E = 5
+scaling = "local"
+
+#get log abundance
+data(shrimp)
+shrimp$splog=log(shrimp$cpue)
+
+#generate lags
+splags = makelags(shrimp, y = "splog", pop = "zone", E = E, tau = 1, append = T)
+
+# ggplot(shrimp) +
+#   facet_wrap(zone~., scales = "free") +
+#   geom_point(aes(y=cpue, x=year)) + geom_line(aes(y=cpue, x=year)) +
+#   theme_bw() + labs(y="Brown shrimp CPUE")
+
+baseplot=ggplot(shrimp) +
+  facet_wrap(zone~., scales = "free") +
+  geom_point(aes(y=splog, x=year)) + geom_line(aes(y=splog, x=year)) +
+  theme_bw() + labs(y="log Brown Shrimp CPUE")
+baseplot
+```
+
+## Individual models
+
+For comparison, we will fit models to each population individually.  
+
+```{r}
+zones=unique(splags$zone)
+spmodind<-spmodindout<-spmodindin<-list()
+for(i in seq_along(zones)) {
+  dsub=subset(splags, zone==zones[i])
+  spmodind[[i]] = fitGP(dsub, y = "splog", x = paste0("splog_",1:E), 
+                        pop = "zone", time = "year", scaling = scaling, predictmethod = "lto")
+  spmodindin[[i]] = spmodind[[i]]$insampresults
+  spmodindout[[i]] = spmodind[[i]]$outsampresults
+}
+spmodindin=do.call(rbind, spmodindin)
+spmodindout=do.call(rbind, spmodindout)
+(R2indivin=getR2(spmodindin$obs,spmodindin$predmean))
+(R2indivout=getR2(spmodindout$obs,spmodindout$predmean))
+colnames(spmodindout)[2]="zone"
+
+baseplot + 
+  ggtitle("Individual") +
+  geom_point(data=spmodindout, aes(y=predmean, x=timestep), color="red") +
+  geom_line(data=spmodindout, aes(y=predmean, x=timestep), color="red") +
+  geom_ribbon(data=spmodindout,
+              aes(x=timestep, ymin=predmean-predsd,ymax=predmean+predsd),fill="red", alpha = 0.3)
+```
+
+## Identical dynamics
+
+Including `pop` and setting `rhofixed = 1` fits a multi-population model in which the dynamics of each population are forced to be identical. In other words, we assume that all delay vectors come from the same attractor.
+
+```{r}
+spmodrho1 = fitGP(splags, y = "splog", x = paste0("splog_",1:E), 
+                  pop = "zone", rhofixed = 1,
+                  time = "year", scaling = scaling, predictmethod = "lto")
+summary(spmodrho1)
+
+spout=spmodrho1$outsampresults
+colnames(spout)[2]="zone"
+
+baseplot + 
+  ggtitle("Identical") +
+  geom_point(data=spout, aes(y=predmean, x=timestep), color="red") +
+  geom_line(data=spout, aes(y=predmean, x=timestep), color="red") +
+  geom_ribbon(data=spout,
+              aes(x=timestep, ymin=predmean-predsd,ymax=predmean+predsd),fill="red", alpha = 0.3)
+
+```
+
+As with other EDM approaches (Simplex, S-map), the same results can be obtained by simply concatenating the delay vectors for multiple populations and fitting a standard model, as if the data all came from one population (i.e. omit the `pop` argument even though there are multiple populations). Note that automatic local scaling cannot be done this way (because only one population is assumed), and thus any local scaling must be done beforehand. You will also not get fit stats for each population. To ensure there isn't crossover between the end of one time series and the beginning of another when constructing the delay vectors, this also requires making lags beforehand and including the `pop` argument in `makelags`.
+
+```{r, eval=FALSE}
+spmod = fitGP(splags, y = "splog", x = paste0("splog_",1:E), 
+              time = "year", scaling = scaling, predictmethod = "lto")
+summary(spmod)
+
+#rejoin the zone information (not considered during model fitting)
+spout = spmod$outsampresults
+spout$zone = splags$zone
+```
+
+## Independent dynamics
+
+You can force the populations to have independent dynamics by setting `rhofixed = 0`. Note that the populations in this case will still share the same inverse length scale parameters, so due to this decreased flexibility, the fit might be poorer than fitting a model to each population independently.
+
+```{r}
+spmodrho0 = fitGP(splags, y = "splog", x = paste0("splog_",1:E), 
+                  pop = "zone", rhofixed = 0,
+                  time = "year", scaling = scaling, predictmethod = "lto")
+summary(spmodrho0)
+```
+
+## Hierarchical dynamics (single rho)
+
+To allow for information sharing across populations without assuming the dynamics are identical, we can fit a hierarchical model with a free `rho` parameter. Simply omit the `rhofixed` argument, and `rho` will be estimated.
+
+```{r}
+spmodrho = fitGP(splags, y = "splog", x = paste0("splog_",1:E), 
+                 pop = "zone",
+                 time = "year", scaling = scaling, predictmethod = "lto")
+summary(spmodrho)
+
+spout=spmodrho$outsampresults
+colnames(spout)[2]="zone"
+
+baseplot +  
+  ggtitle("Hierarchical") +
+  geom_point(data=spout, aes(y=predmean, x=timestep), color="red") +
+  geom_line(data=spout, aes(y=predmean, x=timestep), color="red") +
+  geom_ribbon(data=spout,
+              aes(x=timestep, ymin=predmean-predsd,ymax=predmean+predsd),fill="red", alpha = 0.3)
+```
+
+## Hierarchical dynamics (rho matrix)
+
+Instead of using a single `rho` value, a matrix of fixed pairwise rho values can be supplied using `rhomatrix.` In this case, the single rho parameter will not be used and will revert to the mode of its prior (~0.5). A pairwise rho matrix can be generated using `getrhomatrix`, or you can create a custom one (e.g. based on geographical distance). All `getrhomatrix` does is fit a hierarchical model to each pair of populations and put the resulting `rho` values in a matrix that can be passed to `fitGP`. The rhomatrix itself can be informative about dynamic similarity among populations, and reveal potential clustering and spatial structure.
+
+If you get an error that the matrix is not positive definite (which can happen), you can use `Matrix::nearPD()` with `corr=TRUE` to obtain a positive definite matrix close to `rhomatrix`. The function `GPEDM::posdef()` is a quick wrapper for this.
+
+```{r}
+Rhomat = getrhomatrix(splags, y = "splog", x = paste0("splog_",1:E), 
+                      pop = "zone",
+                      time = "year", scaling = scaling)
+Rhomat
+
+#plot the rho matrix
+Rmatlong=as.data.frame(as.table(Rhomat)) #for plotting purposes only
+colnames(Rmatlong)=c("Region1", "Region2", "rho")
+ggplot(Rmatlong, aes(x=Region1, y=Region2, fill=rho)) +
+  geom_tile() +
+  scale_y_discrete(expand = c(0, 0)) +
+  scale_x_discrete(expand = c(0, 0)) +
+  theme(panel.background = element_rect(fill="gray"), 
+        panel.border = element_rect(color="black", fill="transparent"))
+
+Rhomatpd=posdef(Rhomat)
+
+spmodrhomat = fitGP(splags, y = "splog", x = paste0("splog_",1:E), 
+                    pop = "zone", rhomatrix = Rhomatpd,
+                    time = "year", scaling = scaling, predictmethod = "lto")
+summary(spmodrhomat)
+
+spout=spmodrhomat$outsampresults
+colnames(spout)[2]="zone"
+
+baseplot + 
+  ggtitle("Hierarchical Matrix") +
+  geom_point(data=spout, aes(y=predmean, x=timestep), color="red") +
+  geom_line(data=spout, aes(y=predmean, x=timestep), color="red") +
+  geom_ribbon(data=spout,
+              aes(x=timestep, ymin=predmean-predsd,ymax=predmean+predsd),fill="red", alpha = 0.3)
+```
+
+#### Compare models
+
+```{r}
+comparison=data.frame(Model=c("Individual", "Independent", "Identical", "Single rho", "Rho matrix"),
+                      InSampR2=c(R2indivin,
+                                 spmodrho0$insampfitstats["R2"],
+                                 spmodrho1$insampfitstats["R2"],
+                                 spmodrho$insampfitstats["R2"],
+                                 spmodrhomat$insampfitstats["R2"]),
+                      OutSampR2=c(R2indivout,
+                                  spmodrho0$outsampfitstats["R2"],
+                                  spmodrho1$outsampfitstats["R2"],
+                                  spmodrho$outsampfitstats["R2"],
+                                  spmodrhomat$outsampfitstats["R2"]))
+comparison
+
+popcomparison=data.frame(Individual=sapply(spmodind, function(x) x$outsampfitstats["R2"]),
+                         Independent=spmodrho0$outsampfitstatspop$R2pop,
+                         Identical=spmodrho1$outsampfitstatspop$R2pop,
+                         Single_rho=spmodrho$outsampfitstatspop$R2pop,
+                         Rho_matrix=spmodrhomat$outsampfitstatspop$R2pop)
+popcomparison
+```
+
+
+## References
+
+Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32:134.
+
+Rogers, T. L., and Munch, S. B. 2020. Hidden similarities in the dynamics of a weakly synchronous marine metapopulation. Proceedings in the National Academy of Science, 117(1), 479–485.
+
+Tsai, C. H., Munch, S. B., Masi, M. D., and Pollack, A. G. 2022. Predicting nonlinear dynamics of short-lived penaeid shrimp species in the Gulf of Mexico. Canadian Journal of Fisheries and Aquatic Sciences.

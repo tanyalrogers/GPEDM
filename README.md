@@ -6,15 +6,16 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-**Disclaimer: This is a very much a work in progress. Use at your own
-risk.**
+**Disclaimer: This is very much a work in progress. Use at your own risk
+and please report any problems.**
 
-This is version 0.0.0.9005
+This is version 0.0.0.9006
 
 This package contains functions for fiting hierarchical, separable
-length scale GP models with automatic relevance determination (ARD) for
-use in Empirical Dynamic Modeling (EDM) and other applications. This is
-an adaptation of code originally developed by Stephan Munch in MATLAB.
+length scale Gaussian process (GP) models with automatic relevance
+determination (ARD) for use in Empirical Dynamic Modeling (EDM) and
+other applications. This is an adaptation of code originally developed
+by Stephan Munch in MATLAB.
 
 The main function is `fitGP` which is used to train the model and can
 also produce predictions if desired. Use `summary.GP` to view a summary,
@@ -180,7 +181,7 @@ ggplot(conlong,aes(x=xValue,y=yMean)) +
 ### Plot inverse length scales
 
 The model hyperparameters are located under `model$pars`. If you have
-*n* predictors, the first *n* values of `pars` will be the length
+$n$ predictors, the first $n$ values of `pars` will be the length
 scales. Note that if you use `E` and `tau`, the names of the predictors
 in the input data frame will be stored under `model$inputs$x_names`, and
 the names of the lagged predictors corresponding to the inverse length
