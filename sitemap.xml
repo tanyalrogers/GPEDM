@@ -7,6 +7,12 @@
     <loc>https://tanyalrogers.github.io/GPEDM/LICENSE-text.html</loc>
   </url>
   <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/articles/choosingE.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/articles/hierarchical.html</loc>
+  </url>
+  <url>
     <loc>https://tanyalrogers.github.io/GPEDM/articles/index.html</loc>
   </url>
   <url>
@@ -49,12 +55,21 @@
     <loc>https://tanyalrogers.github.io/GPEDM/reference/plot.GPpred.html</loc>
   </url>
   <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/posdef.html</loc>
+  </url>
+  <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/predict.GP.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/shrimp.html</loc>
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/summary.GP.html</loc>
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/thetalog2pop.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/trawl.html</loc>
   </url>
 </urlset>
