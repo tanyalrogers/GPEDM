@@ -158,6 +158,7 @@
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
+#' \item{call}{Function call. Allows use of \code{\link{update}}}.
 #' @seealso \code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, \code{\link{getrhomatrix}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
 #'   a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.
@@ -175,6 +176,8 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                rhomatrix=NULL,augdata=NULL,
                predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
 
+  cl <- match.call()
+  
   #input checks
   if((!is.null(E) & is.null(tau)) | (is.null(E) & !is.null(tau))) {
     stop("Both E and tau must be supplied if generating lags internally.")
@@ -332,8 +335,12 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   if(is.null(initpars)) {
     initpars=c(rep(0.1,d),0.001, 1-0.001, 0.5)
   }
-  #transform parameters
-  initparst=c(log(initpars[1:d]),logit(initpars[d+1]), logit(initpars[d+2]), logit(initpars[d+3]))
+  #transform parameters (also at line 506!)
+  vemin=0.0001;sigma2min=0.0001
+  vemax=4.9999;sigma2max=4.9999
+  rhomin=0;rhomax=1
+  initparst=c(log(initpars[1:d]),logit(initpars[d+1],vemin,vemax), 
+              logit(initpars[d+2],sigma2min,sigma2max), logit(initpars[d+3],rhomin,rhomax))
   
   #if only one population, set transformed rho to 0
   if(length(unique(pop))==1) {initparst[d+3]=0}
@@ -423,6 +430,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     output=c(output,predictresults)
   }
   
+  output$call=cl
   class(output)=c("GP","GPpred")
   return(output)
 }
@@ -495,8 +503,8 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
   d=ncol(X) #embedding dimension
   
   #transform parameters from real line to constrained space
-  vemin=0.01;sigma2min=0.01
-  vemax=4.99;sigma2max=4.99
+  vemin=0.0001;sigma2min=0.0001
+  vemax=4.9999;sigma2max=4.9999
   rhomin=0.0001;rhomax=1
   phi=exp(parst[1:d])
   ve=(vemax-vemin)/(1+exp(-parst[d+1]))+vemin
@@ -1060,8 +1068,8 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   return(out)
 }
 
-logit=function(x) {
-  log(x/(1-x))
+logit=function(x, min=0, max=1) {
+  log((x-min)/(max-x))
 }
 
 #' Calculate R-squared

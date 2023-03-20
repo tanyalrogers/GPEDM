@@ -9,7 +9,7 @@
 **Disclaimer: This is very much a work in progress. Use at your own risk
 and please report any problems.**
 
-This is version 0.0.0.9006
+This is version 0.0.0.9007
 
 This package contains functions for fiting hierarchical, separable
 length scale Gaussian process (GP) models with automatic relevance
@@ -18,14 +18,14 @@ other applications. This is an adaptation of code originally developed
 by Stephan Munch in MATLAB.
 
 The main function is `fitGP` which is used to train the model and can
-also produce predictions if desired. Use `summary.GP` to view a summary,
-`predict.GP` to generate other or additional predictions from a fitted
-model, `plot.GPpred` to plot observed and predicted values and
-`getconditionals` to obtain conditional reponses. Also available for use
-are the functions `makelags` which can be used to create delay vectors,
-and `getR2` for getting R2 values. See the [Specifying training
-data](#specifying-training-data) and the vignettes for more detailed
-instructions.
+also produce predictions if desired. Use `summary` to view a summary,
+`predict` to generate other or additional predictions from a fitted
+model, `plot` to plot observed and predicted values, `update` to update
+an existing model, and `getconditionals` to obtain conditional reponses.
+Also available for use are the functions `makelags` which can be used to
+create delay vectors, and `getR2` for getting R2 values. See [Specifying
+training data](#specifying-training-data) and the function documentation
+for more detailed instructions.
 
 ## Installation
 
@@ -80,23 +80,23 @@ summary(tlogtest)
 #> Number of predictors: 3 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1         0.529
-#> phi2 Abundance_2         0.000
-#> phi3 Abundance_3         0.000
-#> Process variance (ve): 0.01221358
-#> Pointwise prior variance (sigma2): 2.53986
+#> phi1 Abundance_1        0.5317
+#> phi2 Abundance_2        0.0000
+#> phi3 Abundance_3        0.0000
+#> Process variance (ve): 0.01222333
+#> Pointwise prior variance (sigma2): 2.527349
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.3250464
-#> In-sample R-squared: 0.9933951 
+#> Dynamic correlation (rho): 0.327254
+#> In-sample R-squared: 0.9933975 
 #> In-sample R-squared by population:
 #>             R2
-#> PopA 0.9970774
-#> PopB 0.9815181
-#> Out-of-sample R-squared: 0.991239
+#> PopA 0.9970811
+#> PopB 0.9815187
+#> Out-of-sample R-squared: 0.991238
 #> Out-of-sample R-squared by population:
 #>             R2
-#> PopA 0.9961232
-#> PopB 0.9754852
+#> PopA 0.9961280
+#> PopB 0.9754702
 ```
 
 From the summary, we can see that ARD has (unsurprisingly) deemed lags 2
@@ -104,7 +104,12 @@ and 3 to be unimportant (length scales are 0), so E=1 is probably
 sufficient. The dynamic correlation (rho) tells us the degree to which
 the dynamics are correlated (they are are rather dissimilar in this
 case). Since the simulated data don’t contain that much noise, the
-R-squared values are quite high.
+R-squared values are quite high. For more information on choosing
+embedding parameters, see [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/choosingE.html).
+For more information on hierarchical modeling and the dynamic
+correlation, see [this other
+vignette](https://tanyalrogers.github.io/GPEDM/articles/hierarchical.html).
 
 ### Plot observed and predicted values
 
@@ -203,7 +208,11 @@ We can use the `predict` function to get various types of predictions
 from a fitted model. Leave-one-out, `predictmethod = "loo"` is one
 option (above, we got these predictions at the same time we fit the
 model, but this is not necessary). The following obtains sequential
-(leave-future-out) predictions using the training data.
+(leave-future-out) predictions using the training data. Note that for
+`predictmethod = "loo"` and `predictmethod = "sequential"`, the training
+data are iteratively omitted for the predictions, but the hyperparameter
+values used are those obtained using *all* of the training data (the
+model is not refit).
 
 ``` r
 #sequential predictions (they should improve over time)
@@ -228,8 +237,7 @@ test data. For that we could do the following.
 ``` r
 pAtrain=pA[1:40,]
 pAtest=pA[41:50,]
-tlogtest2=fitGP(data = pAtrain, y = "Abundance", E=2, tau=1,
-                newdata = pAtest)
+tlogtest2=fitGP(data = pAtrain, y = "Abundance", E=2, tau=1, time = "Time", newdata = pAtest)
 plot(tlogtest2)
 #> Plotting out of sample results.
 ```
@@ -246,29 +254,98 @@ pAlags=makelags(pA, y = "Abundance", E=2, tau=1)
 pAdata=cbind(pA,pAlags)
 pAtrain=pAdata[1:40,]
 pAtest=pAdata[41:50,]
-tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags),
-                newdata = pAtest)
+tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Time", newdata = pAtest)
 plot(tlogtest3)
 #> Plotting out of sample results.
 ```
 
 <img src="man/figures/README-predict3-1.png" width="100%" />
 
+Note that this is equivalent to:
+
+``` r
+tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Time")
+tlogtest3_pred=predict(tlogtest3, newdata = pAtest)
+```
+
+### Simulating forecasts
+
+The function `predict_seq` also generates predictions for a data frame
+`newdata`, but sequentially adds each new observation to the training
+data and refits the model. This simulates a real-time forecasting
+application. This prediction method is similar to
+`predictmethod="sequential"` (leave-future-out), but in this case, the
+future time points are not included in the training data used to obtain
+the hyperparameters. It is also similar to the train/test split using
+`newdata`, but in this case, the training data and model hyperparameters
+are sequentially updated with each timestep. Use of this method requires
+the use of `data` with pre-generated lags (see [Specifying training
+data](#specifying-training-data), option A1), that a `time` column is
+specified, that `newdata` has exactly the same columns as `data`, and
+that `newdata` has observed values.
+
+``` r
+tlogtest3_update=predict_seq(tlogtest3, newdata=pAtest)
+
+summary(tlogtest3)
+#> Number of predictors: 2 
+#> Length scale parameters:
+#>        predictor posteriormode
+#> phi1 Abundance_1       0.62609
+#> phi2 Abundance_2       0.00000
+#> Process variance (ve): 0.003394526
+#> Pointwise prior variance (sigma2): 2.331728
+#> Number of populations: 1
+#> In-sample R-squared: 0.9971411
+
+summary(tlogtest3_update)
+#> Number of predictors: 2 
+#> Length scale parameters:
+#>        predictor posteriormode
+#> phi1 Abundance_1       0.59103
+#> phi2 Abundance_2       0.00000
+#> Process variance (ve): 0.00315844
+#> Pointwise prior variance (sigma2): 2.389532
+#> Number of populations: 1
+#> In-sample R-squared: 0.9972318 
+#> Out-of-sample R-squared: 0.9973222
+
+plot(tlogtest3_update)
+#> Plotting out of sample results.
+```
+
+<img src="man/figures/README-predict4-1.png" width="100%" />
+
 ### Making forecasts
 
-You can construct a forecast matrix using `makelags` by setting
-`forecast=T` and supplying this as `newdata`. In order to do this (as
-the code is currently written), you have to generate the lags beforehand
-for *both* the training data and the forecast (you cannot use `E` and
-`tau` in `fitGP`, you have to use `makelags` for both, and the settings
-in `makelags` should match, other than `forecast`, See [Specifying
-training data](#specifying-training-data) option 1). It is a good idea
-to include the `time` argument when doing this.
+You can also use `predict` to generate predictions beyond the end of the
+training data. You can construct a forecast matrix extending beyond the
+last timepoint using `makelags` and setting `forecast=T`. This can be
+supplied this as `newdata`. To use this method, you have to generate the
+lags beforehand for *both* the training data and the forecast (use
+`makelags` for both, and the settings in `makelags` should match, other
+than `forecast`, see [Specifying training
+data](#specifying-training-data) option 1). It is a good idea to include
+the `time` argument when doing this.
 
 ``` r
 lags1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
 fore1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1,forecast = T)
 data1=cbind(thetalog2pop, lags1)
+
+tail(data1)
+#>     Time Population Abundance Abundance_1 Abundance_2 Abundance_3
+#> 95    45       PopB 0.9940592   1.0237266   0.3177380   1.3631716
+#> 96    46       PopB 0.9388969   0.9940592   1.0237266   0.3177380
+#> 97    47       PopB 1.0032245   0.9388969   0.9940592   1.0237266
+#> 98    48       PopB 0.9477896   1.0032245   0.9388969   0.9940592
+#> 99    49       PopB 1.1221056   0.9477896   1.0032245   0.9388969
+#> 100   50       PopB 0.7238974   1.1221056   0.9477896   1.0032245
+
+fore1
+#>   Time Population Abundance_1 Abundance_2 Abundance_3
+#> 1   51       PopA  0.01543102    1.574257   0.7120728
+#> 2   51       PopB  0.72389740    1.122106   0.9477896
 
 tlogfore=fitGP(data = data1, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
                pop = "Population", time = "Time", scaling = "local", newdata = fore1)
@@ -307,20 +384,21 @@ predictors.
     column* of `x` (with spacing `tau`) as predictors. Do not use this
     option if `x` already contains lags, in that case use option 1.
 
-The above example is method A2. Method A1/B1 allows for the most
-customization of response and predictor variables including mixed
-embeddings.
+The above examples use methods A2 and A1.
 
-Options 2 and 3 exist for convenience, but for the most control over the
-model and predictions, it is best to use option 1: use `makelags()` to
-generate any lags beforehand and pass appropriate columns to `fitGP`,
-rather than rely on `fitGP` to generate lags internally. Option A will
-make more sense if your data are already in a data frame, option B may
-make more sense if you are doing simulations and just have a bunch of
-vectors and matrices.
+Option 1 allows for the most customization of response and predictor
+variables, including use of mixed embeddings, and use of different
+variables for the response and predictors. Options 2 and 3 exist for
+convenience, but for the most control over the model and to use the more
+elaborate features in this package, it is best to use option 1: use
+`makelags()` to generate any lags beforehand and pass appropriate
+columns to `fitGP`, rather than rely on `fitGP` to generate lags
+internally. Option A will make more sense if your data are already in a
+data frame, option B may make more sense if you are doing simulations
+and just have a bunch of vectors and matrices.
 
-The `pop` argument is optional in all of the above cases. If omitted, a
-single population is assumed.
+The `pop` argument is optional in all of the above cases. Beware that if
+omitted, a single population is assumed.
 
 ``` r
 set.seed(10)
@@ -354,75 +432,75 @@ summary(ma1)
 #> Number of predictors: 2 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1        0.5208
-#> phi2    othervar        0.0003
-#> Process variance (ve): 0.01031384
-#> Pointwise prior variance (sigma2): 2.539001
+#> phi1 Abundance_1       0.52284
+#> phi2    othervar       0.00030
+#> Process variance (ve): 0.01031377
+#> Pointwise prior variance (sigma2): 2.51944
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.2929397
-#> In-sample R-squared: 0.994516 
+#> Dynamic correlation (rho): 0.2924004
+#> In-sample R-squared: 0.9945158 
 #> In-sample R-squared by population:
 #>             R2
-#> PopA 0.9971648
-#> PopB 0.9855420
+#> PopA 0.9971671
+#> PopB 0.9855357
 
 summary(mb1)
 #> Number of predictors: 4 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1       0.50900
+#> phi1 Abundance_1       0.50864
 #> phi2 Abundance_2       0.00000
 #> phi3  othervar_1       0.00028
 #> phi4  othervar_2       0.00000
-#> Process variance (ve): 0.01026833
-#> Pointwise prior variance (sigma2): 2.671209
+#> Process variance (ve): 0.01026616
+#> Pointwise prior variance (sigma2): 2.688766
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.2873044
-#> In-sample R-squared: 0.9945253 
+#> Dynamic correlation (rho): 0.2901182
+#> In-sample R-squared: 0.9945261 
 #> In-sample R-squared by population:
 #>             R2
-#> PopA 0.9971060
-#> PopB 0.9856004
+#> PopA 0.9971058
+#> PopB 0.9856039
 
 summary(mb2)
 #> Number of predictors: 2 
 #> Length scale parameters:
 #>      posteriormode
-#> phi1       0.53027
+#> phi1       0.53026
 #> phi2       0.00000
-#> Process variance (ve): 0.01205433
-#> Pointwise prior variance (sigma2): 2.53792
+#> Process variance (ve): 0.01205454
+#> Pointwise prior variance (sigma2): 2.540002
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.3250085
-#> In-sample R-squared: 0.9935198 
+#> Dynamic correlation (rho): 0.3250384
+#> In-sample R-squared: 0.9935199 
 #> In-sample R-squared by population:
 #>             R2
-#> PopA 0.9971162
+#> PopA 0.9971163
 #> PopB 0.9817038
 
 summary(ma3)
 #> Number of predictors: 4 
 #> Length scale parameters:
 #>        predictor posteriormode
-#> phi1 Abundance_1       0.50900
+#> phi1 Abundance_1       0.50864
 #> phi2 Abundance_2       0.00000
 #> phi3  othervar_1       0.00028
 #> phi4  othervar_2       0.00000
-#> Process variance (ve): 0.01026833
-#> Pointwise prior variance (sigma2): 2.671209
+#> Process variance (ve): 0.01026616
+#> Pointwise prior variance (sigma2): 2.688766
 #> Number of populations: 2
-#> Dynamic correlation (rho): 0.2873044
-#> In-sample R-squared: 0.9945253 
+#> Dynamic correlation (rho): 0.2901182
+#> In-sample R-squared: 0.9945261 
 #> In-sample R-squared by population:
 #>             R2
-#> PopA 0.9971060
-#> PopB 0.9856004
+#> PopA 0.9971058
+#> PopB 0.9856039
 ```
 
 ## Variable Timestep Method (for missing data)
 
-See the
-[vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
+See [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
 for more detail about the variable timestep method (VS-EDM) for missing
 data.
 

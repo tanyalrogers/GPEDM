@@ -24,7 +24,7 @@ This is version `r packageVersion("GPEDM")`
 
 This package contains functions for fiting hierarchical, separable length scale Gaussian process (GP) models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.  
 
-The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary.GP` to view a summary, `predict.GP` to generate other or additional predictions from a fitted model, `plot.GPpred` to plot observed and predicted values and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See the [Specifying training data] and the vignettes for more detailed instructions.
+The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary` to view a summary, `predict` to generate other or additional predictions from a fitted model, `plot` to plot observed and predicted values, `update` to update an existing model, and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See [Specifying training data] and the function documentation for more detailed instructions.
 
 ## Installation
 
@@ -64,7 +64,7 @@ tlogtest=fitGP(data = thetalog2pop, y = "Abundance", pop = "Population", E=3, ta
 summary(tlogtest)
 ```
 
-From the summary, we can see that ARD has (unsurprisingly) deemed lags 2 and 3 to be unimportant (length scales are 0), so E=1 is probably sufficient. The dynamic correlation (rho) tells us the degree to which the dynamics are correlated (they are are rather dissimilar in this case). Since the simulated data don't contain that much noise, the R-squared values are quite high.  
+From the summary, we can see that ARD has (unsurprisingly) deemed lags 2 and 3 to be unimportant (length scales are 0), so E=1 is probably sufficient. The dynamic correlation (rho) tells us the degree to which the dynamics are correlated (they are are rather dissimilar in this case). Since the simulated data don't contain that much noise, the R-squared values are quite high. For more information on choosing embedding parameters, see [this vignette](https://tanyalrogers.github.io/GPEDM/articles/choosingE.html). For more information on hierarchical modeling and the dynamic correlation, see [this other vignette](https://tanyalrogers.github.io/GPEDM/articles/hierarchical.html).  
 
 ### Plot observed and predicted values
 
@@ -132,7 +132,7 @@ plot(factor(predvars),lscales,xlab="Predictor",ylab="Inverse length scale")
 
 ### Other types of predictions
 
-We can use the `predict` function to get various types of predictions from a fitted model. Leave-one-out, `predictmethod = "loo"` is one option (above, we got these predictions at the same time we fit the model, but this is not necessary). The following obtains sequential (leave-future-out) predictions using the training data. 
+We can use the `predict` function to get various types of predictions from a fitted model. Leave-one-out, `predictmethod = "loo"` is one option (above, we got these predictions at the same time we fit the model, but this is not necessary). The following obtains sequential (leave-future-out) predictions using the training data. Note that for `predictmethod = "loo"` and `predictmethod = "sequential"`, the training data are iteratively omitted for the predictions, but the hyperparameter values used are those obtained using *all* of the training data (the model is not refit).
 
 ```{r predict}
 #sequential predictions (they should improve over time)
@@ -147,8 +147,7 @@ A common approach when fitting these models is to split the available data into 
 ```{r predict2, fig.height=3}
 pAtrain=pA[1:40,]
 pAtest=pA[41:50,]
-tlogtest2=fitGP(data = pAtrain, y = "Abundance", E=2, tau=1,
-                newdata = pAtest)
+tlogtest2=fitGP(data = pAtrain, y = "Abundance", E=2, tau=1, time = "Time", newdata = pAtest)
 plot(tlogtest2)
 ```
 
@@ -159,20 +158,43 @@ pAlags=makelags(pA, y = "Abundance", E=2, tau=1)
 pAdata=cbind(pA,pAlags)
 pAtrain=pAdata[1:40,]
 pAtest=pAdata[41:50,]
-tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags),
-                newdata = pAtest)
+tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Time", newdata = pAtest)
 plot(tlogtest3)
 ```
 
+Note that this is equivalent to:
+
+```{r predict3b}
+tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Time")
+tlogtest3_pred=predict(tlogtest3, newdata = pAtest)
+```
+
+### Simulating forecasts
+
+The function `predict_seq` also generates predictions for a data frame `newdata`, but sequentially adds each new observation to the training data and refits the model. This simulates a real-time forecasting application. This prediction method is similar to `predictmethod="sequential"` (leave-future-out), but in this case, the future time points are not included in the training data used to obtain the hyperparameters. It is also similar to the train/test split using `newdata`, but in this case, the training data and model hyperparameters are sequentially updated with each timestep. Use of this method requires the use of `data` with pre-generated lags (see [Specifying training data], option A1), that a `time` column is specified, that `newdata` has exactly the same columns as `data`, and that `newdata` has observed values.  
+
+```{r predict4, fig.height=3}
+tlogtest3_update=predict_seq(tlogtest3, newdata=pAtest)
+
+summary(tlogtest3)
+
+summary(tlogtest3_update)
+
+plot(tlogtest3_update)
+```
 
 ### Making forecasts
 
-You can construct a forecast matrix using `makelags` by setting `forecast=T` and supplying this as `newdata`. In order to do this (as the code is currently written), you have to generate the lags beforehand for *both* the training data and the forecast (you cannot use `E` and `tau` in `fitGP`, you have to use `makelags` for both, and the settings in `makelags` should match, other than `forecast`, See [Specifying training data] option 1). It is a good idea to include the `time` argument when doing this.
+You can also use `predict` to generate predictions beyond the end of the training data. You can construct a forecast matrix extending beyond the last timepoint using `makelags` and setting `forecast=T`. This can be supplied this as `newdata`. To use this method, you have to generate the lags beforehand for *both* the training data and the forecast (use `makelags` for both, and the settings in `makelags` should match, other than `forecast`, see [Specifying training data] option 1). It is a good idea to include the `time` argument when doing this.
 
 ```{r forecast, fig.height=3}
 lags1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1)
 fore1=makelags(thetalog2pop,y=c("Abundance"),pop="Population",time="Time",E=3,tau=1,forecast = T)
 data1=cbind(thetalog2pop, lags1)
+
+tail(data1)
+
+fore1
 
 tlogfore=fitGP(data = data1, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
                pop = "Population", time = "Time", scaling = "local", newdata = fore1)
@@ -201,11 +223,11 @@ For each of the above 2 options, there are 3 options for specifying the predicto
 2. supplying `y`, `E`, and `tau` (omitting `x`) will use `E` lags of `y` (with spacing `tau`) as predictors. This is equivalent to option 3 with `x`=`y`.  
 3. supplying `y`, `x`, `E`, and `tau` will use `E` lags of *each column* of `x` (with spacing `tau`) as predictors. Do not use this option if `x` already contains lags, in that case use option 1.  
 
-The above example is method A2. Method A1/B1 allows for the most customization of response and predictor variables including mixed embeddings. 
+The above examples use methods A2 and A1. 
 
-Options 2 and 3 exist for convenience, but for the most control over the model and predictions, it is best to use option 1: use `makelags()` to generate any lags beforehand and pass appropriate columns to `fitGP`, rather than rely on `fitGP` to generate lags internally. Option A will make more sense if your data are already in a data frame, option B may make more sense if you are doing simulations and just have a bunch of vectors and matrices.
+Option 1 allows for the most customization of response and predictor variables, including use of mixed embeddings, and use of different variables for the response and predictors. Options 2 and 3 exist for convenience, but for the most control over the model and to use the more elaborate features in this package, it is best to use option 1: use `makelags()` to generate any lags beforehand and pass appropriate columns to `fitGP`, rather than rely on `fitGP` to generate lags internally. Option A will make more sense if your data are already in a data frame, option B may make more sense if you are doing simulations and just have a bunch of vectors and matrices.
 
-The `pop` argument is optional in all of the above cases. If omitted, a single population is assumed.
+The `pop` argument is optional in all of the above cases. Beware that if omitted, a single population is assumed.
 
 ```{r other_methods}
 set.seed(10)
@@ -246,7 +268,7 @@ summary(ma3)
 
 ## Variable Timestep Method (for missing data)
 
-See the [vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html) for more detail about the variable timestep method (VS-EDM) for missing data. 
+See [this vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html) for more detail about the variable timestep method (VS-EDM) for missing data. 
 
 ## References
 
