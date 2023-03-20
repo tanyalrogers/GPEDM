@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9006</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9007</span>
       </span>
     </div>
 
@@ -262,9 +262,9 @@ individually.</p>
 <span><span class="va">spmodindin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">spmodindin</span><span class="op">)</span></span>
 <span><span class="va">spmodindout</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">spmodindout</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">R2indivin</span><span class="op">=</span><span class="fu"><a href="../reference/getR2.html">getR2</a></span><span class="op">(</span><span class="va">spmodindin</span><span class="op">$</span><span class="va">obs</span>,<span class="va">spmodindin</span><span class="op">$</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.8156488</span></span>
+<span><span class="co">#&gt; [1] 0.8165698</span></span>
 <span><span class="op">(</span><span class="va">R2indivout</span><span class="op">=</span><span class="fu"><a href="../reference/getR2.html">getR2</a></span><span class="op">(</span><span class="va">spmodindout</span><span class="op">$</span><span class="va">obs</span>,<span class="va">spmodindout</span><span class="op">$</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.6123714</span></span>
+<span><span class="co">#&gt; [1] 0.6121564</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">spmodindout</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">=</span><span class="st">"zone"</span></span>
 <span></span>
 <span><span class="va">baseplot</span> <span class="op">+</span> </span>
@@ -293,39 +293,39 @@ come from the same attractor.</p>
 <span><span class="co">#&gt; Number of predictors: 5 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1   splog_1       0.06702</span></span>
+<span><span class="co">#&gt; phi1   splog_1       0.06700</span></span>
 <span><span class="co">#&gt; phi2   splog_2       0.00120</span></span>
-<span><span class="co">#&gt; phi3   splog_3       0.02560</span></span>
-<span><span class="co">#&gt; phi4   splog_4       0.10695</span></span>
-<span><span class="co">#&gt; phi5   splog_5       0.02013</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.6568899</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.5236811</span></span>
+<span><span class="co">#&gt; phi3   splog_3       0.02591</span></span>
+<span><span class="co">#&gt; phi4   splog_4       0.10732</span></span>
+<span><span class="co">#&gt; phi5   splog_5       0.02019</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.6568221</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.5213629</span></span>
 <span><span class="co">#&gt; Number of populations: 9</span></span>
 <span><span class="co">#&gt; Dynamic correlation (rho): 0.9999</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.6027635 </span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.6027854 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;                 R2</span></span>
-<span><span class="co">#&gt; zone11  0.18809124</span></span>
-<span><span class="co">#&gt; zone14  0.51849684</span></span>
-<span><span class="co">#&gt; zone15  0.25025252</span></span>
-<span><span class="co">#&gt; zone16  0.44679657</span></span>
-<span><span class="co">#&gt; zone17  0.60322473</span></span>
-<span><span class="co">#&gt; zone18  0.52141050</span></span>
-<span><span class="co">#&gt; zone19  0.21998611</span></span>
-<span><span class="co">#&gt; zone20 -0.06920438</span></span>
-<span><span class="co">#&gt; zone21 -0.09801631</span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.555567</span></span>
+<span><span class="co">#&gt; zone11  0.18816256</span></span>
+<span><span class="co">#&gt; zone14  0.51847339</span></span>
+<span><span class="co">#&gt; zone15  0.25033220</span></span>
+<span><span class="co">#&gt; zone16  0.44688137</span></span>
+<span><span class="co">#&gt; zone17  0.60331705</span></span>
+<span><span class="co">#&gt; zone18  0.52130162</span></span>
+<span><span class="co">#&gt; zone19  0.21999381</span></span>
+<span><span class="co">#&gt; zone20 -0.06904110</span></span>
+<span><span class="co">#&gt; zone21 -0.09802088</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5555569</span></span>
 <span><span class="co">#&gt; Out-of-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;                R2</span></span>
-<span><span class="co">#&gt; zone11  0.1334762</span></span>
-<span><span class="co">#&gt; zone14  0.4543647</span></span>
-<span><span class="co">#&gt; zone15  0.1573047</span></span>
-<span><span class="co">#&gt; zone16  0.3736604</span></span>
-<span><span class="co">#&gt; zone17  0.5488171</span></span>
-<span><span class="co">#&gt; zone18  0.4558532</span></span>
-<span><span class="co">#&gt; zone19  0.1194893</span></span>
-<span><span class="co">#&gt; zone20 -0.1937720</span></span>
-<span><span class="co">#&gt; zone21 -0.2131458</span></span>
+<span><span class="co">#&gt; zone11  0.1335001</span></span>
+<span><span class="co">#&gt; zone14  0.4542791</span></span>
+<span><span class="co">#&gt; zone15  0.1573202</span></span>
+<span><span class="co">#&gt; zone16  0.3737063</span></span>
+<span><span class="co">#&gt; zone17  0.5488948</span></span>
+<span><span class="co">#&gt; zone18  0.4557023</span></span>
+<span><span class="co">#&gt; zone19  0.1193898</span></span>
+<span><span class="co">#&gt; zone20 -0.1936677</span></span>
+<span><span class="co">#&gt; zone21 -0.2132316</span></span>
 <span></span>
 <span><span class="va">spout</span><span class="op">=</span><span class="va">spmodrho1</span><span class="op">$</span><span class="va">outsampresults</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">spout</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">=</span><span class="st">"zone"</span></span>
@@ -377,39 +377,39 @@ each population independently.</p>
 <span><span class="co">#&gt; Number of predictors: 5 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1   splog_1       0.10266</span></span>
-<span><span class="co">#&gt; phi2   splog_2       0.30860</span></span>
-<span><span class="co">#&gt; phi3   splog_3       0.11551</span></span>
-<span><span class="co">#&gt; phi4   splog_4       0.16769</span></span>
-<span><span class="co">#&gt; phi5   splog_5       0.17306</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.5721424</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.3469628</span></span>
+<span><span class="co">#&gt; phi1   splog_1       0.10242</span></span>
+<span><span class="co">#&gt; phi2   splog_2       0.30842</span></span>
+<span><span class="co">#&gt; phi3   splog_3       0.11504</span></span>
+<span><span class="co">#&gt; phi4   splog_4       0.16779</span></span>
+<span><span class="co">#&gt; phi5   splog_5       0.17300</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.5720322</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.3471291</span></span>
 <span><span class="co">#&gt; Number of populations: 9</span></span>
 <span><span class="co">#&gt; Dynamic correlation (rho): 1e-04</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.7190371 </span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.7190166 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;               R2</span></span>
-<span><span class="co">#&gt; zone11 0.3566962</span></span>
-<span><span class="co">#&gt; zone14 0.6152038</span></span>
-<span><span class="co">#&gt; zone15 0.4513165</span></span>
-<span><span class="co">#&gt; zone16 0.6094297</span></span>
-<span><span class="co">#&gt; zone17 0.6780417</span></span>
-<span><span class="co">#&gt; zone18 0.6445235</span></span>
-<span><span class="co">#&gt; zone19 0.4516716</span></span>
-<span><span class="co">#&gt; zone20 0.3522058</span></span>
-<span><span class="co">#&gt; zone21 0.3917056</span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.5287078</span></span>
+<span><span class="co">#&gt; zone11 0.3566795</span></span>
+<span><span class="co">#&gt; zone14 0.6152239</span></span>
+<span><span class="co">#&gt; zone15 0.4512542</span></span>
+<span><span class="co">#&gt; zone16 0.6093629</span></span>
+<span><span class="co">#&gt; zone17 0.6780450</span></span>
+<span><span class="co">#&gt; zone18 0.6445697</span></span>
+<span><span class="co">#&gt; zone19 0.4516270</span></span>
+<span><span class="co">#&gt; zone20 0.3520710</span></span>
+<span><span class="co">#&gt; zone21 0.3915480</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5287102</span></span>
 <span><span class="co">#&gt; Out-of-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;                 R2</span></span>
-<span><span class="co">#&gt; zone11 -0.03034032</span></span>
-<span><span class="co">#&gt; zone14  0.37904121</span></span>
-<span><span class="co">#&gt; zone15  0.05436747</span></span>
-<span><span class="co">#&gt; zone16  0.33836966</span></span>
-<span><span class="co">#&gt; zone17  0.51551761</span></span>
-<span><span class="co">#&gt; zone18  0.40578511</span></span>
-<span><span class="co">#&gt; zone19  0.02939851</span></span>
-<span><span class="co">#&gt; zone20 -0.10127152</span></span>
-<span><span class="co">#&gt; zone21 -0.13044008</span></span></code></pre></div>
+<span><span class="co">#&gt; zone11 -0.03022679</span></span>
+<span><span class="co">#&gt; zone14  0.37914299</span></span>
+<span><span class="co">#&gt; zone15  0.05440260</span></span>
+<span><span class="co">#&gt; zone16  0.33830490</span></span>
+<span><span class="co">#&gt; zone17  0.51555075</span></span>
+<span><span class="co">#&gt; zone18  0.40588994</span></span>
+<span><span class="co">#&gt; zone19  0.02939522</span></span>
+<span><span class="co">#&gt; zone20 -0.10142623</span></span>
+<span><span class="co">#&gt; zone21 -0.13070247</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="hierarchical-dynamics-single-rho">Hierarchical dynamics (single rho)<a class="anchor" aria-label="anchor" href="#hierarchical-dynamics-single-rho"></a>
@@ -426,39 +426,39 @@ argument, and <code>rho</code> will be estimated.</p>
 <span><span class="co">#&gt; Number of predictors: 5 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1   splog_1       0.12891</span></span>
+<span><span class="co">#&gt; phi1   splog_1       0.13002</span></span>
 <span><span class="co">#&gt; phi2   splog_2       0.00000</span></span>
-<span><span class="co">#&gt; phi3   splog_3       0.06053</span></span>
-<span><span class="co">#&gt; phi4   splog_4       0.17750</span></span>
-<span><span class="co">#&gt; phi5   splog_5       0.03732</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.6469135</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.2674166</span></span>
+<span><span class="co">#&gt; phi3   splog_3       0.06131</span></span>
+<span><span class="co">#&gt; phi4   splog_4       0.17783</span></span>
+<span><span class="co">#&gt; phi5   splog_5       0.03767</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.6467111</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.2658343</span></span>
 <span><span class="co">#&gt; Number of populations: 9</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.917185</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.6193256 </span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.9169996</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.6193695 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;                 R2</span></span>
-<span><span class="co">#&gt; zone11  0.20423814</span></span>
-<span><span class="co">#&gt; zone14  0.53323492</span></span>
-<span><span class="co">#&gt; zone15  0.25767602</span></span>
-<span><span class="co">#&gt; zone16  0.46938829</span></span>
-<span><span class="co">#&gt; zone17  0.63364732</span></span>
-<span><span class="co">#&gt; zone18  0.53131658</span></span>
-<span><span class="co">#&gt; zone19  0.26514417</span></span>
-<span><span class="co">#&gt; zone20 -0.01342425</span></span>
-<span><span class="co">#&gt; zone21 -0.03798143</span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.5533193</span></span>
+<span><span class="co">#&gt; zone11  0.20436617</span></span>
+<span><span class="co">#&gt; zone14  0.53323690</span></span>
+<span><span class="co">#&gt; zone15  0.25772910</span></span>
+<span><span class="co">#&gt; zone16  0.46958275</span></span>
+<span><span class="co">#&gt; zone17  0.63364240</span></span>
+<span><span class="co">#&gt; zone18  0.53115126</span></span>
+<span><span class="co">#&gt; zone19  0.26551303</span></span>
+<span><span class="co">#&gt; zone20 -0.01321866</span></span>
+<span><span class="co">#&gt; zone21 -0.03786475</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5532995</span></span>
 <span><span class="co">#&gt; Out-of-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;                R2</span></span>
-<span><span class="co">#&gt; zone11  0.1028784</span></span>
-<span><span class="co">#&gt; zone14  0.4471592</span></span>
-<span><span class="co">#&gt; zone15  0.1254485</span></span>
-<span><span class="co">#&gt; zone16  0.3730665</span></span>
-<span><span class="co">#&gt; zone17  0.5673804</span></span>
-<span><span class="co">#&gt; zone18  0.4389460</span></span>
-<span><span class="co">#&gt; zone19  0.1237297</span></span>
-<span><span class="co">#&gt; zone20 -0.1858981</span></span>
-<span><span class="co">#&gt; zone21 -0.2057352</span></span>
+<span><span class="co">#&gt; zone11  0.1029215</span></span>
+<span><span class="co">#&gt; zone14  0.4470370</span></span>
+<span><span class="co">#&gt; zone15  0.1252973</span></span>
+<span><span class="co">#&gt; zone16  0.3732042</span></span>
+<span><span class="co">#&gt; zone17  0.5673172</span></span>
+<span><span class="co">#&gt; zone18  0.4386862</span></span>
+<span><span class="co">#&gt; zone19  0.1240376</span></span>
+<span><span class="co">#&gt; zone20 -0.1858376</span></span>
+<span><span class="co">#&gt; zone21 -0.2057786</span></span>
 <span></span>
 <span><span class="va">spout</span><span class="op">=</span><span class="va">spmodrho</span><span class="op">$</span><span class="va">outsampresults</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">spout</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">=</span><span class="st">"zone"</span></span>
@@ -498,25 +498,25 @@ quick wrapper for this.</p>
 <span>                      time <span class="op">=</span> <span class="st">"year"</span>, scaling <span class="op">=</span> <span class="va">scaling</span><span class="op">)</span></span>
 <span><span class="va">Rhomat</span></span>
 <span><span class="co">#&gt;           zone11    zone14    zone15    zone16    zone17    zone18    zone19</span></span>
-<span><span class="co">#&gt; zone11 1.0000000 0.6976870 0.6244682 0.6422304 0.7832940 0.8218662 0.7974573</span></span>
-<span><span class="co">#&gt; zone14 0.6976870 1.0000000 0.8085528 0.8576079 0.8259604 0.8252347 0.8244482</span></span>
-<span><span class="co">#&gt; zone15 0.6244682 0.8085528 1.0000000 0.7847058 0.8312803 0.8528149 0.7431166</span></span>
-<span><span class="co">#&gt; zone16 0.6422304 0.8576079 0.7847058 1.0000000 0.8312384 0.4100908 0.7345536</span></span>
-<span><span class="co">#&gt; zone17 0.7832940 0.8259604 0.8312803 0.8312384 1.0000000 0.7536273 0.6127506</span></span>
-<span><span class="co">#&gt; zone18 0.8218662 0.8252347 0.8528149 0.4100908 0.7536273 1.0000000 0.8547616</span></span>
-<span><span class="co">#&gt; zone19 0.7974573 0.8244482 0.7431166 0.7345536 0.6127506 0.8547616 1.0000000</span></span>
-<span><span class="co">#&gt; zone20 0.6253603 0.6009025 0.3716992 0.6315054 0.4730997 0.2439548 0.5751647</span></span>
-<span><span class="co">#&gt; zone21 0.4844066 0.4633364 0.3838641 0.2655856 0.3701098 0.5405180 0.5121699</span></span>
+<span><span class="co">#&gt; zone11 1.0000000 0.6976526 0.6244876 0.6422882 0.7827404 0.8218578 0.7974962</span></span>
+<span><span class="co">#&gt; zone14 0.6976526 1.0000000 0.8102220 0.8576069 0.8259549 0.8253132 0.8244647</span></span>
+<span><span class="co">#&gt; zone15 0.6244876 0.8102220 1.0000000 0.7847154 0.8313152 0.8528488 0.7430921</span></span>
+<span><span class="co">#&gt; zone16 0.6422882 0.8576069 0.7847154 1.0000000 0.8312329 0.5110798 0.7345495</span></span>
+<span><span class="co">#&gt; zone17 0.7827404 0.8259549 0.8313152 0.8312329 1.0000000 0.7535192 0.6125335</span></span>
+<span><span class="co">#&gt; zone18 0.8218578 0.8253132 0.8528488 0.5110798 0.7535192 1.0000000 0.8547646</span></span>
+<span><span class="co">#&gt; zone19 0.7974962 0.8244647 0.7430921 0.7345495 0.6125335 0.8547646 1.0000000</span></span>
+<span><span class="co">#&gt; zone20 0.6253667 0.6009822 0.3716549 0.6315166 0.4731135 0.2439610 0.5750741</span></span>
+<span><span class="co">#&gt; zone21 0.4844173 0.4282931 0.3838596 0.2655707 0.3700907 0.5366677 0.3783972</span></span>
 <span><span class="co">#&gt;           zone20    zone21</span></span>
-<span><span class="co">#&gt; zone11 0.6253603 0.4844066</span></span>
-<span><span class="co">#&gt; zone14 0.6009025 0.4633364</span></span>
-<span><span class="co">#&gt; zone15 0.3716992 0.3838641</span></span>
-<span><span class="co">#&gt; zone16 0.6315054 0.2655856</span></span>
-<span><span class="co">#&gt; zone17 0.4730997 0.3701098</span></span>
-<span><span class="co">#&gt; zone18 0.2439548 0.5405180</span></span>
-<span><span class="co">#&gt; zone19 0.5751647 0.5121699</span></span>
-<span><span class="co">#&gt; zone20 1.0000000 0.5238773</span></span>
-<span><span class="co">#&gt; zone21 0.5238773 1.0000000</span></span>
+<span><span class="co">#&gt; zone11 0.6253667 0.4844173</span></span>
+<span><span class="co">#&gt; zone14 0.6009822 0.4282931</span></span>
+<span><span class="co">#&gt; zone15 0.3716549 0.3838596</span></span>
+<span><span class="co">#&gt; zone16 0.6315166 0.2655707</span></span>
+<span><span class="co">#&gt; zone17 0.4731135 0.3700907</span></span>
+<span><span class="co">#&gt; zone18 0.2439610 0.5366677</span></span>
+<span><span class="co">#&gt; zone19 0.5750741 0.3783972</span></span>
+<span><span class="co">#&gt; zone20 1.0000000 0.5239022</span></span>
+<span><span class="co">#&gt; zone21 0.5239022 1.0000000</span></span>
 <span></span>
 <span><span class="co">#plot the rho matrix</span></span>
 <span><span class="va">Rmatlong</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">as.table</a></span><span class="op">(</span><span class="va">Rhomat</span><span class="op">)</span><span class="op">)</span> <span class="co">#for plotting purposes only</span></span>
@@ -539,39 +539,39 @@ quick wrapper for this.</p>
 <span><span class="co">#&gt; Number of predictors: 5 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1   splog_1       0.21981</span></span>
-<span><span class="co">#&gt; phi2   splog_2       0.00127</span></span>
-<span><span class="co">#&gt; phi3   splog_3       0.06880</span></span>
-<span><span class="co">#&gt; phi4   splog_4       0.22741</span></span>
-<span><span class="co">#&gt; phi5   splog_5       0.07762</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.5933041</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.2634783</span></span>
+<span><span class="co">#&gt; phi1   splog_1       0.20552</span></span>
+<span><span class="co">#&gt; phi2   splog_2       0.01286</span></span>
+<span><span class="co">#&gt; phi3   splog_3       0.06446</span></span>
+<span><span class="co">#&gt; phi4   splog_4       0.22136</span></span>
+<span><span class="co">#&gt; phi5   splog_5       0.07911</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.5900952</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 0.2670027</span></span>
 <span><span class="co">#&gt; Number of populations: 9</span></span>
 <span><span class="co">#&gt; Dynamic correlation (rho): rhomatrix</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.6687056 </span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.6712945 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;               R2</span></span>
-<span><span class="co">#&gt; zone11 0.2388579</span></span>
-<span><span class="co">#&gt; zone14 0.5887770</span></span>
-<span><span class="co">#&gt; zone15 0.2932054</span></span>
-<span><span class="co">#&gt; zone16 0.5519439</span></span>
-<span><span class="co">#&gt; zone17 0.6911535</span></span>
-<span><span class="co">#&gt; zone18 0.6092772</span></span>
-<span><span class="co">#&gt; zone19 0.3672978</span></span>
-<span><span class="co">#&gt; zone20 0.1046765</span></span>
-<span><span class="co">#&gt; zone21 0.1753405</span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.5639579</span></span>
+<span><span class="co">#&gt; zone11 0.2387228</span></span>
+<span><span class="co">#&gt; zone14 0.5907084</span></span>
+<span><span class="co">#&gt; zone15 0.3096061</span></span>
+<span><span class="co">#&gt; zone16 0.5500649</span></span>
+<span><span class="co">#&gt; zone17 0.6919789</span></span>
+<span><span class="co">#&gt; zone18 0.6146147</span></span>
+<span><span class="co">#&gt; zone19 0.3616301</span></span>
+<span><span class="co">#&gt; zone20 0.1190174</span></span>
+<span><span class="co">#&gt; zone21 0.1880890</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5642167</span></span>
 <span><span class="co">#&gt; Out-of-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;                 R2</span></span>
-<span><span class="co">#&gt; zone11  0.05950573</span></span>
-<span><span class="co">#&gt; zone14  0.47607614</span></span>
-<span><span class="co">#&gt; zone15  0.08495593</span></span>
-<span><span class="co">#&gt; zone16  0.40668940</span></span>
-<span><span class="co">#&gt; zone17  0.60858376</span></span>
-<span><span class="co">#&gt; zone18  0.46791777</span></span>
-<span><span class="co">#&gt; zone19  0.16488842</span></span>
-<span><span class="co">#&gt; zone20 -0.21514175</span></span>
-<span><span class="co">#&gt; zone21 -0.15695731</span></span>
+<span><span class="co">#&gt; zone11  0.05478630</span></span>
+<span><span class="co">#&gt; zone14  0.47564667</span></span>
+<span><span class="co">#&gt; zone15  0.09787071</span></span>
+<span><span class="co">#&gt; zone16  0.39897111</span></span>
+<span><span class="co">#&gt; zone17  0.60659794</span></span>
+<span><span class="co">#&gt; zone18  0.47556592</span></span>
+<span><span class="co">#&gt; zone19  0.14990686</span></span>
+<span><span class="co">#&gt; zone20 -0.20415259</span></span>
+<span><span class="co">#&gt; zone21 -0.15334904</span></span>
 <span></span>
 <span><span class="va">spout</span><span class="op">=</span><span class="va">spmodrhomat</span><span class="op">$</span><span class="va">outsampresults</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">spout</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">=</span><span class="st">"zone"</span></span>
@@ -602,11 +602,11 @@ quick wrapper for this.</p>
 <span>                                  <span class="va">spmodrhomat</span><span class="op">$</span><span class="va">outsampfitstats</span><span class="op">[</span><span class="st">"R2"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">comparison</span></span>
 <span><span class="co">#&gt;         Model  InSampR2 OutSampR2</span></span>
-<span><span class="co">#&gt; 1  Individual 0.8156488 0.6123714</span></span>
-<span><span class="co">#&gt; 2 Independent 0.7190371 0.5287078</span></span>
-<span><span class="co">#&gt; 3   Identical 0.6027635 0.5555670</span></span>
-<span><span class="co">#&gt; 4  Single rho 0.6193256 0.5533193</span></span>
-<span><span class="co">#&gt; 5  Rho matrix 0.6687056 0.5639579</span></span>
+<span><span class="co">#&gt; 1  Individual 0.8165698 0.6121564</span></span>
+<span><span class="co">#&gt; 2 Independent 0.7190166 0.5287102</span></span>
+<span><span class="co">#&gt; 3   Identical 0.6027854 0.5555569</span></span>
+<span><span class="co">#&gt; 4  Single rho 0.6193695 0.5532995</span></span>
+<span><span class="co">#&gt; 5  Rho matrix 0.6712945 0.5642167</span></span>
 <span></span>
 <span><span class="va">popcomparison</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Individual<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">spmodind</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">$</span><span class="va">outsampfitstats</span><span class="op">[</span><span class="st">"R2"</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>                         Independent<span class="op">=</span><span class="va">spmodrho0</span><span class="op">$</span><span class="va">outsampfitstatspop</span><span class="op">$</span><span class="va">R2pop</span>,</span>
@@ -615,15 +615,15 @@ quick wrapper for this.</p>
 <span>                         Rho_matrix<span class="op">=</span><span class="va">spmodrhomat</span><span class="op">$</span><span class="va">outsampfitstatspop</span><span class="op">$</span><span class="va">R2pop</span><span class="op">)</span></span>
 <span><span class="va">popcomparison</span></span>
 <span><span class="co">#&gt;         Individual Independent  Identical Single_rho  Rho_matrix</span></span>
-<span><span class="co">#&gt; zone11 0.091395934 -0.03034032  0.1334762  0.1028784  0.05950573</span></span>
-<span><span class="co">#&gt; zone14 0.412557339  0.37904121  0.4543647  0.4471592  0.47607614</span></span>
-<span><span class="co">#&gt; zone15 0.193910293  0.05436747  0.1573047  0.1254485  0.08495593</span></span>
-<span><span class="co">#&gt; zone16 0.480491285  0.33836966  0.3736604  0.3730665  0.40668940</span></span>
-<span><span class="co">#&gt; zone17 0.605470233  0.51551761  0.5488171  0.5673804  0.60858376</span></span>
-<span><span class="co">#&gt; zone18 0.603975955  0.40578511  0.4558532  0.4389460  0.46791777</span></span>
-<span><span class="co">#&gt; zone19 0.341642218  0.02939851  0.1194893  0.1237297  0.16488842</span></span>
-<span><span class="co">#&gt; zone20 0.086550911 -0.10127152 -0.1937720 -0.1858981 -0.21514175</span></span>
-<span><span class="co">#&gt; zone21 0.005818436 -0.13044008 -0.2131458 -0.2057352 -0.15695731</span></span></code></pre></div>
+<span><span class="co">#&gt; zone11 0.087608203 -0.03022679  0.1335001  0.1029215  0.05478630</span></span>
+<span><span class="co">#&gt; zone14 0.412489699  0.37914299  0.4542791  0.4470370  0.47564667</span></span>
+<span><span class="co">#&gt; zone15 0.193900661  0.05440260  0.1573202  0.1252973  0.09787071</span></span>
+<span><span class="co">#&gt; zone16 0.479309505  0.33830490  0.3737063  0.3732042  0.39897111</span></span>
+<span><span class="co">#&gt; zone17 0.605466183  0.51555075  0.5488948  0.5673172  0.60659794</span></span>
+<span><span class="co">#&gt; zone18 0.603964931  0.40588994  0.4557023  0.4386862  0.47556592</span></span>
+<span><span class="co">#&gt; zone19 0.341658106  0.02939522  0.1193898  0.1240376  0.14990686</span></span>
+<span><span class="co">#&gt; zone20 0.086590821 -0.10142623 -0.1936677 -0.1858376 -0.20415259</span></span>
+<span><span class="co">#&gt; zone21 0.006953901 -0.13070247 -0.2132316 -0.2057786 -0.15334904</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">

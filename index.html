@@ -35,7 +35,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9006</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9007</span>
       </span>
     </div>
 
@@ -72,9 +72,9 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <p><strong>Disclaimer: This is very much a work in progress. Use at your own risk and please report any problems.</strong></p>
-<p>This is version 0.0.0.9006</p>
+<p>This is version 0.0.0.9007</p>
 <p>This package contains functions for fiting hierarchical, separable length scale Gaussian process (GP) models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.</p>
-<p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary.GP</code> to view a summary, <code>predict.GP</code> to generate other or additional predictions from a fitted model, <code>plot.GPpred</code> to plot observed and predicted values and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See the <a href="#specifying-training-data">Specifying training data</a> and the vignettes for more detailed instructions.</p>
+<p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary</code> to view a summary, <code>predict</code> to generate other or additional predictions from a fitted model, <code>plot</code> to plot observed and predicted values, <code>update</code> to update an existing model, and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See <a href="#specifying-training-data">Specifying training data</a> and the function documentation for more detailed instructions.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -111,24 +111,24 @@
 <span><span class="co">#&gt; Number of predictors: 3 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;        predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 Abundance_1         0.529</span></span>
-<span><span class="co">#&gt; phi2 Abundance_2         0.000</span></span>
-<span><span class="co">#&gt; phi3 Abundance_3         0.000</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.01221358</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.53986</span></span>
+<span><span class="co">#&gt; phi1 Abundance_1        0.5317</span></span>
+<span><span class="co">#&gt; phi2 Abundance_2        0.0000</span></span>
+<span><span class="co">#&gt; phi3 Abundance_3        0.0000</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.01222333</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.527349</span></span>
 <span><span class="co">#&gt; Number of populations: 2</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.3250464</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9933951 </span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.327254</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9933975 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;             R2</span></span>
-<span><span class="co">#&gt; PopA 0.9970774</span></span>
-<span><span class="co">#&gt; PopB 0.9815181</span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.991239</span></span>
+<span><span class="co">#&gt; PopA 0.9970811</span></span>
+<span><span class="co">#&gt; PopB 0.9815187</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.991238</span></span>
 <span><span class="co">#&gt; Out-of-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;             R2</span></span>
-<span><span class="co">#&gt; PopA 0.9961232</span></span>
-<span><span class="co">#&gt; PopB 0.9754852</span></span></code></pre></div>
-<p>From the summary, we can see that ARD has (unsurprisingly) deemed lags 2 and 3 to be unimportant (length scales are 0), so E=1 is probably sufficient. The dynamic correlation (rho) tells us the degree to which the dynamics are correlated (they are are rather dissimilar in this case). Since the simulated data don’t contain that much noise, the R-squared values are quite high.</p>
+<span><span class="co">#&gt; PopA 0.9961280</span></span>
+<span><span class="co">#&gt; PopB 0.9754702</span></span></code></pre></div>
+<p>From the summary, we can see that ARD has (unsurprisingly) deemed lags 2 and 3 to be unimportant (length scales are 0), so E=1 is probably sufficient. The dynamic correlation (rho) tells us the degree to which the dynamics are correlated (they are are rather dissimilar in this case). Since the simulated data don’t contain that much noise, the R-squared values are quite high. For more information on choosing embedding parameters, see <a href="https://tanyalrogers.github.io/GPEDM/articles/choosingE.html">this vignette</a>. For more information on hierarchical modeling and the dynamic correlation, see <a href="https://tanyalrogers.github.io/GPEDM/articles/hierarchical.html">this other vignette</a>.</p>
 <div class="section level3">
 <h3 id="plot-observed-and-predicted-values">Plot observed and predicted values<a class="anchor" aria-label="anchor" href="#plot-observed-and-predicted-values"></a>
 </h3>
@@ -192,7 +192,7 @@
 <div class="section level3">
 <h3 id="other-types-of-predictions">Other types of predictions<a class="anchor" aria-label="anchor" href="#other-types-of-predictions"></a>
 </h3>
-<p>We can use the <code>predict</code> function to get various types of predictions from a fitted model. Leave-one-out, <code>predictmethod = "loo"</code> is one option (above, we got these predictions at the same time we fit the model, but this is not necessary). The following obtains sequential (leave-future-out) predictions using the training data.</p>
+<p>We can use the <code>predict</code> function to get various types of predictions from a fitted model. Leave-one-out, <code>predictmethod = "loo"</code> is one option (above, we got these predictions at the same time we fit the model, but this is not necessary). The following obtains sequential (leave-future-out) predictions using the training data. Note that for <code>predictmethod = "loo"</code> and <code>predictmethod = "sequential"</code>, the training data are iteratively omitted for the predictions, but the hyperparameter values used are those obtained using <em>all</em> of the training data (the model is not refit).</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#sequential predictions (they should improve over time)</span></span>
 <span><span class="va">seqpred</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">tlogtest</span>,predictmethod <span class="op">=</span> <span class="st">"sequential"</span><span class="op">)</span></span>
@@ -204,8 +204,7 @@
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pAtrain</span><span class="op">=</span><span class="va">pA</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">40</span>,<span class="op">]</span></span>
 <span><span class="va">pAtest</span><span class="op">=</span><span class="va">pA</span><span class="op">[</span><span class="fl">41</span><span class="op">:</span><span class="fl">50</span>,<span class="op">]</span></span>
-<span><span class="va">tlogtest2</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">pAtrain</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span>,</span>
-<span>                newdata <span class="op">=</span> <span class="va">pAtest</span><span class="op">)</span></span>
+<span><span class="va">tlogtest2</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">pAtrain</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, E<span class="op">=</span><span class="fl">2</span>, tau<span class="op">=</span><span class="fl">1</span>, time <span class="op">=</span> <span class="st">"Time"</span>, newdata <span class="op">=</span> <span class="va">pAtest</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tlogtest2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
 <p><img src="reference/figures/README-predict2-1.png" width="100%"></p>
@@ -215,20 +214,71 @@
 <span><span class="va">pAdata</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pA</span>,<span class="va">pAlags</span><span class="op">)</span></span>
 <span><span class="va">pAtrain</span><span class="op">=</span><span class="va">pAdata</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">40</span>,<span class="op">]</span></span>
 <span><span class="va">pAtest</span><span class="op">=</span><span class="va">pAdata</span><span class="op">[</span><span class="fl">41</span><span class="op">:</span><span class="fl">50</span>,<span class="op">]</span></span>
-<span><span class="va">tlogtest3</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">pAtrain</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pAlags</span><span class="op">)</span>,</span>
-<span>                newdata <span class="op">=</span> <span class="va">pAtest</span><span class="op">)</span></span>
+<span><span class="va">tlogtest3</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">pAtrain</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pAlags</span><span class="op">)</span>, time <span class="op">=</span> <span class="st">"Time"</span>, newdata <span class="op">=</span> <span class="va">pAtest</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tlogtest3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
 <p><img src="reference/figures/README-predict3-1.png" width="100%"></p>
+<p>Note that this is equivalent to:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tlogtest3</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">pAtrain</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pAlags</span><span class="op">)</span>, time <span class="op">=</span> <span class="st">"Time"</span><span class="op">)</span></span>
+<span><span class="va">tlogtest3_pred</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">tlogtest3</span>, newdata <span class="op">=</span> <span class="va">pAtest</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="simulating-forecasts">Simulating forecasts<a class="anchor" aria-label="anchor" href="#simulating-forecasts"></a>
+</h3>
+<p>The function <code>predict_seq</code> also generates predictions for a data frame <code>newdata</code>, but sequentially adds each new observation to the training data and refits the model. This simulates a real-time forecasting application. This prediction method is similar to <code>predictmethod="sequential"</code> (leave-future-out), but in this case, the future time points are not included in the training data used to obtain the hyperparameters. It is also similar to the train/test split using <code>newdata</code>, but in this case, the training data and model hyperparameters are sequentially updated with each timestep. Use of this method requires the use of <code>data</code> with pre-generated lags (see <a href="#specifying-training-data">Specifying training data</a>, option A1), that a <code>time</code> column is specified, that <code>newdata</code> has exactly the same columns as <code>data</code>, and that <code>newdata</code> has observed values.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tlogtest3_update</span><span class="op">=</span><span class="fu"><a href="reference/predict_seq.html">predict_seq</a></span><span class="op">(</span><span class="va">tlogtest3</span>, newdata<span class="op">=</span><span class="va">pAtest</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">tlogtest3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 2 </span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;        predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 Abundance_1       0.62609</span></span>
+<span><span class="co">#&gt; phi2 Abundance_2       0.00000</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.003394526</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.331728</span></span>
+<span><span class="co">#&gt; Number of populations: 1</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9971411</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">tlogtest3_update</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 2 </span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;        predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 Abundance_1       0.59103</span></span>
+<span><span class="co">#&gt; phi2 Abundance_2       0.00000</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.00315844</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.389532</span></span>
+<span><span class="co">#&gt; Number of populations: 1</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9972318 </span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.9973222</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tlogtest3_update</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
+<p><img src="reference/figures/README-predict4-1.png" width="100%"></p>
 </div>
 <div class="section level3">
 <h3 id="making-forecasts">Making forecasts<a class="anchor" aria-label="anchor" href="#making-forecasts"></a>
 </h3>
-<p>You can construct a forecast matrix using <code>makelags</code> by setting <code>forecast=T</code> and supplying this as <code>newdata</code>. In order to do this (as the code is currently written), you have to generate the lags beforehand for <em>both</em> the training data and the forecast (you cannot use <code>E</code> and <code>tau</code> in <code>fitGP</code>, you have to use <code>makelags</code> for both, and the settings in <code>makelags</code> should match, other than <code>forecast</code>, See <a href="#specifying-training-data">Specifying training data</a> option 1). It is a good idea to include the <code>time</code> argument when doing this.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>You can also use <code>predict</code> to generate predictions beyond the end of the training data. You can construct a forecast matrix extending beyond the last timepoint using <code>makelags</code> and setting <code>forecast=T</code>. This can be supplied this as <code>newdata</code>. To use this method, you have to generate the lags beforehand for <em>both</em> the training data and the forecast (use <code>makelags</code> for both, and the settings in <code>makelags</code> should match, other than <code>forecast</code>, see <a href="#specifying-training-data">Specifying training data</a> option 1). It is a good idea to include the <code>time</code> argument when doing this.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lags1</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">thetalog2pop</span>,y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Abundance"</span><span class="op">)</span>,pop<span class="op">=</span><span class="st">"Population"</span>,time<span class="op">=</span><span class="st">"Time"</span>,E<span class="op">=</span><span class="fl">3</span>,tau<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">fore1</span><span class="op">=</span><span class="fu"><a href="reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">thetalog2pop</span>,y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Abundance"</span><span class="op">)</span>,pop<span class="op">=</span><span class="st">"Population"</span>,time<span class="op">=</span><span class="st">"Time"</span>,E<span class="op">=</span><span class="fl">3</span>,tau<span class="op">=</span><span class="fl">1</span>,forecast <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
 <span><span class="va">data1</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">thetalog2pop</span>, <span class="va">lags1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="va">data1</span><span class="op">)</span></span>
+<span><span class="co">#&gt;     Time Population Abundance Abundance_1 Abundance_2 Abundance_3</span></span>
+<span><span class="co">#&gt; 95    45       PopB 0.9940592   1.0237266   0.3177380   1.3631716</span></span>
+<span><span class="co">#&gt; 96    46       PopB 0.9388969   0.9940592   1.0237266   0.3177380</span></span>
+<span><span class="co">#&gt; 97    47       PopB 1.0032245   0.9388969   0.9940592   1.0237266</span></span>
+<span><span class="co">#&gt; 98    48       PopB 0.9477896   1.0032245   0.9388969   0.9940592</span></span>
+<span><span class="co">#&gt; 99    49       PopB 1.1221056   0.9477896   1.0032245   0.9388969</span></span>
+<span><span class="co">#&gt; 100   50       PopB 0.7238974   1.1221056   0.9477896   1.0032245</span></span>
+<span></span>
+<span><span class="va">fore1</span></span>
+<span><span class="co">#&gt;   Time Population Abundance_1 Abundance_2 Abundance_3</span></span>
+<span><span class="co">#&gt; 1   51       PopA  0.01543102    1.574257   0.7120728</span></span>
+<span><span class="co">#&gt; 2   51       PopB  0.72389740    1.122106   0.9477896</span></span>
 <span></span>
 <span><span class="va">tlogfore</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">data1</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Abundance_1"</span>,<span class="st">"Abundance_2"</span>,<span class="st">"Abundance_3"</span><span class="op">)</span>, </span>
 <span>               pop <span class="op">=</span> <span class="st">"Population"</span>, time <span class="op">=</span> <span class="st">"Time"</span>, scaling <span class="op">=</span> <span class="st">"local"</span>, newdata <span class="op">=</span> <span class="va">fore1</span><span class="op">)</span></span>
@@ -259,10 +309,10 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 </li>
 <li>supplying <code>y</code>, <code>x</code>, <code>E</code>, and <code>tau</code> will use <code>E</code> lags of <em>each column</em> of <code>x</code> (with spacing <code>tau</code>) as predictors. Do not use this option if <code>x</code> already contains lags, in that case use option 1.</li>
 </ol>
-<p>The above example is method A2. Method A1/B1 allows for the most customization of response and predictor variables including mixed embeddings.</p>
-<p>Options 2 and 3 exist for convenience, but for the most control over the model and predictions, it is best to use option 1: use <code><a href="reference/makelags.html">makelags()</a></code> to generate any lags beforehand and pass appropriate columns to <code>fitGP</code>, rather than rely on <code>fitGP</code> to generate lags internally. Option A will make more sense if your data are already in a data frame, option B may make more sense if you are doing simulations and just have a bunch of vectors and matrices.</p>
-<p>The <code>pop</code> argument is optional in all of the above cases. If omitted, a single population is assumed.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>The above examples use methods A2 and A1.</p>
+<p>Option 1 allows for the most customization of response and predictor variables, including use of mixed embeddings, and use of different variables for the response and predictors. Options 2 and 3 exist for convenience, but for the most control over the model and to use the more elaborate features in this package, it is best to use option 1: use <code><a href="reference/makelags.html">makelags()</a></code> to generate any lags beforehand and pass appropriate columns to <code>fitGP</code>, rather than rely on <code>fitGP</code> to generate lags internally. Option A will make more sense if your data are already in a data frame, option B may make more sense if you are doing simulations and just have a bunch of vectors and matrices.</p>
+<p>The <code>pop</code> argument is optional in all of the above cases. Beware that if omitted, a single population is assumed.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="va">thetalog2pop</span><span class="op">$</span><span class="va">othervar</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">thetalog2pop</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">yvec</span><span class="op">=</span><span class="va">thetalog2pop</span><span class="op">$</span><span class="va">Abundance</span></span>
@@ -294,74 +344,74 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 <span><span class="co">#&gt; Number of predictors: 2 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;        predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 Abundance_1        0.5208</span></span>
-<span><span class="co">#&gt; phi2    othervar        0.0003</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.01031384</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.539001</span></span>
+<span><span class="co">#&gt; phi1 Abundance_1       0.52284</span></span>
+<span><span class="co">#&gt; phi2    othervar       0.00030</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.01031377</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.51944</span></span>
 <span><span class="co">#&gt; Number of populations: 2</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.2929397</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.994516 </span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.2924004</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9945158 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;             R2</span></span>
-<span><span class="co">#&gt; PopA 0.9971648</span></span>
-<span><span class="co">#&gt; PopB 0.9855420</span></span>
+<span><span class="co">#&gt; PopA 0.9971671</span></span>
+<span><span class="co">#&gt; PopB 0.9855357</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mb1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Number of predictors: 4 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;        predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 Abundance_1       0.50900</span></span>
+<span><span class="co">#&gt; phi1 Abundance_1       0.50864</span></span>
 <span><span class="co">#&gt; phi2 Abundance_2       0.00000</span></span>
 <span><span class="co">#&gt; phi3  othervar_1       0.00028</span></span>
 <span><span class="co">#&gt; phi4  othervar_2       0.00000</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.01026833</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.671209</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.01026616</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.688766</span></span>
 <span><span class="co">#&gt; Number of populations: 2</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.2873044</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9945253 </span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.2901182</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9945261 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;             R2</span></span>
-<span><span class="co">#&gt; PopA 0.9971060</span></span>
-<span><span class="co">#&gt; PopB 0.9856004</span></span>
+<span><span class="co">#&gt; PopA 0.9971058</span></span>
+<span><span class="co">#&gt; PopB 0.9856039</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mb2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Number of predictors: 2 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      posteriormode</span></span>
-<span><span class="co">#&gt; phi1       0.53027</span></span>
+<span><span class="co">#&gt; phi1       0.53026</span></span>
 <span><span class="co">#&gt; phi2       0.00000</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.01205433</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.53792</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.01205454</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.540002</span></span>
 <span><span class="co">#&gt; Number of populations: 2</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.3250085</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9935198 </span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.3250384</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9935199 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;             R2</span></span>
-<span><span class="co">#&gt; PopA 0.9971162</span></span>
+<span><span class="co">#&gt; PopA 0.9971163</span></span>
 <span><span class="co">#&gt; PopB 0.9817038</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ma3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Number of predictors: 4 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;        predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 Abundance_1       0.50900</span></span>
+<span><span class="co">#&gt; phi1 Abundance_1       0.50864</span></span>
 <span><span class="co">#&gt; phi2 Abundance_2       0.00000</span></span>
 <span><span class="co">#&gt; phi3  othervar_1       0.00028</span></span>
 <span><span class="co">#&gt; phi4  othervar_2       0.00000</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.01026833</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.671209</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.01026616</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.688766</span></span>
 <span><span class="co">#&gt; Number of populations: 2</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.2873044</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9945253 </span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.2901182</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9945261 </span></span>
 <span><span class="co">#&gt; In-sample R-squared by population:</span></span>
 <span><span class="co">#&gt;             R2</span></span>
-<span><span class="co">#&gt; PopA 0.9971060</span></span>
-<span><span class="co">#&gt; PopB 0.9856004</span></span></code></pre></div>
+<span><span class="co">#&gt; PopA 0.9971058</span></span>
+<span><span class="co">#&gt; PopB 0.9856039</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="variable-timestep-method-for-missing-data">Variable Timestep Method (for missing data)<a class="anchor" aria-label="anchor" href="#variable-timestep-method-for-missing-data"></a>
 </h2>
-<p>See the <a href="https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html">vignette</a> for more detail about the variable timestep method (VS-EDM) for missing data.</p>
+<p>See <a href="https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html">this vignette</a> for more detail about the variable timestep method (VS-EDM) for missing data.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
