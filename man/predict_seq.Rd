@@ -4,13 +4,17 @@
 \alias{predict_seq}
 \title{Get sequentially updated predictions from a GP model}
 \usage{
-predict_seq(object, newdata)
+predict_seq(object, newdata, restart.initpars = F)
 }
 \arguments{
 \item{object}{Output from \code{fitGP}.}
 
 \item{newdata}{Data frame containing the same columns supplied in the
 original model.}
+
+\item{restart.initpars}{Set initpars to pars of the previous model (F, default), or restart
+with the default initspars each time (T). Starting at the last values can reduce the number
+of iterations required, saving time, but might trap you in a local minimum.}
 }
 \value{
 A list (class GP and GPpred) with the same elements as \code{\link{fitGP}}.

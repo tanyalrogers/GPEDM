@@ -24,13 +24,16 @@
 #' @param object Output from \code{fitGP}.
 #' @param newdata Data frame containing the same columns supplied in the
 #'   original model.
+#' @param restart.initpars Set initpars to pars of the previous model (F, default), or restart 
+#'   with the default initspars each time (T). Starting at the last values can reduce the number 
+#'   of iterations required, saving time, but might trap you in a local minimum.
 #' @return A list (class GP and GPpred) with the same elements as \code{\link{fitGP}}. 
 #'   The model information will for the final model including all of the original training
 #'   data plus \code{newdata}. Out \code{outsampresults} and \code{outsampfitstats} will be
 #'   for the sequentially updated predictions.
 #' @export
 #' @keywords functions
-predict_seq=function(object,newdata) { 
+predict_seq=function(object,newdata,restart.initpars=F) { 
   
   if(is.null(object$inputs$time_names)) {
     stop("Model must include `data` and `time` to use this function.")
@@ -56,8 +59,14 @@ predict_seq=function(object,newdata) {
     pred[[i]]=predict(modelupdated, newdata=newdatai)$outsampresults
     #append new data
     dataupdated=rbind(dataupdated, newdatai)
+    #set initpars
+    if(restart.initpars) {
+      inits=NULL
+    } else {
+      inits=modelupdated$pars
+    }
     #refit model
-    modelupdated=update(modelupdated, data=dataupdated, initpars=modelupdated$pars)
+    modelupdated=update(modelupdated, data=dataupdated, initpars=inits)
   }
   #compile predictions
   outsampresults=do.call(rbind, pred)
