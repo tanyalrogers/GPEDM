@@ -57,7 +57,7 @@ simulates a real-time forecasting application.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">predict_seq</span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">predict_seq</span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span>, restart.initpars <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -69,6 +69,12 @@ simulates a real-time forecasting application.</p>
 <dt>newdata</dt>
 <dd><p>Data frame containing the same columns supplied in the
 original model.</p></dd>
+
+
+<dt>restart.initpars</dt>
+<dd><p>Set initpars to pars of the previous model (F, default), or restart
+with the default initspars each time (T). Starting at the last values can reduce the number
+of iterations required, saving time, but might trap you in a local minimum.</p></dd>
 
 </dl></div>
     <div id="value">
