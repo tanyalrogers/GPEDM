@@ -246,10 +246,10 @@ deviation of the GP function, <code>predsd</code> includes process error.</p></d
 
 <dt>insampfitstats</dt>
 <dd><p>Fit statistics for in-sample predictions. Includes R2, rmse, ln_post
-(log posterior evaluated at the mode), lnL_LOO (generalized cross-validation approximate
+(log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
 the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-comparable to ln_post.</p></dd>
+comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.</p></dd>
 
 <dt>insampfitstatspop</dt>
 <dd><p>If &gt;1 population, fit statistics (R2 and rmse) for in-sample predictions by population.</p></dd>
