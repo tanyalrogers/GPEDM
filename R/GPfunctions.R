@@ -147,10 +147,10 @@
 #' \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
 #' \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post 
-#'   (log posterior evaluated at the mode), lnL_LOO (generalized cross-validation approximate
+#'   (log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 #'   leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to 
 #'   the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-#'   comparable to ln_post.}
+#'   comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.}
 #' \item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
@@ -406,8 +406,8 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predfsd=yfsd,predsd=ysd,obs=y)
   output$insampfitstats=c(R2=getR2(y,ypred),
                           rmse=sqrt(mean((y-ypred)^2,na.rm=T)),
-                          ln_post=-output$nllpost,
-                          lnL_LOO=output$lnL_LOO,df=output$df)
+                          ln_post=-output$nllpost, ln_prior=output$lp,
+                          lnL_LOO=output$lnL_LOO,df=output$df,SS=output$SS,logdet=output$logdet)
   if(length(unique(pop))>1) { #within site fit stats
     up=unique(pop)
     np=length(up)
@@ -422,7 +422,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     output$insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
   }
   
-  output[c("lnL_LOO","df","nllpost","mean","cov")]=NULL #take these out of main list
+  output[c("lnL_LOO","df","nllpost","mean","cov","SS","logdet","lp")]=NULL #take these out of main list
   #may eventually want to exclude some more outputs
   
   if(!is.null(predictmethod)|!is.null(xnew)|!is.null(newdata)) { #generate predictions if requested
@@ -605,6 +605,10 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
     return(list(nllpost=neglpost,grad=neglgrad))
   } 
   
+  #likelihood components
+  SS=Y%*%a
+  logdet=sum(log(diag(L)))
+  
   #transformed parameters
   pars=c(phi,ve,sigma2,rho)
   
@@ -622,7 +626,7 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
   out=list(pars=pars,parst=parst,
            nllpost=neglpost,grad=neglgrad,
            lnL_LOO=lnL_LOO,df=df,mean=mpt,cov=Cdt,
-           covm=covm)
+           covm=covm,SS=SS,logdet=logdet,lp=lp)
   return(out)
 }
 
