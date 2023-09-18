@@ -107,10 +107,10 @@ inverse length scales will be stored under \code{x_names2}, provided these names
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post
-(log posterior evaluated at the mode), lnL_LOO (generalized cross-validation approximate
+(log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
 the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-comparable to ln_post.}
+comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.}
 \item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
