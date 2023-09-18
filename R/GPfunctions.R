@@ -158,7 +158,7 @@
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
-#' \item{call}{Function call. Allows use of \code{\link{update}}}.
+#' \item{call}{Function call. Allows use of \code{\link{update}}.}
 #' @seealso \code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, \code{\link{getrhomatrix}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
 #'   a Bayesian perspective on nonlinear forecasting for ecology. Ecological Complexity, 32: 134.

@@ -118,7 +118,7 @@ deviation of the GP function, \code{predsd} includes process error.}
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
 \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
-\item{call}{Function call. Allows use of \code{\link{update}}}.
+\item{call}{Function call. Allows use of \code{\link{update}}.}
 }
 \description{
 Fits a GP model with separable length scales and automatic relevance determination (ARD).
