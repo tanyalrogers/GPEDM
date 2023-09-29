@@ -85,8 +85,8 @@ extrapolation beyond the range of the data in a given population.</p></dd>
 
 <dt>extrap</dt>
 <dd><p>Percentage to extrapolate beyond the predictor range for each
-population (i.e. predictor values will range from <code>(1-extrap)*min(X)</code>
-to <code>(1+extrap)*max(X)</code> Defaults to 0.01.</p></dd>
+population (i.e. predictor values will range from <code>(min(X)-range(X)*extrap</code>
+to <code>(max(X)+range(X)*extrap</code> Defaults to 0.01.</p></dd>
 
 
 <dt>nvals</dt>
