@@ -19,8 +19,8 @@ used. This option can useful for either preventing or allowing for
 extrapolation beyond the range of the data in a given population.}
 
 \item{extrap}{Percentage to extrapolate beyond the predictor range for each
-population (i.e. predictor values will range from \code{(1-extrap)*min(X)}
-to \code{(1+extrap)*max(X)} Defaults to 0.01.}
+population (i.e. predictor values will range from \code{(min(X)-range(X)*extrap}
+to \code{(max(X)+range(X)*extrap} Defaults to 0.01.}
 
 \item{nvals}{The number of values to evaluate across the predictor range for
 each population. Defaults to 25, which should be fine for most
