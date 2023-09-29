@@ -22,23 +22,23 @@ getrhomatrix(
 \item{data}{A data frame, or matrix with named columns.}
 
 \item{y}{The response variable (required). If \code{data} is supplied, a column name
-(character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
+(character) or index (numeric). If \code{data} is not supplied, a numeric vector.}
 
 \item{x}{Predictor variables. If \code{data} is supplied, column names
-(character vector) of indices (numeric vector). If \code{data} is not supplied, a numeric matrix
+(character vector) or indices (numeric vector). If \code{data} is not supplied, a numeric matrix
 (or vector, if there is only one predictor variable). If \code{x} is not supplied,
 values for \code{E} and \code{tau} must be provided to construct it internally.}
 
 \item{pop}{Identifies separate populations (optional, if not supplied, defaults to 1
 population). Population values can be either numeric, character, or factor.
-If \code{data} is supplied, a column name (character) of index (numeric).
+If \code{data} is supplied, a column name (character) or index (numeric).
 If \code{data} is not supplied, a vector (numeric, character, or factor).}
 
 \item{time}{A time index (optional, if not supplied, defaults to a numeric index).
 Important: The time index is not used for model fitting (timesteps are
 assumed to be evenly spaced) but supplying \code{time} will be add these values to the output table,
 which may be useful for later plotting purposes. If \code{data} is supplied, a column name
-(character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
+(character) or index (numeric). If \code{data} is not supplied, a numeric vector.}
 
 \item{E}{Embedding dimension. If supplied, will be used to constuct lags of \code{x} (or
 lags of \code{y} if \code{x} is not supplied).}

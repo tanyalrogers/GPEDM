@@ -28,8 +28,8 @@
 #'   with the default initspars each time (T). Starting at the last values can reduce the number 
 #'   of iterations required, saving time, but might trap you in a local minimum.
 #' @return A list (class GP and GPpred) with the same elements as \code{\link{fitGP}}. 
-#'   The model information will for the final model including all of the original training
-#'   data plus \code{newdata}. Out \code{outsampresults} and \code{outsampfitstats} will be
+#'   The model information will be for the final model including all of the original training
+#'   data plus \code{newdata}. The \code{outsampresults} and \code{outsampfitstats} will be
 #'   for the sequentially updated predictions.
 #' @export
 #' @keywords functions
