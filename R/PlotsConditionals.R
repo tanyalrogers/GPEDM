@@ -115,8 +115,8 @@ plot.GPpred=function(x, plotinsamp=F, ...) {
 #'   used. This option can useful for either preventing or allowing for
 #'   extrapolation beyond the range of the data in a given population.
 #' @param extrap Percentage to extrapolate beyond the predictor range for each
-#'   population (i.e. predictor values will range from \code{(1-extrap)*min(X)}
-#'   to \code{(1+extrap)*max(X)} Defaults to 0.01.
+#'   population (i.e. predictor values will range from \code{(min(X)-range(X)*extrap}
+#'   to \code{(max(X)+range(X)*extrap} Defaults to 0.01.
 #' @param nvals The number of values to evaluate across the predictor range for
 #'   each population. Defaults to 25, which should be fine for most
 #'   applications.
@@ -162,9 +162,13 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
     poppred=rep(up[k],Tslp)
     for(i in 1:d) { #predictors
       if(xrange2=="local") {
-        xgi=seq((1-extrap)*min(X[indi,i]),(1+extrap)*max(X[indi,i]),length.out = Tslp)
+        xgextrap=(max(X[indi,i])-min(X[indi,i]))*extrap
+        xgi=seq(min(X[indi,i])-xgextrap,max(X[indi,i])+xgextrap,length.out = Tslp)
+        #xgi=seq((1-extrap*sign(min(X[indi,i])))*min(X[indi,i]),(1+extrap*sign(max(X[indi,i])))*max(X[indi,i]),length.out = Tslp)
       } else {
-        xgi=seq((1-extrap)*min(X[,i]),(1+extrap)*max(X[,i]),length.out = Tslp)
+        xgextrap=(max(X[,i])-min(X[,i]))*extrap
+        xgi=seq(min(X[,i])-xgextrap,max(X[])+xgextrap,length.out = Tslp)
+        #xgi=seq((1-extrap*sign(min(X[,i])))*min(X[,i]),(1+extrap*sign(max(X[,i])))*max(X[,i]),length.out = Tslp)
       }
       xp=xg
       xp[,i]=xgi
