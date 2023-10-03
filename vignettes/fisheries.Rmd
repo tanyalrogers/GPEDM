@@ -22,11 +22,11 @@ library(GPEDM)
 
 This vignette discusses the use of an alternative parameterization of the GP-EDM model designed for use in fisheries applications, implemented in the function `fitGP_fish`. This fits a GP model of the form
 $$y=f(m-bh,z)$$
-where $y$ is an index of abundance (typically in units of catch per unit effort, CPUE), $m$ are lags of $y$, $h$ are lags of harvest (in numbers or biomass), and $z$ are optional covariates. The index of abundance is assumed proportional to total biomass (or numbers), with proportionality constant $b$ (the "catchability"). The composite variable $m-bh$ is the biomass or number of individuals remaining after harvesting ("escapement").
+where $y$ is an index of abundance (typically in units of catch per unit effort, CPUE), $m$ are lags of $y$, $h$ are lags of harvest (in biomass or numbers), and $z$ are optional covariates. The index of abundance is assumed proportional to biomass, with proportionality constant $b$ (the "catchability", units: CPUE/biomass). The composite variable $m-bh$ is assumed proportional to the biomass of individuals remaining after harvesting ("escapement").
 
-The function `fitGP_fish` finds the parameter $b$ using `stats::optimize` applied to the posterior likelihood of fitted GP models given $b$. If you want to skip optimization of $b$ and use a fixed value for it, one can be provided under `bfixed`.
+The function `fitGP_fish` finds parameter $b$ using `stats::optimize` applied to the posterior likelihood of fitted GP models given $b$. If you want to skip optimization of $b$ and use a fixed value for it, one can be provided under `bfixed`.
 
-The function `fitGP_fish` has all of the same functionality as `fitGP`, including the use of hierarchical models and augmentation data, and can be used with all of the `predict` functions in the package. In all prediction cases, it is only necessary to supply $m$ and $h$ - escapement will be calculated internally. The inputs and structure of the inputs are somewhat more constrained than in `fitGP` (see below), which is just something to be aware of.
+The function `fitGP_fish` has all of the same functionality as `fitGP`, including the use of hierarchical structures and augmentation data, and can be used with all of the `predict` functions in the package. In all prediction cases, it is only necessary to supply $m$ and $h$ - escapement will be calculated internally. The inputs and structure of the inputs are somewhat more constrained than in `fitGP` (see below), which is just something to be aware of.
 
 ## Sample dataset
 
@@ -62,7 +62,7 @@ Conditional effects (from `getconditionals`) will be plotted with respect to the
 getconditionals(fishfit0)
 ```
 
-Note that the function does not go through (0,0) because there are no data there. This could potentially cause problems if the model is extrapolated to regions of low or no escapement (as a result of high catch rates).
+Note that this function does not go through (0,0) because there are no data there. This could potentially cause problems if the model is extrapolated to regions of low or no escapement (as a result of high catch rates).
 
 To force the model through the origin (so that zero escapement means zero CPUE), you can supply an additional datapoint at 0 escapement, 0 CPUE. It works well to supply these under `augdata`, since these points are used as training data and in determining the range the conditional plots, but will not be included in the results table, used to evaluate fit, or plotted as part of the time series. Note that the model will probably not go through 0 exactly, because error is assumed the same at the origin as it is elsewhere. Also note that if a population experiences substantial immigration or emigration, the true function may not actually intersect the origin.
 
@@ -82,16 +82,17 @@ getconditionals(fishfit)
 
 Given a fitted fisheries model, the steady state catch and biomass given a certain harvest rate can be obtained using iterated prediction. This can be done using the `predict_iter` function. Similar to `predict`, you supply a `newdata` data frame, which (for a one-population model) should contain the `time`, `m`, and `h` columns. You also supply a harvest rate `hrate` from 0 to 1, which indicates the proportion of predicted CPUE biomass to be harvested. 
 
-Starting with the first row of `newdata`, the predicted `y` variable is inserted into the first column of `m` for the next timestep, and the other values of `m` are shifted right by 1. The first value of `h` at the next timestep is calculated as `y/b*hrate` and the other values of `h` are shifted right by 1. Escapement is recalculated, and a new prediction for `y` is made. This continues for as many rows as are in `newdata`. Thus, this procedure assumes that all lags are present, evenly spaced, and in order (first lag is the first column). Time steps are also assumed to be evenly spaced. 
+Starting with the first row of `newdata`, the predicted `y` variable is inserted into the first column of `m` for the next timestep, and the other values of `m` are shifted right by 1. The first value of `h` at the next timestep is calculated as `y/b*hrate` and the other values of `h` are shifted right by 1. Escapement is recalculated, and a new prediction for `y` is made. This continues for as many rows as are in `newdata`. Thus, this procedure assumes that all lags are present, evenly spaced, and in order (first lag is the first column). Time steps are assumed to be evenly spaced. The units of `y` and `m` are assumed to be the same.
 
-In `newdata`, only the first timepoint (row) for `m` and `h` needs to be filled in. The rest can be NA and will be filled in as the model iterates forward. If there are covariates (`z`) they should also be included in `newdata`, and values must be supplied for all time points.
+In `newdata`, only the first timepoint (row) for `m` and `h` needs to be filled in. The rest can be NA and will be filled in as the model iterates forward. The values of `time` and must be filled in. If there are covariates (`z`), they should also be included in `newdata`, and values must be supplied for all time points. If there are multiple populations, `newdata` should contain `pop` and there should be duplicated timesteps for each population (see the next section on general iterated predictions for a 2-population example).
 
 ```{r msy1, fig.height=3}
+#number of timesteps to iterate
 nfore=50
 
-#use forecast feature to create first row
+#use the forecast feature to create the first row
 RHfore=makelags(RickerHarvest, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, forecast=T)
-#get remaining timepoints. use expand.grid here if you have multiple populations
+#get remaining timepoints. use expand.grid here if you have multiple populations.
 RHfore2=data.frame(Time=(RHfore$Time[1]+1):(RHfore$Time[1]+nfore-1)) 
 #create empty matrix for future values
 RHfore3=matrix(NA, nrow=nrow(RHfore2), ncol=2,
@@ -114,7 +115,7 @@ plot(predmean~timestep, data=msyfore$outsampresults, type="l")
 plot(Catch_1~timestep, data=msyfore$outsampresults, type="l")
 ```
 
-Evaluating the steady state catch across a range of `hrate` values allows you to obtain the maximum sustainable yield (MSY) and associated fishing rate (f_MSY) and CPUE indexed biomass (proportional to B_MSY). In the example below, we make iterated predictions for 50 timesteps as above, but record just the last 10 values. Since the resulting time series in this example can exhibit chaos and cycles, we then take the average over those values for each harvest rate.
+Evaluating the steady state catch across a range of `hrate` values allows you to obtain the maximum sustainable yield (MSY), associated fishing rate (f_MSY), and associated CPUE indexed biomass (proportional to B_MSY). In the example below, we make iterated predictions for 50 timesteps as above, but record just the last 10 values. Since the resulting time series in this example can exhibit chaos and cycles, we then take the average over those values for each harvest rate.
 
 ```{r msy3, fig.height=3}
 hratevec=seq(0,1,length.out=40)
@@ -128,6 +129,7 @@ for(i in seq_along(hratevec)) {
   catchres$cpue[catchres$hrate==hratevec[i]]=msyfore$outsampresults$predmean[41:50]
 }
 
+#average over the last 10 timepoints
 catchresagg=aggregate(cbind(catch,cpue)~hrate, data=catchres, mean)
 (fmsy=catchresagg$hrate[which.max(catchresagg$catch)])
 (Bmsy=catchresagg$cpue[which.max(catchresagg$catch)])
@@ -145,18 +147,18 @@ It is also possible to set this up using a constant catch value rather than cons
 
 ## Iterated predictions (generally)
 
-The `predict_iter` function can be used to obtain iterated predictions from regular `fitGP` models. Starting with the first row of `newdata`, the predicted `y` variable is inserted as the first lag for the next timestep, the other lags are shifted right by 1, and a new prediction is made. This continues for as many rows as are in `newdata`. Thus, this procedure assumes that all lags are present, evenly spaced, and in order (first lag is the first column). Time steps are also assumed to be evenly spaced.
+The `predict_iter` function can be used to obtain iterated predictions from regular `fitGP` models with lag predictors. Starting with the first row of `newdata`, the predicted `y` variable is inserted as the first lag for the next timestep, the other lags are shifted right by 1, and a new prediction is made. This continues for as many rows as are in `newdata`. Thus, this procedure assumes that all lags are present, evenly spaced, and in order (first lag is the first column). Time steps are assumed to be evenly spaced. The units of `y` and its lags are assumed to be the same.
 
-If the model contains a mixture of lags and covariates, it's necessary to specify which columns are the time lags (`xlags`). Otherwise, all values of `x` are assumed to be time lags of `y`. Only the first row of `newdata` (for each population) needs to be completely filled in. Subsequent time points can be NA or filled in - they will be overwritten with the predictions as the model iterates. If the model has covariates, values for the covariates need to be supplied for all timepoints in `newdata`.
+Unless otherwise specified, all values of `x` are assumed to be time lags of `y`. If this is not the case (the model contains a mixture of lags and covariates), you must specify which columns are the time lags (argument `xlags` in `predict_iter`). The exception is for "fisheries models", where the lags and covariates are already separately specified.
 
-If there are multiple populations, note that the timesteps in `newdata` need to be duplicated for each population.
+As with other prediction methods, `newdata` should contain all values of `x`, as well as `time`. Only the first row of lags in `newdata` (for each population) needs to be completely filled in. Subsequent time points can be NA or filled in - they will be overwritten with the predictions as the model iterates. The values of `time` and must be filled in. If the model has covariates, values for the covariates need to be supplied for all timepoints in `newdata`. If there are multiple populations, `newdata` should contain `pop` and there should be duplicated timesteps for each population.
 
 This examples uses the simulated 2 population theta logistic dataset. As expected for a chaotic system, the iterated predictions become very poor after a few timesteps.
 
 ```{r itergeneral}
 xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time = "Time", E=3, tau=1, append=T)
 xdatatrain=subset(xdata, Time<=40)
-#iterate for the last 10 timesteps
+#get iterated predictions for the last 10 timesteps
 xdatafore=subset(xdata, Time>40)
 
 tlog=fitGP(data = xdatatrain, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
@@ -166,7 +168,7 @@ predtest=predict_iter(tlog, newdata = xdatafore)
 plot(predtest)
 ```
 
-If you wanted to iterate forecasts beyond the end of the time series, here is how you might set that up. Note that because there are no observed values, we can't evaluate fit or make plots of observed vs. predicted.
+If you want to iterate forecasts beyond the end of the time series, here is how you might set that up. Note that because there are no observed values, we can't evaluate fit or make plots of observed vs. predicted.
 
 ```{r itergeneral2}
 xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time="Time", E=3, tau=1, append=T)

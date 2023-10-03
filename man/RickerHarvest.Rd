@@ -27,7 +27,7 @@ Contains a time series simulated from a Ricker model with harvesting:
 \deqn{S_{t+1}=B_{t+1}-C_{t+1}}
 \deqn{\epsilon_{b} \sim N(0,\sigma_{b})}
 \deqn{\epsilon_{u} \sim Unif(-\sigma_{u},\sigma_{u})}
-Where \eqn{B} is biomass, \eqn{X} is a survey index if biomass with catchability \eqn{b}, \eqn{u}
+Where \eqn{B} is biomass, \eqn{X} is a survey index of biomass with catchability \eqn{b}, \eqn{u}
 is the exploitation rate (which changes in response to changing biomass according to parameter
 \eqn{a}), \eqn{C} is catch, and \eqn{S} is uncaught biomass (escapement).
 Parameter values are \eqn{r=3}, \eqn{K=1000}, \eqn{b=0.01}, \eqn{a=0.1},

@@ -75,7 +75,7 @@ original model.}
 \item{bfixed}{Fixes b and bypasses optimization.}
 }
 \value{
-A list (class GP and GPpred) with the same elements as \code{\link{fitGP}} with
+A list (class GP and GPpred) with the same elements as \code{\link{fitGP}} and with
 additonal element \code{b}, the names of m, h, z stored under \code{inputs}, and the
 composite variable (escapement) included in the \code{insampresults} table.
 }
@@ -96,6 +96,8 @@ Parameter \eqn{b} is found using \code{optimize} applied to the posterior likeli
 Alternatively, a fixed value for \eqn{b} can be provided under \code{bfixed}.
 
 Using this method requires the use of \code{data} with pre-generated lags
-(option A1 in \code{\link{fitGP}}).
+(option A1 in \code{\link{fitGP}}). For more details on fitting a fisheries
+model and an example see the vignette. For more elaboration on the inputs,
+(e.g. \code{scaling}, \code{augdata}) see \code{\link{fitGP}}.
 }
 \keyword{functions}
