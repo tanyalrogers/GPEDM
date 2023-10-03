@@ -1,3 +1,9 @@
+# GPEDM 0.0.0.9008
+* Add `fitGP_fish`, `predict_iter`, and fisheries vignette.
+* Add `RickerHarvest` dataset for `fitGP_fish` demo.
+* Fix problem with `extrap` feature in `getconditionals`.
+* Fix typos in documentation.
+
 # GPEDM 0.0.0.9007
 * Enable use of `update.default` with `fitGP` by storing function call in output.
 * Fix bug so that parameter values from prior model can be used in `initpars`. Initial values for `ve` and `sigma2` previously had to be constrained to (0,1), but can now be in (0,5).

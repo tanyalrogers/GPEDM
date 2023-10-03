@@ -4,7 +4,7 @@
 \alias{predict_iter}
 \title{Get interated predictions from a GP model (or MSY from a "fisheries model")}
 \usage{
-predict_iter(object, newdata, xlags = NULL)
+predict_iter(object, newdata, xlags = NULL, hrate = NULL)
 }
 \arguments{
 \item{object}{Output from \code{fitGP}.}
@@ -14,6 +14,8 @@ original model.}
 
 \item{xlags}{Which column names are the lags? Is not supplied, assumed to be all columns
 originally supplied under \code{x}.}
+
+\item{hrate}{For "fisheries models" a value from 0 to 1 indicating the harvest rate.}
 }
 \value{
 A list (class GPpred) with the same elements as \code{\link{predict.GP}}.

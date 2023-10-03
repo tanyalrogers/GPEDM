@@ -9,7 +9,7 @@
 **Disclaimer: This is very much a work in progress. Use at your own risk
 and please report any problems.**
 
-This is version 0.0.0.9007
+This is version 0.0.0.9008
 
 This package contains functions for fiting hierarchical, separable
 length scale Gaussian process (GP) models with automatic relevance
@@ -363,6 +363,12 @@ ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
 
 <img src="man/figures/README-forecast-1.png" width="100%" />
 
+### Making iterated forecasts
+
+The function `predict_iter` will make iterated forecasts, which you can
+read more about in [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html#iterated-predictions-generally).
+
 ## Specifying training data
 
 There are several ways that the training data for a model can be
@@ -391,11 +397,11 @@ variables, including use of mixed embeddings, and use of different
 variables for the response and predictors. Options 2 and 3 exist for
 convenience, but for the most control over the model and to use the more
 elaborate features in this package, it is best to use option 1: use
-`makelags()` to generate any lags beforehand and pass appropriate
-columns to `fitGP`, rather than rely on `fitGP` to generate lags
-internally. Option A will make more sense if your data are already in a
-data frame, option B may make more sense if you are doing simulations
-and just have a bunch of vectors and matrices.
+`makelags` to generate any lags beforehand and pass appropriate columns
+to `fitGP`, rather than rely on `fitGP` to generate lags internally.
+Option A will make more sense if your data are already in a data frame,
+option B may make more sense if you are doing simulations and just have
+a bunch of vectors and matrices.
 
 The `pop` argument is optional in all of the above cases. Beware that if
 omitted, a single population is assumed.
@@ -503,6 +509,13 @@ See [this
 vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
 for more detail about the variable timestep method (VS-EDM) for missing
 data.
+
+## GPEDM Model For Fisheries Applications
+
+See [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html)
+for more detail on an alternative parameterization of the GP model,
+`fitGP_fish`, designed for use fisheries applications.
 
 ## References
 

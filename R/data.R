@@ -81,3 +81,29 @@
 #' https://doi.org/10.1139/cjfas-2022-0029
 #' @keywords datasets
 "shrimp"
+
+#' Simulated time series from a ricker model with fishing
+#'
+#' Contains a time series simulated from a Ricker model with harvesting:
+#' \deqn{B_{t+1}=S_{t}e^{r-S_{t}/K+\epsilon_{b}}}
+#' \deqn{X_{t+1}=bB_{t+1}}
+#' \deqn{u_{t+1}=((1-a)u_{t}+au_{t}(B_{t+1}-B_{t})/B_{t})(1+\epsilon_{u})}
+#' \deqn{C_{t+1}=B_{t+1}u_{t+1}}
+#' \deqn{S_{t+1}=B_{t+1}-C_{t+1}}
+#' \deqn{\epsilon_{b} \sim N(0,\sigma_{b})}
+#' \deqn{\epsilon_{u} \sim Unif(-\sigma_{u},\sigma_{u})}
+#' Where \eqn{B} is biomass, \eqn{X} is a survey index if biomass with catchability \eqn{b}, \eqn{u}
+#' is the exploitation rate (which changes in response to changing biomass according to parameter
+#' \eqn{a}), \eqn{C} is catch, and \eqn{S} is uncaught biomass (escapement).
+#' Parameter values are \eqn{r=3}, \eqn{K=1000}, \eqn{b=0.01}, \eqn{a=0.1}, 
+#' \eqn{\sigma_{b}=0.1}, and \eqn{\sigma_{u}=0.2}. 
+#'
+#' @format A data frame with 100 rows and 3 variables:
+#' \describe{
+#'   \item{Time}{Time index}
+#'   \item{CPUE_index}{Index of abundance, catch per unit effort}
+#'   \item{Catch}{Harvest}
+#' }
+#' @source The simulation code is in data-raw on the GPEDM Github page.
+#' @keywords datasets
+"RickerHarvest"

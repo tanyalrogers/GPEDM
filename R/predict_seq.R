@@ -24,22 +24,31 @@
 #' @param object Output from \code{fitGP}.
 #' @param newdata Data frame containing the same columns supplied in the
 #'   original model.
-#' @param restart.initpars Set initpars to pars of the previous model (F, default), or restart 
-#'   with the default initspars each time (T). Starting at the last values can reduce the number 
+#' @param restart.initpars Set initpars to pars of the previous model (FALSE, default), or restart 
+#'   with the default initspars each time (TRUE). Starting at the last values can reduce the number 
 #'   of iterations required, saving time, but might trap you in a local minimum.
+#' @param refit.b If a "fisheries model", should the b parameter be refit at each iteration? 
+#'   Defaults to FALSE (b fixed to value in oroginal model).
 #' @return A list (class GP and GPpred) with the same elements as \code{\link{fitGP}}. 
 #'   The model information will be for the final model including all of the original training
 #'   data plus \code{newdata}. The \code{outsampresults} and \code{outsampfitstats} will be
 #'   for the sequentially updated predictions.
 #' @export
 #' @keywords functions
-predict_seq=function(object,newdata,restart.initpars=F) { 
+predict_seq=function(object,newdata,restart.initpars=F,refit.b=F) { 
   
   if(is.null(object$inputs$time_names)) {
     stop("Model must include `data` and `time` to use this function.")
   }
   if(!is.null(object$inputs$E)) {
     stop("Lags must be pre-generated to use this function. See option A1 in help(fitGP).")
+  }
+  
+  #in fisheries models, should b be updated or not?
+  if(refit.b) {
+    bfixed=NULL
+  } else {
+    bfixed=object$b
   }
   
   #get times
@@ -66,7 +75,11 @@ predict_seq=function(object,newdata,restart.initpars=F) {
       inits=modelupdated$pars
     }
     #refit model
-    modelupdated=update(modelupdated, data=dataupdated, initpars=inits)
+    if(!is.null(bfixed)) {
+      modelupdated=update(modelupdated, data=dataupdated, initpars=inits, bfixed=bfixed)
+    } else {
+      modelupdated=update(modelupdated, data=dataupdated, initpars=inits)
+    }
   }
   #compile predictions
   outsampresults=do.call(rbind, pred)

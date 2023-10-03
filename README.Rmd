@@ -209,6 +209,9 @@ ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
   theme_bw()
 ```
 
+### Making iterated forecasts
+
+The function `predict_iter` will make iterated forecasts, which you can read more about in [this vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html#iterated-predictions-generally).
 
 ## Specifying training data
 
@@ -225,7 +228,7 @@ For each of the above 2 options, there are 3 options for specifying the predicto
 
 The above examples use methods A2 and A1. 
 
-Option 1 allows for the most customization of response and predictor variables, including use of mixed embeddings, and use of different variables for the response and predictors. Options 2 and 3 exist for convenience, but for the most control over the model and to use the more elaborate features in this package, it is best to use option 1: use `makelags()` to generate any lags beforehand and pass appropriate columns to `fitGP`, rather than rely on `fitGP` to generate lags internally. Option A will make more sense if your data are already in a data frame, option B may make more sense if you are doing simulations and just have a bunch of vectors and matrices.
+Option 1 allows for the most customization of response and predictor variables, including use of mixed embeddings, and use of different variables for the response and predictors. Options 2 and 3 exist for convenience, but for the most control over the model and to use the more elaborate features in this package, it is best to use option 1: use `makelags` to generate any lags beforehand and pass appropriate columns to `fitGP`, rather than rely on `fitGP` to generate lags internally. Option A will make more sense if your data are already in a data frame, option B may make more sense if you are doing simulations and just have a bunch of vectors and matrices.
 
 The `pop` argument is optional in all of the above cases. Beware that if omitted, a single population is assumed.
 
@@ -269,6 +272,10 @@ summary(ma3)
 ## Variable Timestep Method (for missing data)
 
 See [this vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html) for more detail about the variable timestep method (VS-EDM) for missing data. 
+
+## GPEDM Model For Fisheries Applications
+
+See [this vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html) for more detail on an alternative parameterization of the GP model, `fitGP_fish`, designed for use fisheries applications.
 
 ## References
 

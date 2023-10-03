@@ -783,7 +783,7 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         colnames(x2)=object$inputs$x_names[1:ncol(x2)]
         newdata=cbind(newdata,x2)
       }
-    }    
+    }
     
     #if data frame is supplied, take columns from it
     if(!is.null(newdata)) {
@@ -1065,6 +1065,11 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   
   #probably need to output xnew (combine with table?, only if 1 predictor?)
   out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=ypred,predfsd=yfsd,predsd=ysd))
+  
+  if(!is.null(object$b) & !is.null(newdata)) { 
+  out$outsampresults=cbind(out$outsampresults,newdata[,object$inputs$x_names[1:ncol(x2)],drop=F])
+  }
+  
   if(!is.null(ynew)) {
     out$outsampresults$obs=ynew
     out$outsampfitstats=c(R2=getR2(ynew,ypred), 

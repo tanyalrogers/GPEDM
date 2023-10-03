@@ -42,6 +42,7 @@
 #'   original model.
 #' @param xlags Which column names are the lags? Is not supplied, assumed to be all columns
 #'   originally supplied under \code{x}.  
+#' @param hrate For "fisheries models" a value from 0 to 1 indicating the harvest rate.
 #' @return A list (class GPpred) with the same elements as \code{\link{predict.GP}}.
 #' @examples 
 #' xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time = "Time", E=3, tau=1, append=T)
@@ -53,7 +54,7 @@
 #' plot(prediter)
 #' @export
 #' @keywords functions
-predict_iter=function(object,newdata,xlags=NULL) { 
+predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) { 
   
   if(is.null(object$inputs$time_names)) {
     stop("Model must include `data` and `time` to use this function.")
@@ -62,7 +63,14 @@ predict_iter=function(object,newdata,xlags=NULL) {
     stop("Lags must be pre-generated to use this function. See option A1 in help(fitGP).")
   }
   
-  #will need modification for fisheries models
+  if(!is.null(object$b)) {  
+    if(!is.null(xlags)) {
+      message("xlags in fisheries models set to `m` variables, input ignored")
+    }
+    xlags=object$inputs$m_names
+    hlags=object$inputs$h_names
+    b=object$b
+  }
   
   if(is.null(xlags)) { #if not provided, assume all x columns are lags
     xlags=object$inputs$x_names
@@ -93,9 +101,17 @@ predict_iter=function(object,newdata,xlags=NULL) {
       for(j in 1:length(up)){
         predsj=preds[preds$pop==up[j],]$predmean
         newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],xlags[1]]=predsj
-        if(length(xlags>1)) {
+        if(length(xlags)>1) {
           newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],xlags[2:length(xlags)]]=
             newdata[newdata[,timename]==newtimes[i] & newdata[,popname]==up[j],xlags[1:(length(xlags)-1)]]
+        }
+        #compute next catch
+        if(!is.null(hrate)) {
+          newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],hlags[1]]=predsj/b*hrate
+          if(length(xlags)>1) {
+            newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],hlags[2:length(xlags)]]=
+              newdata[newdata[,timename]==newtimes[i] & newdata[,popname]==up[j],hlags[1:(length(xlags)-1)]]
+          }
         }
       }
     }
@@ -103,6 +119,9 @@ predict_iter=function(object,newdata,xlags=NULL) {
   #compile predictions
   outsampresults=do.call(rbind, pred)
   out=list(outsampresults=outsampresults)
+  if(!is.null(hrate)) {
+    out$outsampresults=cbind(out$outsampresults,newdata[,hlags,drop=F])
+  }
   
   #return updated model and predictions
   if(object$inputs$y_names %in% colnames(newdata)) {

@@ -17,19 +17,22 @@ fitGP_fish(
   modeprior = 1,
   rhofixed = NULL,
   rhomatrix = NULL,
+  augdata = NULL,
   predictmethod = NULL,
   newdata = NULL,
-  xname = "escapement"
+  xname = "escapement",
+  bfixed = NULL
 )
 }
 \arguments{
 \item{data}{A data frame, required.}
 
-\item{y}{The response variable (required).}
+\item{y}{The response variable (required). Typically CPUE.}
 
-\item{m}{Lags of the response variable (required).}
+\item{m}{Lags of the response variable (required). Typically lags of CPUE.}
 
-\item{h}{Lags of the variable to be multipled by b and subtracted from m (required).}
+\item{h}{Lags of the variable to be multipled by b and subtracted from m (required).
+Typically harvest. The dimensions of m and h must match.}
 
 \item{z}{Other predictor variables, e.g. covariates, that are unmodified (optional).}
 
@@ -58,6 +61,8 @@ The output of \code{\link{getrhomatrix}} can be used here.
 All populations in the dataset must appear in \code{rhomatrix}. Populations in
 \code{rhomatrix} that are not in the dataset are allowed and will not be used.}
 
+\item{augdata}{A data frame with augmentation data (see Details).}
+
 \item{predictmethod}{Using the training data, \code{loo} does leave-one-out prediction, \code{lto} does
 leave-timepoint-out prediction, and \code{sequential} does sequential (leave-future-out)
 prediction.}
@@ -66,10 +71,13 @@ prediction.}
 original model.}
 
 \item{xname}{What the composite variable m-bh should be called. Defaults to "escapement".}
+
+\item{bfixed}{Fixes b and bypasses optimization.}
 }
 \value{
-A list (class GP and GPpred) with the same elements as fitGP with additonal
-element \code{b}, data_x, and names of m, h, z stored under inputs.
+A list (class GP and GPpred) with the same elements as \code{\link{fitGP}} with
+additonal element \code{b}, the names of m, h, z stored under \code{inputs}, and the
+composite variable (escapement) included in the \code{insampresults} table.
 }
 \description{
 Fits an alternate version of the GP model with one additonal parameter (catchability),
@@ -77,12 +85,15 @@ designed for use in fisheries applications.
 }
 \details{
 This fits a GP model of the form
-y=f(m-bh,z)
+\deqn{y=f(m-bh,z)}
+where \eqn{y} is catch per unit effort (CPUE), \eqn{m} are lags of CPUE, \eqn{h} are lags of
+harvest (in numbers or biomass), \eqn{b} is catchability (scalar), and \eqn{z} are
+optional covariates. CPUE is assumed proportional to total biomass (or numbers),
+with proportionality constant \eqn{b}. The composite variable \eqn{m-bh} is the biomass or
+number of individuals remaining after harvesting (escapement).
 
-Where y is CPUE, m are lags of CPUE, h are lags of harvest, b is catchability (scalar),
-and z are optional covariates. The dimensions of m and h must match.
-
-Parameter b is found using \code{optimize} applied to the posterior likelihood.
+Parameter \eqn{b} is found using \code{optimize} applied to the posterior likelihood.
+Alternatively, a fixed value for \eqn{b} can be provided under \code{bfixed}.
 
 Using this method requires the use of \code{data} with pre-generated lags
 (option A1 in \code{\link{fitGP}}).
