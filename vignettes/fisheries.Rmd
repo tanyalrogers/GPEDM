@@ -30,13 +30,15 @@ The function `fitGP_fish` has all of the same functionality as `fitGP`, includin
 
 ## Sample dataset
 
-As a sample dataset, we will use a simulated Ricker model with harvest, where we know the true value of $b$ is 0.01. This model has chaotic dynamics.
+As a sample dataset, we will use a simulated Ricker model with harvest. This model has chaotic dynamics, and data from two 'regions'. For this first example we will just use Region A, where we know the true value of $b$ is 0.01. 
 
 ```{r sampledata, fig.height=3}
 data("RickerHarvest")
+RickerHarvestA=subset(RickerHarvest, Region=="A")
+RickerHarvestB=subset(RickerHarvest, Region=="B")
 par(mfrow=c(1,2),mar=c(4,4,2,1))
-plot(Catch~Time, data=RickerHarvest, type="l")
-plot(CPUE_index~Time, data=RickerHarvest, type="l")
+plot(Catch~Time, data=RickerHarvestA, type="l", main="Region A")
+plot(CPUE_index~Time, data=RickerHarvestA, type="l", main="Region A")
 ```
 
 ## Fitting a model
@@ -44,7 +46,7 @@ plot(CPUE_index~Time, data=RickerHarvest, type="l")
 The function `fitGP_fish` requires the use of `data` with pre-generated lags (option A1 in [Specifying training data](https://tanyalrogers.github.io/GPEDM/index.html#specifying-training-data))). Values for `y`, `m`, and `h` are required, which should be the names of the appropriate columns in `data`. A value for `time` is also recommended. For the sample dataset, we will use just one lag.
 
 ```{r modelfit1}
-RHlags=makelags(RickerHarvest, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, append=T)
+RHlags=makelags(RickerHarvestA, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, append=T)
 
 fishfit0=fitGP_fish(data=RHlags, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time")
 summary(fishfit0)
@@ -91,7 +93,7 @@ In `newdata`, only the first timepoint (row) for `m` and `h` needs to be filled 
 nfore=50
 
 #use the forecast feature to create the first row
-RHfore=makelags(RickerHarvest, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, forecast=T)
+RHfore=makelags(RickerHarvestA, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, forecast=T)
 #get remaining timepoints. use expand.grid here if you have multiple populations.
 RHfore2=data.frame(Time=(RHfore$Time[1]+1):(RHfore$Time[1]+nfore-1)) 
 #create empty matrix for future values
@@ -118,15 +120,19 @@ plot(Catch_1~timestep, data=msyfore$outsampresults, type="l")
 Evaluating the steady state catch across a range of `hrate` values allows you to obtain the maximum sustainable yield (MSY), associated fishing rate (f_MSY), and associated CPUE indexed biomass (proportional to B_MSY). In the example below, we make iterated predictions for 50 timesteps as above, but record just the last 10 values. Since the resulting time series in this example can exhibit chaos and cycles, we then take the average over those values for each harvest rate.
 
 ```{r msy3, fig.height=3}
+#vector of harvest rates
 hratevec=seq(0,1,length.out=40)
+#number of timepoints to save
+tsave=10
 
-catchres=expand.grid(time=1:10,hrate=hratevec)
+catchres=expand.grid(time=1:tsave,hrate=hratevec)
 catchres$catch=NA
 catchres$cpue=NA
 for(i in seq_along(hratevec)) {
   msyfore=predict_iter(fishfit, newdata = RHfore, hrate = hratevec[i])
-  catchres$catch[catchres$hrate==hratevec[i]]=msyfore$outsampresults$Catch_1[41:50]
-  catchres$cpue[catchres$hrate==hratevec[i]]=msyfore$outsampresults$predmean[41:50]
+  #note that the next 2 lines only work if there is one population
+  catchres$catch[catchres$hrate==hratevec[i]]=msyfore$outsampresults$Catch_1[(nfore-tsave+1):nfore]
+  catchres$cpue[catchres$hrate==hratevec[i]]=msyfore$outsampresults$predmean[(nfore-tsave+1):nfore]
 }
 
 #average over the last 10 timepoints
@@ -145,50 +151,171 @@ abline(v=fmsy, col="red")
 
 It is also possible to set this up using a constant catch value rather than constant catch rate. To do this, omit `hrate` and fill all the catch rows and columns in `newdata` with a constant value. In this example with chaotic dynamics, this can lead to negative escapement, so it was not done here.
 
-## Iterated predictions (generally)
+## Multiple populations
 
-The `predict_iter` function can be used to obtain iterated predictions from regular `fitGP` models with lag predictors. Starting with the first row of `newdata`, the predicted `y` variable is inserted as the first lag for the next timestep, the other lags are shifted right by 1, and a new prediction is made. This continues for as many rows as are in `newdata`. Thus, this procedure assumes that all lags are present, evenly spaced, and in order (first lag is the first column). Time steps are assumed to be evenly spaced. The units of `y` and its lags are assumed to be the same.
+The `fitGP_fish` model can only have a single value of $b$. If you have multiple regions (populations), each with their own CPUE index and Catch values, you can fit a hierarchical model using `fitGP_fish` in the same way as `fitGP`, but the catchability will be assumed the same for both regions. If you have reason to believe this is not the case (e.g. different survey methods are used in each region, so the units of CPUE are not the same), one solution is to fit models separately for each region and obtain separate estimates for $b$. 
 
-Unless otherwise specified, all values of `x` are assumed to be time lags of `y`. If this is not the case (the model contains a mixture of lags and covariates), you must specify which columns are the time lags (argument `xlags` in `predict_iter`). The exception is for "fisheries models", where the lags and covariates are already separately specified.
+The sample dataset contains time series for a second region B, where the true value of $b$ is 0.005. It also has a different catch history.
 
-As with other prediction methods, `newdata` should contain all values of `x`, as well as `time`. Only the first row of lags in `newdata` (for each population) needs to be completely filled in. Subsequent time points can be NA or filled in - they will be overwritten with the predictions as the model iterates. The values of `time` and must be filled in. If the model has covariates, values for the covariates need to be supplied for all timepoints in `newdata`. If there are multiple populations, `newdata` should contain `pop` and there should be duplicated timesteps for each population.
-
-This examples uses the simulated 2 population theta logistic dataset. As expected for a chaotic system, the iterated predictions become very poor after a few timesteps.
-
-```{r itergeneral}
-xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time = "Time", E=3, tau=1, append=T)
-xdatatrain=subset(xdata, Time<=40)
-#get iterated predictions for the last 10 timesteps
-xdatafore=subset(xdata, Time>40)
-
-tlog=fitGP(data = xdatatrain, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
-           pop = "Population", time = "Time", scaling = "local")
-predtest=predict_iter(tlog, newdata = xdatafore)
-
-plot(predtest)
+```{r sampledataB, fig.height=3}
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(Catch~Time, data=RickerHarvestB, type="l", main="Region B")
+plot(CPUE_index~Time, data=RickerHarvestB, type="l", main="Region B")
 ```
 
-If you want to iterate forecasts beyond the end of the time series, here is how you might set that up. Note that because there are no observed values, we can't evaluate fit or make plots of observed vs. predicted.
+```{r modelfitB}
+#model for region B
+RHlagsB=makelags(RickerHarvestB, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, append=T)
+zeropin=data.frame(Time=0,CPUE_index=0,CPUE_index_1=0,Catch_1=0)
 
-```{r itergeneral2}
-xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time="Time", E=3, tau=1, append=T)
-#use forecast feature to get first rows
-xdatafore=makelags(data = thetalog2pop, y="Abundance", pop="Population", time="Time", E=3, tau=1, forecast=T)
-#create remaining timepoints for each population
-xdatafore2=expand.grid(Time=52:65, Population=unique(thetalog2pop$Population))
+fishfitB=fitGP_fish(data=RHlagsB, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time",
+                    augdata=zeropin)
+summary(fishfitB)
+```
+
+If you felt the need to combine these into a single hierarchical model, you could fix the values of $b$ for each population, calculate escapement, and fit a regular `fitGP` to the escapement values. Be sure to use `scaling="local"` because the values are assumed to be in different units by virtue of having different catchabilities, but the dynamics should be proportional. You may want to check whether the combined model actually produces better within-population fits than the models fit separately. If there are sufficient data, there is a good chance it will not.
+
+```{r combomodel, fig.height=3}
+bA=fishfit$b
+bB=fishfitB$b
+RHlags$escapement_1=RHlags$CPUE_index_1-RHlags$Catch_1*bA
+RHlagsB$escapement_1=RHlagsB$CPUE_index_1-RHlagsB$Catch_1*bB
+
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(CPUE_index~escapement_1, data=RHlags, main="Region A")
+plot(CPUE_index~escapement_1, data=RHlagsB, main="Region B")
+
+#alternatively, you could pull escapement out of the insampresults table, 
+#or use it to double check you math
+
+head(fishfit$insampresults)
+
+head(RHlags)
+```
+
+```{r combomodel2}
+RHlagscombo=rbind(RHlags, RHlagsB)
+zeropin=data.frame(Region=c("A","B"),Time=0,CPUE_index=0,escapement_1=0)
+
+fishfitcombo=fitGP(data=RHlagscombo, y="CPUE_index", x="escapement_1", time="Time",
+                   pop="Region", scaling="local", augdata=zeropin)
+summary(fishfitcombo)
+
+getconditionals(fishfitcombo)
+```
+
+## MSY with multiple populations
+
+If you have a multi-population `fitGP_fish` model that assumes a single values of $b$, or if you are using separate `fitGP_fish` models for each population, you should be able to use `predict_iter` as above, but will need to keep track of the predictions for each population and decide if you want to add them together or not.
+
+If you have a multi-population `fitGP` model with fixed $b$ values for each population, this gets a little tricky, since `predict_iter` is only designed to work with one value of $b$. You will probably have to write a custom loop, like below. This is mostly the internal code of `predict_iter` but with some modification.
+
+```{r combomsy}
+#number of timesteps to iterate
+nfore=50
+
+#use the forecast feature to create the first row
+RHforecombo=makelags(RickerHarvest, y=c("CPUE_index","Catch"), time="Time", 
+                     pop="Region", tau=1, E=1, forecast=T)
+#get remaining timepoints
+RHforecombo2=expand.grid(Time=(RHforecombo$Time[1]+1):(RHforecombo$Time[1]+nfore-1),
+                         Region=unique(RickerHarvest$Region))
 #create empty matrix for future values
-xdatafore3=matrix(NA, nrow=nrow(xdatafore2), ncol=3,
-                  dimnames=list(NULL,c("Abundance_1","Abundance_2","Abundance_3")))
+RHforecombo3=matrix(NA, nrow=nrow(RHforecombo2), ncol=2,
+                    dimnames=list(NULL,c("CPUE_index_1","Catch_1")))
 #combine everything
-xdatafore=rbind(xdatafore,cbind(xdatafore2,xdatafore3))
+RHforecombo=rbind(RHforecombo,cbind(RHforecombo2,RHforecombo3))
 
-head(xdatafore)
+#calculate escapement
+RHforecombo$b=ifelse(RHforecombo$Region=="A", bA, bB)
+RHforecombo$escapement_1=RHforecombo$CPUE_index_1-RHforecombo$Catch_1*RHforecombo$b
 
-tlog2=fitGP(data = xdata, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
-           pop = "Population", time = "Time", scaling = "local")
-predtest2=predict_iter(tlog2, newdata = xdatafore)
-#plot(predtest2)
-head(predtest2$outsampresults)
+head(RHforecombo)
+
+#vector of harvest rates
+hratevec=seq(0,1,length.out=40)
+#number of timepoints to save
+tsave=10
+
+#rename some stuff to minimize recoding
+popname="Region"
+timename="Time"
+object=fishfitcombo
+xlags="CPUE_index_1"
+hlags="Catch_1"
+newtimes=unique(RHforecombo[,timename])
+up=unique(RHforecombo[,popname])
+
+#setup final data frame
+catchres=expand.grid(Region=up,time=1:tsave,hrate=hratevec)
+catchres$catch=NA
+catchres$cpue=NA
+
+pred=list()
+
+for(h in seq_along(hratevec)) {
+  
+  newdata=RHforecombo
+  hrate = hratevec[h]
+  
+  #iterated prediction loop
+  for(i in seq_along(newtimes)) {
+    newdatai=newdata[newdata[,timename]==newtimes[i],]
+    #get prediction
+    pred[[i]]=predict(object, newdata=newdatai)$outsampresults
+    preds=pred[[i]]
+    #create new data row for each population
+    #assumes all lags are present and evenly spaced
+    if(i+1 <= length(newtimes)) {
+      for(j in 1:length(up)){
+        predsj=preds[preds$pop==up[j],]$predmean
+        thisrowj=newdata[,timename]==newtimes[i] & newdata[,popname]==up[j]
+        nextrowj=newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j]
+        newdata[nextrowj,xlags[1]]=predsj
+        if(length(xlags)>1) {
+          newdata[nextrowj,xlags[2:length(xlags)]]=newdata[thisrowj,xlags[1:(length(xlags)-1)]]
+        }
+        #compute next catch
+        newdata[nextrowj,hlags[1]]=predsj/newdata[nextrowj,"b"]*hrate
+        if(length(xlags)>1) {
+          newdata[nextrowj,hlags[2:length(xlags)]]=newdata[thisrowj,hlags[1:(length(xlags)-1)]]
+        }
+        #compute escapement
+        newdata$escapement_1=newdata[,xlags]-newdata[,hlags]*newdata[,"b"]
+      }
+    }
+  }
+  
+  #combine results
+  msyfore=do.call(rbind, pred)
+  msyfore=cbind(msyfore,newdata[,hlags,drop=F])
+  
+  #pull out last tsave timepoints for each population
+  for(i in 1:length(up)){
+    msyforei=subset(msyfore, pop==up[i])
+    catchres$catch[catchres$hrate==hratevec[h] & catchres$Region==up[i]]=
+      msyforei$Catch_1[(nfore-tsave+1):nfore]
+    catchres$cpue[catchres$hrate==hratevec[h] & catchres$Region==up[i]]=
+      msyforei$predmean[(nfore-tsave+1):nfore]
+  }
+}
+
+#add two regions together (could keep separate if desired)
+#this is more relevant for catch than cpue, since cpue are in different units and sum is not really interpretable
+catchresagg0=aggregate(cbind(catch,cpue)~hrate*time, data=catchres, sum)
+
+#average over the last 10 timepoints
+catchresagg=aggregate(cbind(catch,cpue)~hrate, data=catchresagg0, mean)
+(fmsy=catchresagg$hrate[which.max(catchresagg$catch)])
+(Bmsy=catchresagg$cpue[which.max(catchresagg$catch)])
+
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(catch~hrate, data=catchresagg0, col="gray")
+lines(catch~hrate, data=catchresagg, lwd=2, col="red")
+abline(v=fmsy, col="red")
+plot(cpue~hrate, data=catchresagg0, col="gray")
+lines(cpue~hrate, data=catchresagg, lwd=2, col="red")
+abline(v=fmsy, col="red")
 ```
 
 ## References
