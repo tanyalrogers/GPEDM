@@ -272,7 +272,11 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     yd=c(y,yaug)
     xd=rbind(x,xaug)
     timed=c(time,timeaug)
-    popd=c(pop,popaug)
+    if(is.factor(pop)) { #fixes bug that happens if pop is a factor, augdata is used, and local scaling is used
+      popd=factor(c(as.character(pop),as.character(popaug)), levels=levels(pop))
+    } else {
+      popd=c(pop,popaug)
+    }
     primary=c(rep(T,length(y)),rep(F,length(yaug)))
   } else { 
   #no augmentation data
@@ -311,22 +315,22 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     xds=apply(xd,2,scale)
   }
   if(scaling=="local") {
-    ymeans=tapply(yd,pop,mean,na.rm=T)
-    ysds=tapply(yd,pop,sd,na.rm=T)
-    xlist=split(as.data.frame(xd),pop)
+    ymeans=tapply(yd,popd,mean,na.rm=T)
+    ysds=tapply(yd,popd,sd,na.rm=T)
+    xlist=split(as.data.frame(xd),popd)
     xmeans=lapply(xlist,function(x) apply(x,2,mean,na.rm=T))
     xsds=lapply(xlist,function(x) apply(x,2,sd,na.rm=T))
-    up=unique(pop)
+    up=unique(popd)
     xds=xd
     yds=yd
     for(i in 1:length(up)) {
       locmean=ymeans[as.character(up[i])==names(ymeans)]
       locsd=ysds[as.character(up[i])==names(ysds)]
-      yds[pop==up[i]]=(yds[pop==up[i]]-locmean)/locsd
+      yds[popd==up[i]]=(yds[popd==up[i]]-locmean)/locsd
       for(j in 1:d) {
         locmean=xmeans[[which(as.character(up[i])==names(xmeans))]][j]
         locsd=xsds[[which(as.character(up[i])==names(xsds))]][j]
-        xds[pop==up[i],j]=(xd[pop==up[i],j]-locmean)/locsd          
+        xds[popd==up[i],j]=(xd[popd==up[i],j]-locmean)/locsd          
       }
     }
   }
@@ -343,12 +347,12 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
               logit(initpars[d+2],sigma2min,sigma2max), logit(initpars[d+3],rhomin,rhomax))
   
   #if only one population, set transformed rho to 0
-  if(length(unique(pop))==1) {initparst[d+3]=0}
+  if(length(unique(popd))==1) {initparst[d+3]=0}
   
   #store rhomatrix if supplied, check formatting, pop representation
   if(!is.null(rhomatrix)) {
     inputs$rhomatrix=rhomatrix
-    up=unique(pop)
+    up=unique(popd)
     if(is.null(colnames(rhomatrix)) | is.null(rownames(rhomatrix))) {
       colnames(rhomatrix)=up
       rownames(rhomatrix)=up
