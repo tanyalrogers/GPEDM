@@ -86,7 +86,7 @@ Given a fitted fisheries model, the steady state catch and biomass given a certa
 
 Starting with the first row of `newdata`, the predicted `y` variable is inserted into the first column of `m` for the next timestep, and the other values of `m` are shifted right by 1. The first value of `h` at the next timestep is calculated as `y/b*hrate` and the other values of `h` are shifted right by 1. Escapement is recalculated, and a new prediction for `y` is made. This continues for as many rows as are in `newdata`. Thus, this procedure assumes that all lags are present, evenly spaced, and in order (first lag is the first column). Time steps are assumed to be evenly spaced. The units of `y` and `m` are assumed to be the same.
 
-In `newdata`, only the first timepoint (row) for `m` and `h` needs to be filled in. The rest can be NA and will be filled in as the model iterates forward. The values of `time` and must be filled in. If there are covariates (`z`), they should also be included in `newdata`, and values must be supplied for all time points. If there are multiple populations, `newdata` should contain `pop` and there should be duplicated timesteps for each population (see the next section on general iterated predictions for a 2-population example).
+In `newdata`, only the first timepoint (row) for `m` and `h` needs to be filled in. The rest can be NA and will be filled in as the model iterates forward. The values of `time` must be filled in. If there are covariates (`z`), they should also be included in `newdata`, and values must be supplied for all time points. If there are multiple populations, `newdata` should contain `pop` and there should be duplicated timesteps for each population (see the next sections for a 2-population example).
 
 ```{r msy1, fig.height=3}
 #number of timesteps to iterate
@@ -98,7 +98,7 @@ RHfore=makelags(RickerHarvestA, y=c("CPUE_index","Catch"), time="Time", tau=1, E
 RHfore2=data.frame(Time=(RHfore$Time[1]+1):(RHfore$Time[1]+nfore-1)) 
 #create empty matrix for future values
 RHfore3=matrix(NA, nrow=nrow(RHfore2), ncol=2,
-                  dimnames=list(NULL,c("CPUE_index_1","Catch_1")))
+               dimnames=list(NULL,c("CPUE_index_1","Catch_1")))
 #combine everything
 RHfore=rbind(RHfore,cbind(RHfore2,RHfore3))
 
@@ -186,7 +186,7 @@ plot(CPUE_index~escapement_1, data=RHlags, main="Region A")
 plot(CPUE_index~escapement_1, data=RHlagsB, main="Region B")
 
 #alternatively, you could pull escapement out of the insampresults table, 
-#or use it to double check you math
+#or use it to double check your math
 
 head(fishfit$insampresults)
 
@@ -280,9 +280,9 @@ for(h in seq_along(hratevec)) {
         if(length(xlags)>1) {
           newdata[nextrowj,hlags[2:length(xlags)]]=newdata[thisrowj,hlags[1:(length(xlags)-1)]]
         }
-        #compute escapement
-        newdata$escapement_1=newdata[,xlags]-newdata[,hlags]*newdata[,"b"]
       }
+      #compute escapement
+      newdata$escapement_1=newdata[,xlags]-newdata[,hlags]*newdata[,"b"]
     }
   }
   
