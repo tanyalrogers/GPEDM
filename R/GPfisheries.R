@@ -42,7 +42,7 @@
 
 fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
                 scaling=c("global","local","none"),
-                initpars=NULL,modeprior=1,rhofixed=NULL,
+                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                 rhomatrix=NULL,augdata=NULL,
                 predictmethod=NULL,newdata=NULL,
                 xname="escapement",bfixed=NULL) {
@@ -66,7 +66,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
     bmax=min(md/hd, na.rm=T)
     boptim=optimize(GPlike_fish, interval = c(0, bmax), maximum = TRUE,
                     data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
-                    initpars=initpars,modeprior=modeprior,rhofixed=rhofixed,
+                    initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
                     rhomatrix=rhomatrix,augdata=augdata,xname=xname)
     #get value of b
     b=boptim$maximum
@@ -94,7 +94,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
   if(!is.null(z)) { x=c(x,z) }
 
   output=fitGP(data=data,y=y,x=x,pop=pop,time=time,scaling=scaling,initpars=initpars,
-             modeprior=modeprior,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
+             modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
   output$b=b
   output$insampresults=cbind(output$insampresults,data[,x,drop=F])
     output$inputs$m_names=m
@@ -111,7 +111,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
 }
 
 
-GPlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,rhofixed,rhomatrix,augdata,xname="escapement") {
+GPlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,xname="escapement") {
   
   #extract variables
   md=data[,m,drop=F]
@@ -137,7 +137,7 @@ GPlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,rhofixed
   
   #fit model
   mfit=fitGP(data=data,y=y,x=x,pop=pop,time=time,scaling=scaling,initpars=initpars,
-             modeprior=modeprior,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
+             modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
   
   #return posterior likelihood
   return(mfit$insampfitstats["ln_post"])
