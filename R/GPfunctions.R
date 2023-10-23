@@ -124,6 +124,10 @@
 #'   vector with length \code{ncol(x)+3}. Defaults used if not supplied: \code{c(rep(0.1,ncol(x)), 0.001, 1-0.001, 0.5)}
 #' @param modeprior This value is used by the phi prior and sets the expected number of modes over the unit interval. 
 #'   Defaults to 1.
+#' @param fixedpars Fixes values of the hyperparameters phi, ve, and sigma2 (if desired). Should be a numeric 
+#'   vector with length \code{ncol(x)+2} in the order \code{c(phi,ve,sigma2)} in constrained 
+#'   (non-transformed) space. Hyperparameters to estimate should be input as NA. The value of rho is
+#'   fixed separately using argument \code{rhofixed}.
 #' @param rhofixed Fixes the rho parameter, if desired (see Details).
 #' @param rhomatrix Symmetrical square matrix of fixed pairwise rho values to use, with 1's on the diagonal. 
 #'   The rows and columns should be named with the population identifier. 
@@ -172,7 +176,7 @@
 
 fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
-               initpars=NULL,modeprior=1,rhofixed=NULL,
+               initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                rhomatrix=NULL,augdata=NULL,
                predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
 
@@ -339,6 +343,13 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   if(is.null(initpars)) {
     initpars=c(rep(0.1,d),0.001, 1-0.001, 0.5)
   }
+  #fixed parameters
+  if(is.null(fixedpars)) {
+    fixedpars=rep(NA,times=d+2)
+  }
+  if(length(fixedpars)!=d+2) {
+    stop("Length of fixedpars must be number of predictors + 2 (phi, ve, sigma2)")
+  }
   #transform parameters (also at line 506!)
   vemin=0.0001;sigma2min=0.0001
   vemax=4.9999;sigma2max=4.9999
@@ -372,7 +383,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   Primary=primary[completerows]
   
   #optimize model
-  output=fmingrad_Rprop(initparst,Y,X,Pop,modeprior,rhofixed,rhomatrix)
+  output=fmingrad_Rprop(initparst,Y,X,Pop,modeprior,fixedpars,rhofixed,rhomatrix)
   # contains: list(parst,pars,nllpost,grad,lnL_LOO,df,mean,cov,covm,iter)
   
   #backfill missing values
@@ -439,7 +450,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   return(output)
 }
 
-fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix) {
+fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix) {
   
   #this uses the sign of the gradient to determine descent directions 
   #and an adaptive step size - supposedly smoother convergence than
@@ -462,7 +473,7 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix) {
   }  
   
   #initialize 
-  output=getlikegrad(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly=T)
+  output=getlikegrad(initparst,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,returngradonly=T)
   nllpost=output$nllpost
   grad=output$grad
   s=drop(sqrt(grad%*%grad))
@@ -477,7 +488,7 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix) {
     
     #step 1-move
     panew=pa-sign(grad)*del
-    output_new=getlikegrad(panew,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly=T)
+    output_new=getlikegrad(panew,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,returngradonly=T)
     nllpost_new=output_new$nllpost
     grad_new=output_new$grad
     s=drop(sqrt(grad_new%*%grad_new))
@@ -496,13 +507,13 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,rhofixed,rhomatrix) {
   
   #print(iter)
   paopt=pa
-  output_new=getlikegrad(paopt,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly=F)
+  output_new=getlikegrad(paopt,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,returngradonly=F)
   output_new$iter=iter
   
   return(output_new)
 }
 
-getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly) {
+getlikegrad=function(parst,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,returngradonly) {
   
   d=ncol(X) #embedding dimension
   
@@ -515,8 +526,12 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
   sigma2=(sigma2max-sigma2min)/(1+exp(-parst[d+2]))+sigma2min
   rho=(rhomax-rhomin)/(1+exp(-parst[d+3]))+rhomin
   
-  if (!is.null(rhofixed)) {rho=rhofixed}
-
+  #fix parameters
+  if(!is.null(rhofixed)) {rho=rhofixed}
+  if(any(!is.na(fixedpars[1:d]))) {phi[which(!is.na(fixedpars[1:d]))]=fixedpars[which(!is.na(fixedpars[1:d]))]}
+  if(!is.na(fixedpars[d+1])) {ve=fixedpars[d+1]}
+  if(!is.na(fixedpars[d+2])) {sigma2=fixedpars[d+2]}
+  
   #derivative for rescaled parameters wrt inputs -- for gradient calculation
   dpars=c(phi,(ve-vemin)*(1-(ve-vemin)/(vemax-vemin)),
           (sigma2-sigma2min)*(1-(sigma2-sigma2min)/(sigma2max-sigma2min)),
@@ -549,11 +564,19 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
   dl=0*dlp
   vQ=0.5*matrix2vector(a%*%t(a)-iKVs)
   
-  dl[1:d]<-sapply(D,function(x) {
-    dC=-multMat(x,Cd)
-    vdC=matrix2vector(dC)
-    0.5*innerProd(vQ,vdC) })
+  # dl[1:d]<-sapply(D,function(x) {
+  #   dC=-multMat(x,Cd)
+  #   vdC=matrix2vector(dC)
+  #   0.5*innerProd(vQ,vdC) })
   
+  for(i in 1:d) {
+    if(is.na(fixedpars[i])) {
+      dC=-multMat(D[[i]],Cd)
+      vdC=matrix2vector(dC)
+      dl[i]=0.5*innerProd(vQ,vdC)
+    }
+  }
+
   # dl[1:d]=sapply(D,function(x) {
   #   dC=-x*Cd
   #   vdC=as.vector(dC)
@@ -575,12 +598,17 @@ getlikegrad=function(parst,Y,X,pop,modeprior,rhofixed,rhomatrix,D,returngradonly
   #   dl[i]=0.5*vQ%*%as.vector(dC[[i]])
   # }
   
-  vdC=matrix2vector(Id)
-  # dl[d+1]=vQ%*%vdC
-  dl[d+1]=innerProd(vQ,vdC)
-  vdC=matrix2vector(Cd/sigma2)
-  # dl[d+2]=vQ%*%vdC
-  dl[d+2]=innerProd(vQ,vdC)
+  if(is.na(fixedpars[d+1])) {
+    vdC=matrix2vector(Id)
+    # dl[d+1]=vQ%*%vdC
+    dl[d+1]=innerProd(vQ,vdC)
+  }
+
+  if(!is.na(fixedpars[d+2])) {
+    vdC=matrix2vector(Cd/sigma2)
+    # dl[d+2]=vQ%*%vdC
+    dl[d+2]=innerProd(vQ,vdC)
+  }
   
   #if rhofixed exists, rhomatrix exists, or only 1 population, don't compute grad for rho
   if(!is.null(rhofixed) | !is.null(rhomatrix) | length(unique(pop))==1) {
