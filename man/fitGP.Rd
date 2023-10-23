@@ -15,6 +15,7 @@ fitGP(
   scaling = c("global", "local", "none"),
   initpars = NULL,
   modeprior = 1,
+  fixedpars = NULL,
   rhofixed = NULL,
   rhomatrix = NULL,
   augdata = NULL,
@@ -65,6 +66,11 @@ vector with length \code{ncol(x)+3}. Defaults used if not supplied: \code{c(rep(
 
 \item{modeprior}{This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.}
+
+\item{fixedpars}{Fixes values of the hyperparameters phi, ve, and sigma2 (if desired). Should be a numeric
+vector with length \code{ncol(x)+2} in the order \code{c(phi,ve,sigma2)} in constrained
+(non-transformed) space. Hyperparameters to estimate should be input as NA. The value of rho is
+fixed separately using argument \code{rhofixed}.}
 
 \item{rhofixed}{Fixes the rho parameter, if desired (see Details).}
 
