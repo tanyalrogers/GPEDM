@@ -94,6 +94,7 @@ See Details for more information.</p>
 <span>  scaling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"global"</span>, <span class="st">"local"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  initpars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  modeprior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  fixedpars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rhofixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rhomatrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  augdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -165,6 +166,13 @@ vector with length <code>ncol(x)+3</code>. Defaults used if not supplied: <code>
 <dt>modeprior</dt>
 <dd><p>This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.</p></dd>
+
+
+<dt>fixedpars</dt>
+<dd><p>Fixes values of the hyperparameters phi, ve, and sigma2 (if desired). Should be a numeric
+vector with length <code>ncol(x)+2</code> in the order <code>c(phi,ve,sigma2)</code> in constrained
+(non-transformed) space. Hyperparameters to estimate should be input as NA. The value of rho is
+fixed separately using argument <code>rhofixed</code>.</p></dd>
 
 
 <dt>rhofixed</dt>
