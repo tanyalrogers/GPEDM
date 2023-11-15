@@ -162,14 +162,14 @@ have one large time gap that you don’t want to use this method for).</p>
 <span><span class="co">#&gt; Number of predictors: 4 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1       X_1       0.45263</span></span>
-<span><span class="co">#&gt; phi2       X_2       0.63457</span></span>
-<span><span class="co">#&gt; phi3   Tdiff_1       0.03895</span></span>
-<span><span class="co">#&gt; phi4   Tdiff_2       0.02187</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.0003071627</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.499959</span></span>
+<span><span class="co">#&gt; phi1       X_1       0.33608</span></span>
+<span><span class="co">#&gt; phi2       X_2       0.50403</span></span>
+<span><span class="co">#&gt; phi3   Tdiff_1       0.03449</span></span>
+<span><span class="co">#&gt; phi4   Tdiff_2       0.01978</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.0003144938</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.399279</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9997688</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9997596</span></span>
 <span></span>
 <span><span class="va">basepredplot</span><span class="op">=</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">vtdemo</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
@@ -193,7 +193,7 @@ have one large time gap that you don’t want to use this method for).</p>
 <span><span class="va">vtinterp</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo</span>, newdata <span class="op">=</span> <span class="va">HPmissinterp</span><span class="op">)</span></span>
 <span><span class="va">vtinterp</span><span class="op">$</span><span class="va">outsampfitstats</span></span>
 <span><span class="co">#&gt;         R2       rmse </span></span>
-<span><span class="co">#&gt; 0.99594193 0.01249214</span></span>
+<span><span class="co">#&gt; 0.99460308 0.01440622</span></span>
 <span></span>
 <span><span class="va">basepredplot</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">vtinterp</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span></span>
@@ -287,20 +287,20 @@ all possible combinations of the Tdiff values supplied in
 <span><span class="co">#&gt; Number of predictors: 4 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1       X_1       0.44481</span></span>
-<span><span class="co">#&gt; phi2       X_2       0.59467</span></span>
-<span><span class="co">#&gt; phi3   Tdiff_1       0.04555</span></span>
-<span><span class="co">#&gt; phi4   Tdiff_2       0.09015</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.0003703434</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.499961</span></span>
+<span><span class="co">#&gt; phi1       X_1       0.31120</span></span>
+<span><span class="co">#&gt; phi2       X_2       0.45204</span></span>
+<span><span class="co">#&gt; phi3   Tdiff_1       0.04290</span></span>
+<span><span class="co">#&gt; phi4   Tdiff_2       0.07374</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.0003759305</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.705812</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9997631</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9997533</span></span>
 <span></span>
 <span><span class="va">vtapred</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo_aug</span>,newdata<span class="op">=</span><span class="va">HPmissfore</span><span class="op">)</span></span>
 <span><span class="va">vtainterp</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">vtdemo_aug</span>, newdata <span class="op">=</span> <span class="va">HPmissinterp</span><span class="op">)</span></span>
 <span><span class="va">vtainterp</span><span class="op">$</span><span class="va">outsampfitstats</span></span>
 <span><span class="co">#&gt;         R2       rmse </span></span>
-<span><span class="co">#&gt; 0.99721022 0.01035767</span></span>
+<span><span class="co">#&gt; 0.99726036 0.01026417</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">vtdemo_aug</span><span class="op">$</span><span class="va">insampresults</span>,<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>,y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>

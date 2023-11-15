@@ -241,13 +241,13 @@ least 2.</p>
 <span><span class="co">#&gt; Number of predictors: 2 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1       X_1       0.27192</span></span>
-<span><span class="co">#&gt; phi2       X_2       0.38890</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.0001772399</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.499949</span></span>
+<span><span class="co">#&gt; phi1       X_1       0.21716</span></span>
+<span><span class="co">#&gt; phi2       X_2       0.33140</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.0001761443</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.365049</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9998471 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.9967384</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9998473 </span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.9979118</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-2-3.png" width="700"></p>
@@ -321,7 +321,7 @@ smaller one if you were interested in parsimony.</p>
 <span><span class="co">#if not aleady in order</span></span>
 <span><span class="co">#Etaugrid=Etaugrid[order(Etaugrid$tau,Etaugrid$E),] </span></span>
 <span><span class="op">(</span><span class="va">bestE</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">E</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 4</span></span>
+<span><span class="co">#&gt; [1] 6</span></span>
 <span><span class="op">(</span><span class="va">besttau</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">tau</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
 <span></span>
@@ -330,18 +330,20 @@ smaller one if you were interested in parsimony.</p>
 <span>           time<span class="op">=</span><span class="st">"YEAR"</span>, </span>
 <span>           predictmethod <span class="op">=</span> <span class="st">"loo"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Number of predictors: 4 </span></span>
+<span><span class="co">#&gt; Number of predictors: 6 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;       predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 squidlog_1       0.05461</span></span>
-<span><span class="co">#&gt; phi2 squidlog_2       0.28062</span></span>
-<span><span class="co">#&gt; phi3 squidlog_3       0.03991</span></span>
-<span><span class="co">#&gt; phi4 squidlog_4       0.11078</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.2132048</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.499949</span></span>
+<span><span class="co">#&gt; phi1 squidlog_1       0.04734</span></span>
+<span><span class="co">#&gt; phi2 squidlog_2       0.24373</span></span>
+<span><span class="co">#&gt; phi3 squidlog_3       0.06569</span></span>
+<span><span class="co">#&gt; phi4 squidlog_4       0.00746</span></span>
+<span><span class="co">#&gt; phi5 squidlog_5       0.02067</span></span>
+<span><span class="co">#&gt; phi6 squidlog_6       0.00130</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.203274</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.647853</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.8906374 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.5752373</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.8892768 </span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5833364</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-3-3.png" width="700"></p>
@@ -390,21 +392,21 @@ actually be.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">demo</span><span class="op">$</span><span class="va">pars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">i</span><span class="op">]</span>,<span class="fl">6</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt;     phi1 </span></span>
-<span><span class="co">#&gt; 0.026097 </span></span>
+<span><span class="co">#&gt; 0.020154 </span></span>
 <span><span class="co">#&gt;     phi1     phi2 </span></span>
-<span><span class="co">#&gt; 0.271921 0.388902 </span></span>
+<span><span class="co">#&gt; 0.217163 0.331399 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3 </span></span>
-<span><span class="co">#&gt; 0.092386 0.079755 0.017705 </span></span>
+<span><span class="co">#&gt; 0.063912 0.056489 0.011711 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4 </span></span>
-<span><span class="co">#&gt; 0.077228 0.020995 0.034684 0.015913 </span></span>
+<span><span class="co">#&gt; 0.066353 0.049745 0.000000 0.004594 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5 </span></span>
-<span><span class="co">#&gt; 0.070162 0.000000 0.044644 0.000001 0.012690 </span></span>
+<span><span class="co">#&gt; 0.056124 0.000000 0.038560 0.000000 0.008030 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6 </span></span>
-<span><span class="co">#&gt; 0.063698 0.000000 0.012350 0.023735 0.014589 0.004826 </span></span>
+<span><span class="co">#&gt; 0.055719 0.000000 0.037928 0.000000 0.008687 0.000000 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6     phi7 </span></span>
-<span><span class="co">#&gt; 0.060608 0.000000 0.000000 0.033965 0.009984 0.010918 0.000000 </span></span>
+<span><span class="co">#&gt; 0.055749 0.000000 0.038347 0.000000 0.008479 0.000000 0.000000 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6     phi7     phi8 </span></span>
-<span><span class="co">#&gt; 0.059714 0.000000 0.000000 0.031701 0.012288 0.011211 0.000000 0.000000</span></span>
+<span><span class="co">#&gt; 0.046518 0.000000 0.000471 0.000471 0.033521 0.012773 0.002145 0.000000</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span>, <span class="va">R2vals</span>, type<span class="op">=</span><span class="st">"o"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
 </div>
@@ -429,17 +431,17 @@ not providing much information.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">demo</span><span class="op">$</span><span class="va">pars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">i</span><span class="op">]</span>,<span class="fl">6</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt;     phi1 </span></span>
-<span><span class="co">#&gt; 0.037219 </span></span>
+<span><span class="co">#&gt; 0.035776 </span></span>
 <span><span class="co">#&gt;     phi1     phi2 </span></span>
-<span><span class="co">#&gt; 0.037001 0.000000 </span></span>
+<span><span class="co">#&gt; 0.035482 0.000000 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3 </span></span>
-<span><span class="co">#&gt; 0.047184 0.195044 0.031655 </span></span>
+<span><span class="co">#&gt; 0.046410 0.193942 0.031216 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4 </span></span>
-<span><span class="co">#&gt; 0.054606 0.280616 0.039907 0.110778 </span></span>
+<span><span class="co">#&gt; 0.061337 0.292041 0.044430 0.124112 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5 </span></span>
-<span><span class="co">#&gt; 0.055427 0.241224 0.060114 0.008953 0.017981 </span></span>
+<span><span class="co">#&gt; 0.062538 0.307994 0.049649 0.077748 0.000000 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6 </span></span>
-<span><span class="co">#&gt; 0.049677 0.248286 0.068720 0.007943 0.021861 0.001310</span></span>
+<span><span class="co">#&gt; 0.047337 0.243734 0.065694 0.007457 0.020671 0.001297</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span>, <span class="va">R2vals</span>, type<span class="op">=</span><span class="st">"o"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
 </div>
@@ -472,19 +474,19 @@ though.</p>
 <span><span class="co">#&gt; Number of predictors: 8 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;      predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1       X_1       0.05971</span></span>
+<span><span class="co">#&gt; phi1       X_1       0.04652</span></span>
 <span><span class="co">#&gt; phi2       X_2       0.00000</span></span>
-<span><span class="co">#&gt; phi3       X_3       0.00000</span></span>
-<span><span class="co">#&gt; phi4       X_4       0.03170</span></span>
-<span><span class="co">#&gt; phi5       X_5       0.01229</span></span>
-<span><span class="co">#&gt; phi6       X_6       0.01121</span></span>
-<span><span class="co">#&gt; phi7       X_7       0.00000</span></span>
+<span><span class="co">#&gt; phi3       X_3       0.00047</span></span>
+<span><span class="co">#&gt; phi4       X_4       0.00047</span></span>
+<span><span class="co">#&gt; phi5       X_5       0.03352</span></span>
+<span><span class="co">#&gt; phi6       X_6       0.01277</span></span>
+<span><span class="co">#&gt; phi7       X_7       0.00214</span></span>
 <span><span class="co">#&gt; phi8       X_8       0.00000</span></span>
-<span><span class="co">#&gt; Process variance (ve): 1e-04</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.49995</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.0001000025</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.087007</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.999998 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.9998537</span></span></code></pre></div>
+<span><span class="co">#&gt; In-sample R-squared: 0.9999973 </span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.9998047</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="squid-data-2">Squid data<a class="anchor" aria-label="anchor" href="#squid-data-2"></a>
@@ -497,17 +499,17 @@ though.</p>
 <span><span class="co">#&gt; Number of predictors: 6 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;       predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 squidlog_1       0.04968</span></span>
-<span><span class="co">#&gt; phi2 squidlog_2       0.24829</span></span>
-<span><span class="co">#&gt; phi3 squidlog_3       0.06872</span></span>
-<span><span class="co">#&gt; phi4 squidlog_4       0.00794</span></span>
-<span><span class="co">#&gt; phi5 squidlog_5       0.02186</span></span>
-<span><span class="co">#&gt; phi6 squidlog_6       0.00131</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.2036796</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.49995</span></span>
+<span><span class="co">#&gt; phi1 squidlog_1       0.04734</span></span>
+<span><span class="co">#&gt; phi2 squidlog_2       0.24373</span></span>
+<span><span class="co">#&gt; phi3 squidlog_3       0.06569</span></span>
+<span><span class="co">#&gt; phi4 squidlog_4       0.00746</span></span>
+<span><span class="co">#&gt; phi5 squidlog_5       0.02067</span></span>
+<span><span class="co">#&gt; phi6 squidlog_6       0.00130</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.203274</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.647853</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.8893235 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.5785835</span></span></code></pre></div>
+<span><span class="co">#&gt; In-sample R-squared: 0.8892768 </span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5833364</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
