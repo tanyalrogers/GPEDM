@@ -350,6 +350,9 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   if(length(fixedpars)!=d+2) {
     stop("Length of fixedpars must be number of predictors + 2 (phi, ve, sigma2)")
   }
+  fixedpars_index=which(!is.na(fixedpars))
+  initpars[fixedpars_index]=fixedpars[fixedpars_index]
+  
   #transform parameters (also at line 506!)
   vemin=0.0001;sigma2min=0.0001
   vemax=4.9999;sigma2max=4.9999
@@ -491,6 +494,7 @@ fmingrad_Rprop = function(initparst,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatr
     output_new=getlikegrad(panew,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,returngradonly=T)
     nllpost_new=output_new$nllpost
     grad_new=output_new$grad
+    #panew=output_new$parst #prevent parst from changing if using fixedpars (probably not necessary?)
     s=drop(sqrt(grad_new%*%grad_new))
     df=abs(nllpost_new/nllpost-1)
     
@@ -526,11 +530,28 @@ getlikegrad=function(parst,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,retu
   sigma2=(sigma2max-sigma2min)/(1+exp(-parst[d+2]))+sigma2min
   rho=(rhomax-rhomin)/(1+exp(-parst[d+3]))+rhomin
   
+  #if only 1 pop or rhomatrix exists, fix rho to 0.5
+  if(length(unique(pop))==1 | !is.null(rhomatrix)) {
+    rhofixed=0.5
+  }
+  
   #fix parameters
-  if(!is.null(rhofixed)) {rho=rhofixed}
-  if(any(!is.na(fixedpars[1:d]))) {phi[which(!is.na(fixedpars[1:d]))]=fixedpars[which(!is.na(fixedpars[1:d]))]}
-  if(!is.na(fixedpars[d+1])) {ve=fixedpars[d+1]}
-  if(!is.na(fixedpars[d+2])) {sigma2=fixedpars[d+2]}
+  if(!is.null(rhofixed)) {
+    rho=rhofixed
+    parst[d+3]=logit(rho,rhomin,rhomax)
+  }
+  if(any(!is.na(fixedpars[1:d]))) {
+    phi[which(!is.na(fixedpars[1:d]))]=fixedpars[which(!is.na(fixedpars[1:d]))]
+    parst[1:d]=log(phi)
+  }
+  if(!is.na(fixedpars[d+1])) {
+    ve=fixedpars[d+1]
+    parst[d+1]=logit(ve,vemin,vemax)
+  }
+  if(!is.na(fixedpars[d+2])) {
+    sigma2=fixedpars[d+2]
+    parst[d+2]=logit(sigma2,sigma2min,sigma2max)
+  }
   
   #derivative for rescaled parameters wrt inputs -- for gradient calculation
   dpars=c(phi,(ve-vemin)*(1-(ve-vemin)/(vemax-vemin)),
@@ -604,14 +625,14 @@ getlikegrad=function(parst,Y,X,pop,modeprior,fixedpars,rhofixed,rhomatrix,D,retu
     dl[d+1]=innerProd(vQ,vdC)
   }
 
-  if(!is.na(fixedpars[d+2])) {
+  if(is.na(fixedpars[d+2])) {
     vdC=matrix2vector(Cd/sigma2)
     # dl[d+2]=vQ%*%vdC
     dl[d+2]=innerProd(vQ,vdC)
   }
   
   #if rhofixed exists, rhomatrix exists, or only 1 population, don't compute grad for rho
-  if(!is.null(rhofixed) | !is.null(rhomatrix) | length(unique(pop))==1) {
+  if(!is.null(rhofixed)) {
     dl[d+3]=0
   } else {
     popsame=covm$popsame #population simularity matrix
