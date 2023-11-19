@@ -15,11 +15,11 @@ summary.GP=function(object, ...) {
   }
   cat("Length scale parameters:\n")
   if(!is.null(object$inputs$x_names2)) {
-    print(data.frame(predictor=object$inputs$x_names2,posteriormode=round(object$pars[1:d],5)))
+    print.data.frame(data.frame(predictor=object$inputs$x_names2,posteriormode=round(object$pars[1:d],5)))
   } else if(!is.null(object$inputs$x_names)) {
-    print(data.frame(predictor=object$inputs$x_names,posteriormode=round(object$pars[1:d],5)))
+    print.data.frame(data.frame(predictor=object$inputs$x_names,posteriormode=round(object$pars[1:d],5)))
   } else {
-    print(data.frame(posteriormode=round(object$pars[1:d],5)))
+    print.data.frame(data.frame(posteriormode=round(object$pars[1:d],5)))
   }
   cat("Process variance (ve):",object$pars["ve"])
   cat("\nPointwise prior variance (sigma2):",object$pars["sigma2"])
@@ -35,13 +35,13 @@ summary.GP=function(object, ...) {
   cat("\nIn-sample R-squared:",object$insampfitstats["R2"],"\n")
   if(np>1) {
     cat("In-sample R-squared by population:\n")
-    print(data.frame(R2=object$insampfitstatspop$R2))
+    print.data.frame(data.frame(R2=object$insampfitstatspop$R2))
   }
   if(!is.null(object$outsampfitstats)) {
     cat("Out-of-sample R-squared:",object$outsampfitstats["R2"])
     if(np>1) {
       cat("\nOut-of-sample R-squared by population:\n")
-      print(data.frame(R2=object$outsampfitstatspop$R2))
+      print.data.frame(data.frame(R2=object$outsampfitstatspop$R2))
     }
   }
 }
