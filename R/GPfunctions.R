@@ -836,6 +836,13 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         colnames(x2)=object$inputs$x_names[1:ncol(x2)]
         newdata=cbind(newdata,x2)
       }
+      if(object$inputs$y0_names %in% colnames(newdata)) {
+        #get transformed y
+        y0=object$inputs$y0
+        yd=ytransfun(y=newdata[,y0], m1=md[,1], e1=x2[,1], ytrans=object$inputs$ytrans)
+        yd=data.frame(yd); colnames(yd)=y
+        newdata=cbind(newdata,yd)
+      }
     }
     
     #if data frame is supplied, take columns from it
@@ -938,6 +945,14 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   } else {
     
     predictmethod=match.arg(predictmethod)
+    
+    #get training data m and e values from fisheries models
+    #(not used for prediction, but potentially needed for backtransform)
+    if(!is.null(object$b)) {
+      md=object$inputs$m
+      x2=object$inputs$x
+      colnames(x2)=object$inputs$x_names[1:ncol(x2)]
+    }
     
     if(predictmethod=="loo") {
       Cd=object$covm$Cd
@@ -1118,13 +1133,30 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   
   #probably need to output xnew (combine with table?, only if 1 predictor?)
   out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=ypred,predfsd=yfsd,predsd=ysd))
+  if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults, obs=ynew) }
   
-  if(!is.null(object$b) & !is.null(newdata)) { 
-  out$outsampresults=cbind(out$outsampresults,newdata[,object$inputs$x_names[1:ncol(x2)],drop=F])
+  if(!is.null(object$b)) { #for fisheries models
+    #backtransform predictions
+    ypred_trans=ypred
+    ypred=ytransfuninv(y=ypred_trans, m1=md[,1], e1=x2[,1], ytrans=object$inputs$ytrans)
+    if(!is.null(ynew)) {
+      ynew_trans=ynew
+      ynew=ytransfuninv(y=ynew_trans, m1=md[,1], e1=x2[,1], ytrans=object$inputs$ytrans)
+    }
+    #change outsampresults 
+    out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean_trans=ypred_trans,
+                                       predfsd_trans=yfsd,predsd_trans=ysd))
+    if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults,obs_trans=ynew_trans) }
+    out$outsampresults=cbind(out$outsampresults,predmean=ypred)
+    if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults,obs=ynew) }
+    out$outsampresults=cbind(out$outsampresults,x2) #add escapement values
   }
   
+  # if(!is.null(object$b) & !is.null(newdata)) { #add escapement values for newdata
+  # out$outsampresults=cbind(out$outsampresults,newdata[,object$inputs$x_names[1:ncol(x2)],drop=F])
+  # }
+  
   if(!is.null(ynew)) {
-    out$outsampresults$obs=ynew
     out$outsampfitstats=c(R2=getR2(ynew,ypred), 
                           rmse=sqrt(mean((ynew-ypred)^2,na.rm=T)))
     if(length(unique(popnew))>1) { #within site fit stats

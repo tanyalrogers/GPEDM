@@ -52,7 +52,7 @@ fishfit0=fitGP_fish(data=RHlags, y="CPUE_index", m="CPUE_index_1", h="Catch_1", 
 summary(fishfit0)
 ```
 
-Computed values of "escapement" (lagged) will be appended to the `model$insampresults` table (also to any `model$outsampresults` table). By default, the composite variable will be called "escapement", unless you supply a different name for it (argument `xname` of `fitGP_fish`). 
+Computed values of "escapement" (lagged) will be appended to the `model$insampresults` table (also to any `model$outsampresults` table). By default, the composite variable will be called "escapement", unless you supply a different name for it (argument `xname` of `fitGP_fish`). In this case, no data transformation is applied (see [Data tranformations](#data-transformations), so `predmean_trans` and `predmean` are the same.
 
 ```{r}
 head(fishfit0$insampresults)
@@ -318,6 +318,27 @@ lines(cpue~hrate, data=catchresagg, lwd=2, col="red")
 abline(v=fmsy, col="red")
 ```
 
+## Data transformations
+
+The argument `ytrans` in `fitGP_fish` can be used to apply a data transformation to `y` prior to fitting the model. Inputs `y` and `m` should always be in untransformed CPUE. Setting `ytrans="none"` (the default) will apply no tranformation, `ytrans="log"` with compute $log(y)$, `ytrans="gr1"` will compute $log(y_t/m_{t-1})$, and `ytrans="gr2"` will compute $log(y_t/(m_{t-1}-bh_{t-1})$. All $R^2$ values will be computed in the original (untransformed) units of CPUE. Note that the standard deviations in the results table are only for the transformed variable.
+
+The conditional responses (from `getconditionals`) will plot the transformed variable. The `plot` method will plot the untransformed variable (without standard deviations), unless you specify `ytrans=TRUE`. 
+
+```{r ytrans}
+fishfit0_trans=fitGP_fish(data=RHlags, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time",
+                          ytrans="gr2")
+summary(fishfit0_trans)
+
+head(fishfit0_trans$insampresults)
+
+getconditionals(fishfit0_trans)
+```
+
+```{r ytransplots, fig.height=3}
+plot(fishfit0_trans)
+plot(fishfit0_trans, ytrans = TRUE)
+```
+
 ## References
 
-Tsai CH, Munch SB (in prep)
+Tsai CH, Munch SB, Masi MD, Stevens MH (in prep) Empirical dynamic modelling for sustainable benchmarks of short-lived species: an example of brown shrimp fisheries in the Gulf of Mexico.

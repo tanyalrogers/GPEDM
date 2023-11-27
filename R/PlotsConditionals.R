@@ -55,11 +55,12 @@ summary.GP=function(object, ...) {
 #' @param x Output from \code{fitGP} or \code{predict.GP}.
 #' @param plotinsamp Plot the in-sample results. Defaults to out-of-sample
 #'   results if available.
+#' @param ytrans For fisheries models, plot transformed y (TRUE) or not (FALSE, default).
 #' @param ... Other args (not used).
 #' @export
 #' @keywords functions
 
-plot.GPpred=function(x, plotinsamp=F, ...) {
+plot.GPpred=function(x, plotinsamp=FALSE, ytrans=FALSE, ...) {
   
   if(is.null(x$outsampresults) | plotinsamp) {
     dplot=x$insampresults
@@ -74,27 +75,55 @@ plot.GPpred=function(x, plotinsamp=F, ...) {
   
   if(!is.null(x$inputs$y_names)) {
     yl=x$inputs$y_names
+    if(!is.null(x$b)) {
+      ylt=yl
+      yl=sub("_trans","",yl)
+    }
   } else {
     yl="y"
   }
   
   # par(mfrow=c(np,ifelse((ncol(x$inputs$x)==1 | is.null(x$inputs)),3,2)),mar=c(5,4,2,2))
-  old.par <- par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
+  old.par <- par(no.readonly = TRUE)
+  #old.par <- par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
   on.exit(par(old.par),add = T,after = F)
+  
+  par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
+  
+  if(ytrans==FALSE) {
 
-  for(i in 1:np) {
-    dploti=subset(dplot,pop==up[i])
-    plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="Time",
-         ylim=range(dploti$predmean+dploti$predfsd,dploti$predmean-dploti$predfsd,dploti$obs,na.rm=T),main=up[i])
-    lines(dploti$timestep,dploti$predmean+dploti$predfsd, lty=2)
-    lines(dploti$timestep,dploti$predmean-dploti$predfsd, lty=2)
-    points(dploti$timestep,dploti$obs,col="blue")
-    legend(x = "bottomright",legend = c("obs","pred"),col=c("blue","black"),pch=1)
+    for(i in 1:np) {
+      dploti=subset(dplot,pop==up[i])
+      plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="Time",
+           ylim=range(dploti$predmean+dploti$predfsd,dploti$predmean-dploti$predfsd,dploti$obs,na.rm=T),main=up[i])
+      lines(dploti$timestep,dploti$predmean+dploti$predfsd, lty=2)
+      lines(dploti$timestep,dploti$predmean-dploti$predfsd, lty=2)
+      points(dploti$timestep,dploti$obs,col="blue")
+      legend(x = "bottomright",legend = c("obs","pred"),col=c("blue","black"),pch=1)
+      
+      if(!is.null(dploti$obs)) {    
+        plot(dploti$obs,dploti$predmean,ylab=paste(yl,"pred"),xlab=paste(yl,"obs"),main=up[i])
+        abline(a=0,b=1)
+      }    
+    }
+  
+  } else { #plot transformed y (fisheries models only)
     
-    if(!is.null(dploti$obs)) {    
-      plot(dploti$obs,dploti$predmean,ylab=paste(yl,"pred"),xlab=paste(yl,"obs"),main=up[i])
-      abline(a=0,b=1)
-    }    
+    for(i in 1:np) {
+      dploti=subset(dplot,pop==up[i])
+      plot(dploti$timestep,dploti$predmean_trans,type="o",ylab=ylt,xlab="Time",
+           ylim=range(dploti$predmean_trans+dploti$predfsd_trans,dploti$predmean_trans-dploti$predfsd_trans,dploti$obs_trans,na.rm=T),main=up[i])
+      lines(dploti$timestep,dploti$predmean_trans+dploti$predfsd_trans, lty=2)
+      lines(dploti$timestep,dploti$predmean_trans-dploti$predfsd_trans, lty=2)
+      points(dploti$timestep,dploti$obs_trans,col="blue")
+      legend(x = "bottomright",legend = c("obs","pred"),col=c("blue","black"),pch=1)
+      
+      if(!is.null(dploti$obs_trans)) {    
+        plot(dploti$obs_trans,dploti$predmean_trans,ylab=paste(ylt,"pred"),xlab=paste(ylt,"obs"),main=up[i])
+        abline(a=0,b=1)
+      }    
+    }
+    
   }
   
 }
@@ -227,11 +256,16 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
   if(plot) {
     if(!is.null(fit$inputs$y_names)) {
       yl=fit$inputs$y_names
+      if(!is.null(fit$b)) {
+        if(fit$inputs$ytrans=="none") {yl=sub("_trans","",yl)}
+      }
     } else {
       yl="y"
     }
-    old.par <- par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
+    old.par <- par(no.readonly = TRUE)
+    #old.par <- par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
     on.exit(par(old.par),add = T,after = F)
+    par(mfrow=c(min(4,np),min(4,d)),mar=c(5,4,2,2))
 
     for(i in 1:np) {
       ylims=range(out[out$pop==up[i],grep("_yMean",colnames(out))]+out[out$pop==up[i],grep("_ySD",colnames(out))],

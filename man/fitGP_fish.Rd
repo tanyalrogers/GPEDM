@@ -22,6 +22,7 @@ fitGP_fish(
   predictmethod = NULL,
   newdata = NULL,
   xname = "escapement",
+  ytrans = c("none", "log", "gr1", "gr2"),
   bfixed = NULL
 )
 }
@@ -78,6 +79,10 @@ original model.}
 
 \item{xname}{What the composite variable m-bh should be called. Defaults to "escapement".}
 
+\item{ytrans}{Tranformation to apply to y before fitting (m remains untransformed).
+Either "none" (default), "log", "gr1", or "gr2". R2 is calculated on y in its original
+units.}
+
 \item{bfixed}{Fixes b and bypasses optimization.}
 }
 \value{
@@ -100,6 +105,12 @@ number of individuals remaining after harvesting (escapement).
 
 Parameter \eqn{b} is found using \code{optimize} applied to the posterior likelihood.
 Alternatively, a fixed value for \eqn{b} can be provided under \code{bfixed}.
+
+Parameter \code{ytrans} applies a transformation to \eqn{y} before fitting the model.
+Inputs \code{y} and \code{m} should be in untransformed CPUE. \code{ytrans="none"} (the
+default) will apply no tranformation, \code{ytrans="log"} with compute \eqn{log(y)},
+\code{ytrans="gr1"} will compute \eqn{log(y_t/m_{t-1})}, and \code{ytrans="gr2"} will
+compute \eqn{log(y_t/(m_{t-1}-bh_{t-1})}.
 
 Using this method requires the use of \code{data} with pre-generated lags
 (option A1 in \code{\link{fitGP}}). For more details on fitting a fisheries
