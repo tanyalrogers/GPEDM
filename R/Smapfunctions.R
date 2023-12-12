@@ -295,34 +295,26 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
     }
   }
   
-  
-  
+  #standardize time
+  #Time=(Time-min(Time))/max(Time-min(Time))
   
   #if initpars is not supplied, use default starting parameters
   if(is.null(initpars)) {
-    initpars=c(rep(0.1,d),0.001, 1-0.001, 0.5)
+    initpars=c(0,0)
   }
   #fixed parameters
+  if(!ns) { #if model is stationary, fix delta to 0
+    deltafixed=0
+  }
   if(is.null(fixedpars)) {
-    fixedpars=rep(NA,times=d+2)
+    fixedpars=rep(NA,times=2)
   }
-  if(length(fixedpars)!=d+2) {
-    stop("Length of fixedpars must be number of predictors + 2 (phi, ve, sigma2)")
-  }
-  fixedpars_index=which(!is.na(fixedpars))
-  initpars[fixedpars_index]=fixedpars[fixedpars_index]
   
-  #transform parameters (also at line 506!)
-  vemin=0.0001;sigma2min=0.0001
-  vemax=4.9999;sigma2max=4.9999
-  rhomin=0;rhomax=1
-  initparst=c(log(initpars[1:d]),logit(initpars[d+1],vemin,vemax), 
-              logit(initpars[d+2],sigma2min,sigma2max), logit(initpars[d+3],rhomin,rhomax))
-  
-
-  
-  
-  
+  # if(length(fixedpars)!=2) {
+  #   stop("Length of fixedpars must be number of predictors + 2 (phi, ve, sigma2)")
+  # }
+  # fixedpars_index=which(!is.na(fixedpars))
+  # initpars[fixedpars_index]=fixedpars[fixedpars_index]
   
   #remove missing values
   completerows=complete.cases(cbind(yds,xds))
@@ -333,19 +325,21 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   Primary=primary[completerows]
   
   #optimize model
-  output=fmingrad_Rprop(initparst,Y,X,Pop,modeprior,fixedpars,rhofixed,rhomatrix)
-  # contains: list(parst,pars,nllpost,grad,lnL_LOO,df,mean,cov,covm,iter)
+  output=fmingrad_Rprop_smap(initpars,Y,X,Time,thetafixed,deltafixed)
+  # contains: list(theta,delta,nllpost,grad,lnL_LOO,df,mean,cov,iter)
   
   #backfill missing values
-  ypred<-yfsd<-ysd<-yd*NA
-  ypred[completerows]=output$mean
-  yfsd[completerows]=sqrt(diag(output$cov))
-  ysd[completerows]=sqrt(diag(output$cov)+output$pars["ve"])
-  
+  ypred<-ypred_loo<-ysd<-ysd_loo<-yd*NA
+  ypred[completerows]=output$ypred
+  ysd[completerows]=output$ysd
+  ypred_loo[completerows]=output$ypred_loo
+  ysd_loo[completerows]=output$ysd_loo
+
   #remove predictions for augmentation data
   ypred=ypred[primary]
-  yfsd=yfsd[primary]
   ysd=ysd[primary]
+  ypred_loo=ypred_loo[primary]
+  ysd_loo=ysd_loo[primary]
   
   #unscale predictions
   if(scaling=="global") {
@@ -368,7 +362,8 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
                               completerows=completerows,
                               Y=Y,X=X,Pop=Pop,Time=Time,Primary=Primary))
   output$scaling=list(scaling=scaling,ymeans=ymeans,ysds=ysds,xmeans=xmeans,xsds=xsds)
-  output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predfsd=yfsd,predsd=ysd,obs=y)
+  output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predsd=ysd,
+                                  predmean_loo=ypred_loo, predsd_loo=ysd_loo, obs=y)
   output$insampfitstats=c(R2=getR2(y,ypred),
                           rmse=sqrt(mean((y-ypred)^2,na.rm=T)),
                           ln_post=-output$nllpost, ln_prior=output$lp,
@@ -402,43 +397,296 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
 
 #loop over values of E, fitSmap model, return table and delta agg value
 Smap_NStest=function(data, y, x, pop, time, nsvar=time, Emin=1, Emax, tau, scaling) {
-  
+ #not done 
 }
 
-#Rprop to find optimum delta and/or theta
-optimizeG=function(X, Y, t, trainingSteps=40, hp=c(0,0), fixed=c(FALSE, FALSE)) {
+#Rprop to find optimum delta and/or theta (Kenneth's version)
+# optimizeG=function(X, Y, Time, trainingSteps=40, hp=c(0,0), fixed=c(FALSE, FALSE)) {
+#   
+#   err=0
+#   gradPrev = rep(1,times=length(hp))
+#   deltaPrev = rep(1,times=length(hp))
+#   
+#   for (count in range(trainingSteps)) {
+#     errPrev = err
+#     out = getlikegrad_smap(X, Y, Time, hp[1], hp[2])
+#     grad = out$grad
+#     err = out$E
+#     
+#     if (abs(err-errPrev) < 0.01 | count == trainingSteps-1)
+#       break
+#     
+#     # c(dweights, deltaPrev, gradPrev) = calculateHPChange(grad, gradPrev, deltaPrev)
+#     rhoplus = 1.2 # if the sign of the gradient doesn't change, must be > 1
+#     rhominus = 0.5 # if the sign DO change, then use this val, must be < 1
+#     
+#     grad = grad / sqrt(sum(grad^2)) #la.norm(grad) # NORMALIZE, because rprop ignores magnitude
+#     
+#     s = grad * gradPrev # ratio between -1 and 1 for each param
+#     spos = ceiling(s) # 0 for - vals, 1 for + vals
+#     sneg = -1 * (spos - 1)
+#     
+#     delta = ((rhoplus * spos) + (rhominus * sneg)) * (deltaPrev)
+#     dweights = (delta) * ((np.ceil(grad) - 0.5) * 2) # make sure signs reflect the orginal gradient
+#     
+#     # floor and ceiling the hyperparameters
+#     for (i in 1:2) {
+#       if (!fixed[i])
+#         hp[i] = max(0, hp[i] + dweights[i])
+#     }
+#   }
+#   return(list(hp, err))
+#   #needs to return more stuff
+# }
+
+fmingrad_Rprop_smap = function(initpars,Y,X,Time,thetafixed,deltafixed) {
   
-  err=0
-  gradPrev = np.ones(hp.shape, dtype=float)
-  deltaPrev = np.ones(hp.shape, dtype=float)
+  #this uses the sign of the gradient to determine descent directions 
+  #and an adaptive step size - supposedly smoother convergence than
+  #conjugate gradients for GP optimization.
   
-  for (count in range(trainingSteps)) {
-    errPrev = err
-    c(grad, err) = gradient(X, Y, t, hp[0], hp[1])
+  p=length(initpars)
+  
+  #optimization parameters for Rprop
+  Delta0 = 0.1*rep(1,p)
+  Deltamin = 1e-6
+  Deltamax = 50
+  eta_minus = 0.5;eta_minus=eta_minus-1
+  eta_plus = 1.2;eta_plus=eta_plus-1   
+  maxiter=200
+  
+  #pre-compute distance matrices
+  D=list()
+  for(i in 1:ncol(X)) {
+    D[[i]]=laGP::distance(X[,i])
+  }  
+  
+  #initialize 
+  output=getlikegrad_smap(initpars,Y,X,Time,thetafixed,deltafixed,returngradonly=T)
+  nllpost=output$nllpost
+  grad=output$grad
+  s=drop(sqrt(grad%*%grad))
+  
+  #loop starts here
+  pa=initparst
+  iter=0
+  del=Delta0
+  df=10
+  
+  while (s>.0001 & iter<maxiter & df>.0000001) {
     
-    if (abs(err-errPrev) < 0.01 | count == trainingSteps-1)
-      break
+    #step 1-move
+    panew=pa-sign(grad)*del
+    output_new=getlikegrad(panew,Y,X,Time,thetafixed,deltafixed,returngradonly=T)
+    nllpost_new=output_new$nllpost
+    grad_new=output_new$grad
+    #panew=output_new$parst #prevent parst from changing if using fixedpars (probably not necessary?)
+    s=drop(sqrt(grad_new%*%grad_new))
+    df=abs(nllpost_new/nllpost-1)
     
-    c(dweights, deltaPrev, gradPrev) = calculateHPChange(grad, gradPrev, deltaPrev)
+    #step 2 - update step size
+    gc=grad*grad_new
+    tdel=del*(1+eta_plus*(gc>0)*1+eta_minus*(gc<0)*1)
+    del=ifelse(tdel<Deltamin,Deltamin,ifelse(tdel>Deltamax,Deltamax,tdel))
     
-    # floor and ceiling the hyperparameters
-    for(i in 1:2) {
-      if (!fixed[i])
-        hp[i] = max(0, hp[i] + dweights[i])
-    }
+    pa=panew
+    grad=grad_new
+    nllpost=nllpost_new
+    iter=iter+1
   }
-  return(c(hp[0], hp[1], err))
+  
+  #print(iter)
+  paopt=pa
+  output_new=getlikegrad(paopt,Y,X,Time,thetafixed,deltafixed,returngradonly=F)
+  output_new$iter=iter
+  
+  return(output_new)
 }
-
 
 
 #Function to get likelihood, gradient, df
 
+# finds the gradient of the likelihood function with respect to our hyperparameters theta and delta
+getlikegrad_smap = function(pars, X, Y, Time, thetafixed, deltafixed, returngradonly) {
+  # we should be able to pull this off with two passes, once for leave one out and again leave all in.
+  
+  theta=pars[1]
+  delta=pars[2]
+  
+  #fix parameters
+  if(!is.null(thetafixed)) {
+    theta=thetafixed
+  }
+  if(!is.null(deltafixed)) {
+    delta=deltafixed
+  }
+  
+  n = dim(X)[1]
+  dimnames(X) = NULL
+  
+  dSSE_dtheta = 0
+  dDOF_dtheta = 0
+  dSSE_ddelta = 0
+  dDOF_ddelta = 0
+  
+  SSE = 0
+  dof = 0
+  
+  ypred_loo <- ypred <- varp_loo <- varp <- numeric(length = n)
+  
+  for(i in 1:n) {
+    Xi = X[i,,drop=F]
+    Yi = Y[i]
+    Timei = Time[i]
+    
+    Xnoi = X[-i,,drop=F]
+    Ynoi = Y[-i]
+    Timenoi = Time[-i]
+    
+    #loo
+    loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta)
+    loo_dhdtheta = loo_out$dhdtheta
+    loo_dhddelta =loo_out$dhddelta
+    ypred_loo[i] = loo_out$prediction
+    varp_loo[i] = loo_out$varp
+    
+    #in sample
+    insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta)
+    hat_vec = insamp_out$H
+    insamp_dhdtheta = insamp_out$dhdtheta 
+    insamp_dhddelta = insamp_out$dhddelta
+    ypred[i] = insamp_out$prediction
+    varp[i] = insamp_out$varp
+    
+    residual = Yi - loo_out$prediction
+    
+    SSE = SSE + (residual) ^ 2
+    dof = dof + hat_vec[i] #trace of hat matrix
+    
+    dSSE_dtheta = dSSE_dtheta + -2 * residual * (loo_dhdtheta %*% Ynoi)
+    dSSE_ddelta = dSSE_ddelta + -2 * residual * (loo_dhddelta %*% Ynoi)
+    dDOF_dtheta = dDOF_dtheta + insamp_dhdtheta[i]
+    dDOF_ddelta = dDOF_ddelta + insamp_dhddelta[i]
+  }
+
+  #likelihood gradient for theta and delta
+  # this is ugly, but we have to include the max stuff to prevent divide by 0 errors
+  dl_dtheta = (-n/2) * ( dSSE_dtheta / max(SSE, 10e-6) + dDOF_dtheta / max(n-dof, 10e-6))
+  dl_ddelta = (-n/2) * ( dSSE_ddelta / max(SSE, 10e-6) + dDOF_ddelta / max(n-dof, 10e-6))
+  
+  #log likelihood
+  E = ((-n/2) * (log(max(SSE, 10e-6) / max(n-dof, 10e-6)) + log(2*pi) + 1))
+  
+  if(returngradonly) { #exit here, return only likelihood and gradient
+    return(list(nll = -E, grad = c(dl_dtheta, dl_ddelta)))
+  }
+  
+  #compute sd and other stuff, return predictions
+  sigma2_loo=SSE/n
+  ysd_loo=sqrt(sigma2*varp_loo)
+  
+  sigma2=mean((Y-ypred)^2)
+  ysd=sqrt(sigma2*varp_loo)
+  
+  out=list(theta=theta, delta=delta, sigma2=sigma2, df=dof, 
+           nllpost= -E,grad = c(dl_dtheta, dl_ddelta),
+           ypred=ypred, ysd=ysd, ypred_loo=ypred_loo, ysd_loo=ysd_loo,
+           SS=SS,logdet=logdet,lp=lp)
+  return(out)
+
+}
+
+# Implementation of NSMap! Note that T and t(where) must be standardized 
+# to be between 0 and 1.
+#   Parameters
+#       X - (ndarray) training data, (n,p) array of state space variables
+#       Y - (ndarray) labels
+#       T - (ndarray) time for each row in X
+#       x - (ndarray) current state to predict from
+#       t - (scalar) current time to predict from
+#       theta - (scalar) hyperparameter
+#       delta - (scalar) hyperparameter
+#   Returns
+#       scalar prediction
+#           OR
+#       (scalar prediction, hat matrix row) if return_hat is true
+#           OR
+#       (scalar prediction, hat matrix row, derivative of h wrt theta, derivative of h wrt delta)
+#               if return_hat_derivatives is True
+NSMap=function(X, Y, Time, x, t, theta, delta) {
+  
+  n = nrow(X)
+  norms = drop(sqrt(laGP::distance(x,X))) #la.norm(X - x, axis=1) #euclidean distance of each point from x
+  d = mean(norms)
+  
+  W = exp(-(theta*norms)/d - delta*(Time-t)^2) #vector of weights for each point
+  #should this be (Time-t)/n ?
+  
+  # augment the training data with a column of 1s to allow for intercepts
+  M = cbind(X, rep(1, times=n))
+  xaug = cbind(x, 1)
+  
+  # weighted penrose inverse
+  pinv = MASS::ginv(W*M) #pinv = la.pinv(W*M)
+  #pinv2 = solve(t(M) %*% diag(W)^2 %*% M) %*% t(M) %*% diag(W) #same
+  
+  H = xaug %*% t(t(pinv) * W) #hat matrix row (needed for dof calculation)
+  prediction = drop(H %*% Y) #prediction for point x
+  # prediction = drop(xaug %*% pinv %*% diag(W) %*% Y) #same
+  varp=diag(H %*% t(H))+1 #to get sd=sqrt(sigma2*varp)
+  
+  # compute the derivatives of the hat matrix wrt theta and delta
+  dWdtheta = -1 * W * norms / d 
+  dWddelta = -1 * W * ((Time-t)^2)
+  
+  dthetapinv = t(dWdtheta * t(pinv))
+  ddeltapinv = t(dWddelta * t(pinv))
+  
+  dhdtheta = 2 * xaug %*% (dthetapinv - dthetapinv %*% M %*% t(t(pinv) * W))
+  dhddelta = 2 * xaug %*% (ddeltapinv - ddeltapinv %*% M %*% t(t(pinv) * W))
+  
+  #same (divided by 2) ** why are lines above multipled by 2? Is it because of W being squared?
+  # dhdtheta2 = xaug %*% pinv %*% (diag(dWdtheta) - diag(dWdtheta) %*% M %*% pinv %*% diag(W))
+  # dhddelta2 = xaug %*% pinv %*% (diag(dWddelta) - diag(dWddelta) %*% M %*% pinv %*% diag(W))
+  
+  return (list(prediction=prediction, varp=varp, H=H, dhdtheta=dhdtheta, dhddelta=dhddelta))
+  
+  # else{
+  #     # use least squares to solve if hat matrix derivates aren't needed,
+  #     # as this is much faster than computing the penrose inverse
+  #     # and gives the same output
+  #     prediction = xaug %*% la.lstsq( W * M, W * Y, rcond=None)[1]
+  #     return(prediction=prediction)
+  #   }
+}
+
+#unresolved:
+# - confirm gradient calc is right
+# - squaring of weighting kernel, matching rEDM
+
 #Predict function for Smap
 predict.Smap=function(object,predictmethod=c("loo","lto","sequential"),newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) {
-  
+  #not done
 }
-  
-  
-  
-  
+
+par(mfrow=c(2,2))
+thetagrid=seq(0,5, by=0.2)
+thetagrad <- nllike <- numeric(length = length(thetagrid))
+for(i in seq_along(thetagrid)) {
+  test=getlikegrad_smap(pars = c(thetagrid[i],0),X = X, Y = Y, Time = Time, thetafixed = NULL, deltafixed = 0, returngradonly = T)
+  nllike[i]=test$nll
+  thetagrad[i]=test$grad[1]
+}
+plot(thetagrid,nllike)
+plot(thetagrid,thetagrad); abline(h=0)
+
+deltagrid=seq(-1,5, by=0.5)
+deltagrad <- nllike <- numeric(length = length(deltagrid))
+for(i in seq_along(deltagrid)) {
+  test=getlikegrad_smap(pars = c(0,deltagrid[i]),X = X, Y = Y, Time = Time, thetafixed = 2.2, deltafixed = NULL, returngradonly = T)
+  nllike[i]=test$nll
+  deltagrad[i]=test$grad[1]
+}
+plot(deltagrid,nllike)
+plot(deltagrid,deltagrad); abline(h=0)
+
