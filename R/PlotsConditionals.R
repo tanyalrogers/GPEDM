@@ -12,11 +12,11 @@ summary.GP=function(object, ...) {
   cat("Number of predictors:",d,"\n")
   cat("Length scale parameters:\n")
   if(!is.null(object$inputs$x_names2)) {
-    print(data.frame(predictor=object$inputs$x_names2,posteriormode=round(object$pars[1:d],5)))
+    print.data.frame(data.frame(predictor=object$inputs$x_names2,posteriormode=round(object$pars[1:d],5)))
   } else if(!is.null(object$inputs$x_names)) {
-    print(data.frame(predictor=object$inputs$x_names,posteriormode=round(object$pars[1:d],5)))
+    print.data.frame(data.frame(predictor=object$inputs$x_names,posteriormode=round(object$pars[1:d],5)))
   } else {
-    print(data.frame(posteriormode=round(object$pars[1:d],5)))
+    print.data.frame(data.frame(posteriormode=round(object$pars[1:d],5)))
   }
   cat("Process variance (ve):",object$pars["ve"])
   cat("\nPointwise prior variance (sigma2):",object$pars["sigma2"])
@@ -32,13 +32,13 @@ summary.GP=function(object, ...) {
   cat("\nIn-sample R-squared:",object$insampfitstats["R2"],"\n")
   if(np>1) {
     cat("In-sample R-squared by population:\n")
-    print(data.frame(R2=object$insampfitstatspop$R2))
+    print.data.frame(data.frame(R2=object$insampfitstatspop$R2))
   }
   if(!is.null(object$outsampfitstats)) {
     cat("Out-of-sample R-squared:",object$outsampfitstats["R2"])
     if(np>1) {
       cat("\nOut-of-sample R-squared by population:\n")
-      print(data.frame(R2=object$outsampfitstatspop$R2))
+      print.data.frame(data.frame(R2=object$outsampfitstatspop$R2))
     }
   }
 }
@@ -243,4 +243,97 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
     }
   }
   return(invisible(out))
+}
+
+#' Print a summary of an S-map model
+#'
+#' Prints out some key information including hyperparameters and fit stats.
+#'
+#' @param object Output from \code{fitSmap}.
+#' @param ... Other args (not used).
+#' @method summary Smap
+#' @export
+#' @keywords functions
+summary.Smap=function(object, ...) {
+  d=ncol(object$inputs$X)
+  cat("Number of predictors:",d,"\n")
+  if(!is.null(object$inputs$x_names2)) {
+    print.data.frame(data.frame(predictor=object$inputs$x_names2))
+  } else if(!is.null(object$inputs$x_names)) {
+    print.data.frame(data.frame(predictor=object$inputs$x_names))
+  } 
+  cat("Theta (nonlinearity):",round(object$theta,5),"\n")
+  if(object$ns==TRUE) {
+    cat("Delta (nonstationarity):",round(object$delta,5),"\n")
+  }
+  cat("Error variance (ve):",object$sigma2)
+  np=length(unique(object$inputs$pop))
+  cat("\nNumber of populations:",np)
+  cat("\nLeave-one-out R-squared:",object$loofitstats["R2"],"\n")
+  if(np>1) {
+    cat("Leave-one-out R-squared by population:\n")
+    print.data.frame(data.frame(R2=object$loofitstatspop$R2))
+  }
+  if(!is.null(object$outsampfitstats)) {
+    cat("Out-of-sample R-squared:",object$outsampfitstats["R2"])
+    if(np>1) {
+      cat("\nOut-of-sample R-squared by population:\n")
+      print.data.frame(data.frame(R2=object$outsampfitstatspop$R2))
+    }
+  }
+}
+
+#' Plot predictions from an S-map model
+#'
+#' Plots observed and predicted values from an S-map model. If the model includes
+#' multiple populations, separate plots are produced for each population. Plots
+#' leave-one-out predictions, unless other predictions are available.
+#'
+#' @param x Output from \code{fitGP} or \code{predict.GP}.
+#' @param plotloo Plot the leave-one-out results. Defaults to other out-of-sample
+#'   results if available.
+#' @param ... Other args (not used).
+#' @export
+#' @keywords functions
+
+plot.Smappred=function(x, plotloo=F, ...) {
+  
+  if(is.null(x$outsampresults) | plotloo) {
+    dplot=x$looresults
+    message("Plotting leave-one-out results.")
+  } else {
+    dplot=x$outsampresults
+    message("Plotting out of sample results.")
+  }
+  
+  up=unique(dplot$pop)
+  np=length(up)  
+  
+  if(!is.null(x$inputs$y_names)) {
+    yl=x$inputs$y_names
+  } else {
+    yl="y"
+  }
+  
+  # par(mfrow=c(np,ifelse((ncol(x$inputs$x)==1 | is.null(x$inputs)),3,2)),mar=c(5,4,2,2))
+  old.par <- par(no.readonly = TRUE)
+  on.exit(par(old.par),add = T,after = F)
+  
+  par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
+
+  for(i in 1:np) {
+    dploti=subset(dplot,pop==up[i])
+    plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="Time",
+         ylim=range(dploti$predmean+dploti$predsd,dploti$predmean-dploti$predsd,dploti$obs,na.rm=T),main=up[i])
+    lines(dploti$timestep,dploti$predmean+dploti$predsd, lty=2)
+    lines(dploti$timestep,dploti$predmean-dploti$predsd, lty=2)
+    points(dploti$timestep,dploti$obs,col="blue")
+    legend(x = "bottomright",legend = c("obs","pred"),col=c("blue","black"),pch=1)
+    
+    if(!is.null(dploti$obs)) {    
+      plot(dploti$obs,dploti$predmean,ylab=paste(yl,"pred"),xlab=paste(yl,"obs"),main=up[i])
+      abline(a=0,b=1)
+    }    
+  }
+  
 }
