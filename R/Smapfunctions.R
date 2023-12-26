@@ -128,6 +128,9 @@
 #' @param tau Time delay. If supplied, will be used to constuct lags of \code{x} (or
 #'   lags of \code{y} if \code{x} is not supplied).
 #' @param thetafixed Fixes the theta parameter, if desired (see Details).
+#' @param exclradius Exclusion radius. How many adjacent time steps on either side of the focal
+#'   point should be excluded when fitting the local linear model? Defaults to 0 (none). 
+#'   This setting is retained when making other types of predictions. Must be a positive integer.
 #' @param ns Logical. Use nonstationary s-map (or not). Defaults to FALSE. 
 #' @param nsvar If \code{ns=TRUE}, the variable supplied under \code{time} is used by default.
 #'   If for some reason you want to use a different variable, supply it here (column name of 
@@ -150,6 +153,7 @@
 #' \item{sigma2}{Variance estimate for the model (mean squared deviations), from leave-one-out.}
 #' \item{grad}{Likelihood gradients of hyperparameters. Can be used to assess convergence.}
 #' \item{iter}{Number of iterations until convergence was reached. Currently fixed at a max of 200.}
+#' \item{ns}{Whether the model is nonstationary.}
 #' \item{inputs}{Inputs and scaled inputs. Note that if you use \code{E} and \code{tau},
 #'   the names of the predictors in the input data frame will be stored under
 #' \code{x_names}, and the names of the lagged predictors corresponding to the
@@ -163,16 +167,15 @@
 #' @seealso \code{\link{predict.Smap}}, \code{\link{plot.Smappred}}, \code{\link{getconditionals}}}
 #' @references 
 #' @examples 
-#' yrand=rnorm(20)
-#' testgp=fitGP(y=yrand,E=2,tau=1,predictmethod = "loo")
+#' 
 #' @export
 #' @importFrom MASS ginv
 #' @keywords functions
 
 fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixed=NULL,
-                 ns=FALSE,nsvar=time,deltafixed=NULL,
+                 exclradius=0,ns=FALSE,nsvar=time,deltafixed=NULL,
                  scaling=c("global","local","none"),
-                 initpars=NULL, augdata=NULL, returninsamp=FALSE,
+                 initpars=NULL, augdata=NULL, returninsamp=FALSE, parallel=FALSE,
                  predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
   
   cl <- match.call()
@@ -342,8 +345,13 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   Time=timed[completerows]
   Primary=primary[completerows]
   
+  if(parallel) {
+    registerDoParallel(cores=5)
+    on.exit(stopImplicitCluster())
+  }
+  
   #optimize model
-  output=fmingrad_Rprop_smap(initpars,Y,X,Time,thetafixed,deltafixed)
+  output=fmingrad_Rprop_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,parallel)
   # contains: list(theta,delta,sigma2,df,nllpost,grad,ypred,ysd,ypred_loo,ysd_loo,coefs,coefs_loo,iter)
   
   #backfill missing values
@@ -353,7 +361,8 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   ypred_loo[completerows]=output$ypred_loo
   ysd_loo[completerows]=output$ysd_loo
   
-  coefs<-coefs_loo<-matrix(NA,nrow=nrow(xd),ncol=ncol(xd)+1,dimnames=list(NULL,c(colnames(xd),"int")))
+  if(is.null(inputs$x_names2)) {labs<-inputs$x_names} else {labs<-inputs$x_names2}
+  coefs<-coefs_loo<-matrix(NA,nrow=nrow(xd),ncol=ncol(xd)+1,dimnames=list(NULL,c(labs,"int")))
   coefs[completerows,]=output$coefs
   coefs_loo[completerows,]=output$coefs_loo
 
@@ -386,6 +395,7 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   
   #create additional outputs
   output$ns=ns
+  output$exclradius=exclradius
   output$inputs=c(inputs,list(y=y,x=x,yd=yd,xd=xd,pop=pop,time=time,
                               completerows=completerows,
                               Y=Y,X=X,Pop=Pop,Time=Time,Primary=Primary))
@@ -431,51 +441,80 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   return(output)
 }
 
-#loop over values of E, fitSmap model, return table and delta agg value
-Smap_NStest=function(data, y, x, pop, time, nsvar=time, Emin=1, Emax, tau, scaling) {
- #not done 
+#' S-map test for nonstationarity
+#'
+#' loop over values of E, fitSmap model, return table and delta agg value
+#' 
+#' 
+#' @inheritParams fitSmap
+#' @param covar Any additional predictors (these will not be lagged)
+#' @param Emin Minimum E, defaults to 1.
+#' @param Emax Maximum E (required). Should generally not exceed sqrt(n).
+#' @param tau Time delay. Defaults to 1.
+#' @param summaryonly Return just the summary tables, not the lists of model output for
+#'   each value of E.
+#' 
+#' @return A list (class NStest) with the following elements:
+#' \item{delta_agg}{The nonstationarity test statistic.}
+#' \item{bestR2}{Best loo R2 value of all the models fit.}
+#' \item{results}{Data frame of hyperparameters, logL, df, R2, and weights for stationary and 
+#'   nonstationary model at each value of E.}
+#' \item{series}{Data frame of time and y (for plotting purposes).}
+#' \item{mods}{If \code{summaryonly=FALSE}, list of all stationary models.}
+#' \item{mods_NS}{If \code{summaryonly=FALSE}, list of all nonstationary models.}
+#' 
+#' 
+Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, thetafixed=NULL,
+                     exclradius=0,nsvar=time,
+                     scaling=c("global","local","none"),
+                     initpars=NULL, augdata=NULL, summaryonly=TRUE) {
+  
+  df=as.data.frame(data) #plot won't work with class 'tbl', must be data.frame
+  dflag=GPEDM::makelags(df, y=y, E=Emax, tau=tau, append = T)
+  
+  results=data.frame(E=Emin:Emax, theta=NA, theta_NS=NA, delta=NA, logL=NA, logL_NS=NA, dfs=NA, dfs_NS=NA, R2=NA, R2_NS=NA)
+  mods <- mods_NS <- list() 
+  for(i in Emin:Emax) {
+    #Stationary
+    mods[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                      exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
+    results$theta[i]=mods[[i]]$theta
+    results$logL[i]=mods[[i]]$loofitstats["ln_L"]
+    results$dfs[i]=mods[[i]]$loofitstats["df"]
+    results$R2[i]=mods[[i]]$loofitstats["R2"]
+    #Nonstationary
+    mods_NS[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                         exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
+    results$theta_NS[i]=mods_NS[[i]]$theta
+    results$logL_NS[i]=mods_NS[[i]]$loofitstats["ln_L"]
+    results$dfs_NS[i]=mods_NS[[i]]$loofitstats["df"]
+    results$R2_NS[i]=mods_NS[[i]]$loofitstats["R2"]
+    results$delta[i]=mods_NS[[i]]$delta
+  }
+  
+  rownames(results)=NULL
+  
+  W_E=pmax(0,exp(results$logL_NS)-exp(results$logL))
+  if(sum(W_E)!=0) W_E=round(W_E/sum(W_E),8)
+  results$W_E=W_E
+  delta_agg=round(sum(results$phi_time*W_E),8)
+  
+  bestR2=max(results$R2, results$R2_NS)
+  
+  series=df[,c(time,y)]
+  
+  if(summaryonly) {
+    out=list(delta_agg=delta_agg, bestR2=bestR2, results=results, series=series)
+    class(out)=c("NStest")
+    return(out)
+  } else {
+    out=list(delta_agg=delta_agg, results=results, series=series, mods=mods, mods_NS=mods_NS)
+    class(out)=c("NStest")
+    return(out)
+  }
 }
 
-#Rprop to find optimum delta and/or theta (Kenneth's version)
-# optimizeG=function(X, Y, Time, trainingSteps=40, hp=c(0,0), fixed=c(FALSE, FALSE)) {
-#   
-#   err=0
-#   gradPrev = rep(1,times=length(hp))
-#   deltaPrev = rep(1,times=length(hp))
-#   
-#   for (count in range(trainingSteps)) {
-#     errPrev = err
-#     out = getlikegrad_smap(X, Y, Time, hp[1], hp[2])
-#     grad = out$grad
-#     err = out$E
-#     
-#     if (abs(err-errPrev) < 0.01 | count == trainingSteps-1)
-#       break
-#     
-#     # c(dweights, deltaPrev, gradPrev) = calculateHPChange(grad, gradPrev, deltaPrev)
-#     rhoplus = 1.2 # if the sign of the gradient doesn't change, must be > 1
-#     rhominus = 0.5 # if the sign DO change, then use this val, must be < 1
-#     
-#     grad = grad / sqrt(sum(grad^2)) #la.norm(grad) # NORMALIZE, because rprop ignores magnitude
-#     
-#     s = grad * gradPrev # ratio between -1 and 1 for each param
-#     spos = ceiling(s) # 0 for - vals, 1 for + vals
-#     sneg = -1 * (spos - 1)
-#     
-#     delta = ((rhoplus * spos) + (rhominus * sneg)) * (deltaPrev)
-#     dweights = (delta) * ((np.ceil(grad) - 0.5) * 2) # make sure signs reflect the orginal gradient
-#     
-#     # floor and ceiling the hyperparameters
-#     for (i in 1:2) {
-#       if (!fixed[i])
-#         hp[i] = max(0, hp[i] + dweights[i])
-#     }
-#   }
-#   return(list(hp, err))
-#   #needs to return more stuff
-# }
-
-fmingrad_Rprop_smap = function(initpars,Y,X,Time,thetafixed,deltafixed) {
+fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,parallel) {
   
   p=length(initpars)
   
@@ -488,7 +527,7 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Time,thetafixed,deltafixed) {
   maxiter=200
   
   #initialize 
-  output=getlikegrad_smap(initpars,Y,X,Time,thetafixed,deltafixed,returngradonly=T)
+  output=getlikegrad_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returngradonly=T,parallel)
   nll=output$nll
   grad=output$grad
   s=drop(sqrt(grad%*%grad))
@@ -504,7 +543,7 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Time,thetafixed,deltafixed) {
     #step 1-move
     panew=pa-sign(grad)*del
     panew=pmax(0,panew) #pars cannot be less than 0
-    output_new=getlikegrad_smap(panew,Y,X,Time,thetafixed,deltafixed,returngradonly=T)
+    output_new=getlikegrad_smap(panew,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returngradonly=T,parallel)
     nll_new=output_new$nll
     grad_new=output_new$grad
     #panew=output_new$parst #prevent parst from changing if using fixedpars (probably not necessary?)
@@ -524,14 +563,14 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Time,thetafixed,deltafixed) {
   
   #print(iter)
   paopt=pa
-  output_new=getlikegrad_smap(paopt,Y,X,Time,thetafixed,deltafixed,returngradonly=F)
+  output_new=getlikegrad_smap(paopt,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returngradonly=F,parallel)
   output_new$iter=iter
   
   return(output_new)
 }
 
 #Function to get likelihood, gradient, df, predictions
-getlikegrad_smap = function(pars, Y, X, Time, thetafixed, deltafixed, returngradonly) {
+getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclradius, returngradonly, parallel) {
 
   theta=pars[1]
   delta=pars[2]
@@ -547,54 +586,127 @@ getlikegrad_smap = function(pars, Y, X, Time, thetafixed, deltafixed, returngrad
   n = nrow(X)
   dimnames(X) = NULL
   
-  dSSE_dtheta = 0
-  dDOF_dtheta = 0
-  dSSE_ddelta = 0
-  dDOF_ddelta = 0
-  
-  SSE = 0
-  dof = 0
-  
-  ypred_loo <- ypred <- varp_loo <- varp <- numeric(length = n)
-  coefs <- coefs_loo <- matrix(nrow = n, ncol = ncol(X)+1)
-  
-  for(i in 1:n) {
-    Xi = X[i,,drop=F]
-    Yi = Y[i]
-    Timei = Time[i]
+  if(!parallel) {
     
-    Xnoi = X[-i,,drop=F]
-    Ynoi = Y[-i]
-    Timenoi = Time[-i]
+    dSSE_dtheta = 0
+    dDOF_dtheta = 0
+    dSSE_ddelta = 0
+    dDOF_ddelta = 0
     
-    #loo
-    loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta)
-    loo_dhdtheta = loo_out$dhdtheta
-    loo_dhddelta =loo_out$dhddelta
-    ypred_loo[i] = loo_out$prediction
-    varp_loo[i] = loo_out$varp
-    coefs_loo[i,] = loo_out$coefs
+    SSE = 0
+    dof = 0
     
-    #in sample
-    insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta)
-    hat_vec = insamp_out$H
-    insamp_dhdtheta = insamp_out$dhdtheta 
-    insamp_dhddelta = insamp_out$dhddelta
-    ypred[i] = insamp_out$prediction
-    varp[i] = insamp_out$varp
-    coefs[i,] = insamp_out$coefs
+    ypred_loo <- ypred <- varp_loo <- varp <- numeric(length = n)
+    coefs <- coefs_loo <- matrix(nrow = n, ncol = ncol(X)+1)
     
-    residual = Yi - loo_out$prediction
+    for(i in 1:n) {
+      
+      #exclude adjacent points
+      exclude=(i-exclradius):(i+exclradius)
+      #exclude=exclude[exclude>0 & exclude<=n]
+      exclude=exclude[exclude %in% which(Pop==Pop[i])]
+      
+      Xi = X[i,,drop=F]
+      Yi = Y[i]
+      Timei = Time[i]
+      
+      Xnoi = X[-exclude,,drop=F]
+      Ynoi = Y[-exclude]
+      Timenoi = Time[-exclude]
+      
+      #loo
+      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta)
+      loo_dhdtheta = loo_out$dhdtheta
+      loo_dhddelta =loo_out$dhddelta
+      ypred_loo[i] = loo_out$prediction
+      varp_loo[i] = loo_out$varp
+      coefs_loo[i,] = loo_out$coefs
+      
+      #in sample
+      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta)
+      hat_vec = insamp_out$H
+      insamp_dhdtheta = insamp_out$dhdtheta
+      insamp_dhddelta = insamp_out$dhddelta
+      ypred[i] = insamp_out$prediction
+      varp[i] = insamp_out$varp
+      coefs[i,] = insamp_out$coefs
+      
+      residual = Yi - loo_out$prediction
+      
+      SSE = SSE + (residual) ^ 2
+      dof = dof + hat_vec[i] #trace of hat matrix
+      
+      dSSE_dtheta = dSSE_dtheta + -2 * residual * (loo_dhdtheta %*% Ynoi)
+      dSSE_ddelta = dSSE_ddelta + -2 * residual * (loo_dhddelta %*% Ynoi)
+      dDOF_dtheta = dDOF_dtheta + insamp_dhdtheta[i]
+      dDOF_ddelta = dDOF_ddelta + insamp_dhddelta[i]
+    }
     
-    SSE = SSE + (residual) ^ 2
-    dof = dof + hat_vec[i] #trace of hat matrix
+  } else { #parallel
     
-    dSSE_dtheta = dSSE_dtheta + -2 * residual * (loo_dhdtheta %*% Ynoi)
-    dSSE_ddelta = dSSE_ddelta + -2 * residual * (loo_dhddelta %*% Ynoi)
-    dDOF_dtheta = dDOF_dtheta + insamp_dhdtheta[i]
-    dDOF_ddelta = dDOF_ddelta + insamp_dhddelta[i]
+    results=foreach::foreach(i=1:n) %dopar% {
+      #exclude adjacent points
+      exclude=(i-exclradius):(i+exclradius)
+      #exclude=exclude[exclude>0 & exclude<=n]
+      exclude=exclude[exclude %in% which(Pop==Pop[i])]
+      
+      Xi = X[i,,drop=F]
+      Yi = Y[i]
+      Timei = Time[i]
+      
+      Xnoi = X[-exclude,,drop=F]
+      Ynoi = Y[-exclude]
+      Timenoi = Time[-exclude]
+      
+      #loo
+      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta)
+      loo_dhdtheta = loo_out$dhdtheta
+      loo_dhddelta =loo_out$dhddelta
+      ypred_loo = loo_out$prediction
+      varp_loo = loo_out$varp
+      coefs_loo = loo_out$coefs
+      
+      #in sample
+      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta)
+      hat_vec = insamp_out$H
+      insamp_dhdtheta = insamp_out$dhdtheta
+      insamp_dhddelta = insamp_out$dhddelta
+      ypred = insamp_out$prediction
+      varp = insamp_out$varp
+      coefs = insamp_out$coefs
+      
+      residual = Yi - loo_out$prediction
+      
+      SSEi = (residual) ^ 2
+      dofi = hat_vec[i] #trace of hat matrix
+      
+      dSSE_dthetai = -2 * residual * (loo_dhdtheta %*% Ynoi)
+      dSSE_ddeltai = -2 * residual * (loo_dhddelta %*% Ynoi)
+      dDOF_dthetai = insamp_dhdtheta[i]
+      dDOF_ddeltai = insamp_dhddelta[i]
+      
+      results=list(ypred_loo=ypred_loo, varp_loo=varp_loo, coefs_loo=coefs_loo,
+                   ypred=ypred, varp=varp, coefs=coefs, SSEi=SSEi, dofi=dofi,
+                   dSSE_dthetai=dSSE_dthetai, dSSE_ddeltai=dSSE_ddeltai,
+                   dDOF_dthetai=dDOF_dthetai, dDOF_ddeltai=dDOF_ddeltai)
+    }
+    
+    ypred_loo=sapply(results, function(x) x$ypred_loo)
+    varp_loo=sapply(results, function(x) x$varp_loo)
+    coefs_loo=t(sapply(results, function(x) x$coefs_loo))
+    ypred=sapply(results, function(x) x$ypred)
+    varp=sapply(results, function(x) x$varp)
+    coefs=t(sapply(results, function(x) x$coefs))
+    
+    SSE=sum(sapply(results, function(x) x$SSEi))
+    dof=sum(sapply(results, function(x) x$dofi))
+    
+    dSSE_dtheta=sum(sapply(results, function(x) x$dSSE_dthetai))
+    dSSE_ddelta=sum(sapply(results, function(x) x$dSSE_ddeltai))
+    dDOF_dtheta=sum(sapply(results, function(x) x$dDOF_dthetai))
+    dDOF_ddelta=sum(sapply(results, function(x) x$dDOF_ddeltai))
   }
-
+  
   #likelihood gradient for theta and delta (max prevents divide by 0 errors)
   dl_dtheta = (-n/2) * ( dSSE_dtheta / max(SSE, 10e-6) + dDOF_dtheta / max(n-dof, 10e-6))
   dl_ddelta = (-n/2) * ( dSSE_ddelta / max(SSE, 10e-6) + dDOF_ddelta / max(n-dof, 10e-6))
@@ -621,11 +733,11 @@ getlikegrad_smap = function(pars, Y, X, Time, thetafixed, deltafixed, returngrad
 }
 
 # Implementation of NSMap
-#       X - (ndarray) training data, (n,p) array of state space variables
-#       Y - (ndarray) labels
-#       T - (ndarray) time for each row in X
-#       x - (ndarray) current state to predict from
-#       t - (scalar) current time to predict from
+#       X - (matrix) training data
+#       Y - (vector) targets
+#       T - (vector) time for each row in X
+#       x - (matrix, 1 row) current state to predict
+#       t - (scalar) current time to predict
 #       theta - (scalar) hyperparameter
 #       delta - (scalar) hyperparameter
 NSMap=function(X, Y, Time, x, t, theta, delta) {
@@ -676,24 +788,59 @@ NSMap=function(X, Y, Time, x, t, theta, delta) {
   #   }
 }
 
-#unresolved:
-# - squaring of weighting kernel, matching rEDM
-
-#Predict function for Smap
-predict.Smap=function(object,predictmethod=c("lto","sequential"),newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) {
-  
-  if(predictmethod=="loo") {
-    message("loo predictions are computed automatically in fitSmap, no need to include it under predictmethod")
-    return(NULL)
-  }
+#' Get predictions from an S-map model
+#'
+#' Obtain predictions from a fitted S-map model.
+#' 
+#' The s-map routine automatically does leave-one-out prediction, which is included in the
+#' output, so there is no separate \code{predictmethod="loo"}.
+#' 
+#' There are several additional options for producing predictions:
+#' \enumerate{
+#'   \item Use \code{predictmethod="lto"} for leave-timepoint-out prediction using the training data. This will leave
+#'   out values with the same time index across multiple populations, rather than each individual datapoint. 
+#'   If there is only one population, \code{"lto"} will be equivalent to \code{"loo"}.
+#'   \item Use \code{predictmethod="sequential"} for sequential (leave-future-out) prediction using the training data.
+#'   \item If data frame \code{data} was supplied, supply data frame \code{newdata} containing same column names. 
+#'   Column for \code{y} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
+#'   \item If vectors/matrices were supplied for \code{y}, \code{x}, etc, equivalent vector/matrices \code{xnew}, 
+#'   \code{popnew} (if \code{pop} was supplied), and \code{timenew} (optional).
+#'   \code{ynew} is optional, unless \code{E} and \code{tau} were supplied in lieu of \code{x}.
+#' }
+#'
+#' @param object Output from \code{fitGP}.
+#' @param predictmethod Using the training data, \code{lto} does 
+#'   leave-timepoint-out prediction, and \code{sequential} does sequential (leave-future-out)
+#'   prediction.
+#' @param newdata Data frame containing the same columns supplied in the
+#'   original model.
+#' @param xnew New predictor matrix or vector. Not required if \code{newdata} is supplied.
+#' @param popnew New population vector. Not required if \code{newdata} is supplied.
+#' @param timenew New time vector. Not required if \code{newdata} is supplied.
+#' @param ynew New response vector. Optional, unless \code{E} and \code{tau} were supplied in 
+#'   lieu of \code{x}. Not required if \code{newdata} is supplied.
+#' @param ... Other args (not used).
+#' 
+#' @return A list (class Smappred) with the following elements:
+#' \item{outsampresults}{Data frame with out-of-sample predictions.}
+#' \item{outsampcoefs}{Data frame with S-map coefficients for the out-of-sample predictions. The last column is the intercept.}
+#' \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
+#'   Only computed if using \code{"lto"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
+#'   or if \code{ynew} supplied (i.e. if the observed values are known).}
+#' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
+#' @export
+#' @keywords functions
+predict.Smap=function(object,predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) {
   
   theta=object$theta
   delta=object$delta
   sigma2=object$sigma2
+  exclradius=object$exclradius
   X=object$inputs$X
   Y=object$inputs$Y
   y=object$inputs$y
   Pop=object$inputs$Pop
+  Time=object$inputs$Time
   scaling=object$scaling$scaling
   ymeans=object$scaling$ymeans
   ysds=object$scaling$ysds
@@ -802,11 +949,16 @@ predict.Smap=function(object,predictmethod=c("lto","sequential"),newdata=NULL,xn
     ysd[completerowsnew]=sqrt(sigma2*varp)
     
     coefsnew<-matrix(NA,nrow=nrow(xnew),ncol=ncol(xnew)+1,dimnames=list(NULL,c(colnames(xnew),"int")))
-    coefsnew[completerows,]=coefs
+    coefsnew[completerowsnew,]=coefs
 
   } else {
     
-    predictmethod=match.arg(predictmethod)
+    # predictmethod=match.arg(predictmethod)
+    
+    if(predictmethod=="loo") {
+      message("loo predictions are computed automatically in fitSmap, no need to include it under predictmethod")
+      return(NULL)
+    }
     
     if(predictmethod=="lto") {
       
@@ -822,11 +974,21 @@ predict.Smap=function(object,predictmethod=c("lto","sequential"),newdata=NULL,xn
       for(i in 1:nt) {
         ind=which(Time[Primary]==timevals[i])
         train=which(Time!=timevals[i]) #this should also exclude any dups in the aug data
-        Xtrain=X[train,]
-        Ytrain=Y[train]
-        Timetrain=Time[train]
-        
+        # Xtrain=X[train,]
+        # Ytrain=Y[train]
+        # Timetrain=Time[train]
+          
         for(j in ind) {
+          #exclude adjacent points
+          exclude=(j-exclradius):(j+exclradius)
+          exclude=exclude[exclude %in% which(Pop==Pop[j])] 
+          
+          trainj=setdiff(train, exclude)
+          
+          Xtrain=X[trainj,]
+          Ytrain=Y[trainj]
+          Timetrain=Time[trainj]
+          
           Xi = X[j,,drop=F]
           Timei = Time[j]
           
@@ -864,11 +1026,21 @@ predict.Smap=function(object,predictmethod=c("lto","sequential"),newdata=NULL,xn
       for(i in 3:nt) { #start with at least 3 time steps
         ind=which(Time[Primary]==timevals[i])
         train=which(Time<timevals[i])
-        Xtrain=X[train,]
-        Ytrain=Y[train]
-        Timetrain=Time[train]
+        # Xtrain=X[train,]
+        # Ytrain=Y[train]
+        # Timetrain=Time[train]
         
         for(j in ind) {
+          #exclude adjacent points
+          exclude=(j-exclradius):(j+exclradius)
+          exclude=exclude[exclude %in% which(Pop==Pop[j])] 
+          
+          trainj=setdiff(train, exclude)
+          
+          Xtrain=X[trainj,]
+          Ytrain=Y[trainj]
+          Timetrain=Time[trainj]
+          
           Xi = X[j,,drop=F]
           Timei = Time[j]
           
@@ -910,7 +1082,7 @@ predict.Smap=function(object,predictmethod=c("lto","sequential"),newdata=NULL,xn
   
   #probably need to output xnew (combine with table?, only if 1 predictor?)
   out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=ypred,predsd=ysd))
-  out$outsampcoefs=coefsnew
+  out$outsampcoefs=as.data.frame(coefsnew)
   if(!is.null(ynew)) {
     out$outsampresults$obs=ynew
     out$outsampfitstats=c(R2=getR2(ynew,ypred), 
@@ -977,3 +1149,7 @@ predict.Smap=function(object,predictmethod=c("lto","sequential"),newdata=NULL,xn
 # test2=fmingrad_Rprop_smap(c(0,0), Y, X, Time, thetafixed = NULL, deltafixed = 0)
 # test3=fmingrad_Rprop_smap(c(0,0), Y, X, Time, thetafixed = NULL, deltafixed = NULL)
 # test4=fmingrad_Rprop_smap(c(0,0), Y, X, Time, thetafixed = 8, deltafixed = NULL)
+
+
+#unresolved:
+# - squaring of weighting kernel, matching rEDM

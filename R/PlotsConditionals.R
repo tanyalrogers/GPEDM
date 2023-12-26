@@ -289,13 +289,12 @@ summary.Smap=function(object, ...) {
 #' multiple populations, separate plots are produced for each population. Plots
 #' leave-one-out predictions, unless other predictions are available.
 #'
-#' @param x Output from \code{fitGP} or \code{predict.GP}.
+#' @param x Output from \code{fitSmap} or \code{predict.Smap}.
 #' @param plotloo Plot the leave-one-out results. Defaults to other out-of-sample
 #'   results if available.
 #' @param ... Other args (not used).
 #' @export
 #' @keywords functions
-
 plot.Smappred=function(x, plotloo=F, ...) {
   
   if(is.null(x$outsampresults) | plotloo) {
@@ -335,5 +334,44 @@ plot.Smappred=function(x, plotloo=F, ...) {
       abline(a=0,b=1)
     }    
   }
+  
+}
+
+#' Plot results from an S-map nonstationarity test
+#' 
+#' Makes some plots of results from the nonstationarity test.
+#'
+#' @param x Output from \code{Smap_NStest}.
+#' @param ... Other graphical parameters for the time series plot, like 'main'.
+#' @export
+#' @keywords functions
+plot.NStest=function(x, ...) {
+  
+  results=x$results
+  series=x$series
+  
+  old.par <- par(no.readonly = TRUE)
+  on.exit(par(old.par),add = T,after = F)
+  
+  par(mfrow=c(3,2), mar=c(4,4,2,1))
+  
+  plot(x=series[,1], y=series[,2], type="o", ylab=colnames(series)[2], xlab=colnames(series)[1], ...)
+  
+  plot(x=results$E, y=results$logL_NS, type="o", col="red", ylab="logL", xlab="E", lwd=2, ylim=range(results$logL,results$logL_NS))
+  points(x=results$E, y=results$logL, type="o")
+  legend(x="bottomright", col=c("black","red"), legend=c("Stationary","Nonstationary"), lty=1, pch=1, lwd=c(1,2), cex=0.6)
+  
+  plot(x=results$E, y=results$delta, type="o", ylab="delta", xlab="E", ylim=c(0,max(results$delta,0.01)))
+  text(x=mean(results$E),y=max(results$delta,0.01)/2,label=paste("delta_agg =", round(x$delta_agg,4)), pos=1)
+  
+  plot(x=results$E, y=results$W_E, type="o", ylab="W_E", xlab="E", ylim=c(0,1))
+
+  plot(x=results$E, y=results$dfs_NS, type="o", col="red", ylab="df", xlab="E", lwd=2, ylim=range(results$dfs, results$dfs_NS))
+  points(x=results$E, y=results$dfs, type="o")
+  legend(x="bottomright", col=c("black","red"), legend=c("Stationary","Nonstationary"), lty=1, pch=1, lwd=c(1,2), cex=0.6)
+  
+  plot(x=results$E, y=results$R2_NS, type="o", col="red", ylab="loo R2", xlab="E", lwd=2, ylim=range(results$R2, results$R2_NS))
+  points(x=results$E, y=results$R2, type="o")
+  legend(x="bottomright", col=c("black","red"), legend=c("Stationary","Nonstationary"), lty=1, pch=1, lwd=c(1,2), cex=0.6)
   
 }

@@ -1,0 +1,153 @@
+---
+title: "S-map and Extensions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{smap}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(GPEDM)
+```
+
+## Introduction
+
+How does this differ from the S-map implementation in rEDM? In rEDM, one has to conduct a grid search to find the optimal value of $theta$ whereas this algorithm finds the maximum likelihood value of $theta$ given $E$ and $tau$ using gradient desent. This includes implementation of nonstationary S-map, allowing for weighting in both space and time. This package has not been as optimized for speed as rEDM, so is potentially slower for large datasets. Parameterization of weighting kernel?? The front end and generation of predictions may be more intuitive to use.
+
+## Differences from fitGP
+
+The function `fitSmap` is very similar to `fitGP`, but there are some noteworthy differences. The hyperparameters are obviously different, so the inputs and outputs related to those differ. The main one is that `fitSmap` automatically computes leave-one-out predictions and it is these (instead of the in-sample predictions) that are returned by the function. So, there is no `predictmethod="loo"` bcause these values are already provided. 
+
+## Scaling considerations
+
+
+## Example
+
+```{r}
+data=subset(thetalog2pop, Population=="PopA")
+dlags=makelags(data, y = "Abundance", E=1, tau=1, append = T)
+X=as.matrix(dlags[-(1:3),4])
+Y=dlags$Abundance[-(1:3)]
+Time=dlags$Time[-(1:3)]/47
+
+test=fitSmap(dlags, y="Abundance", E=1, tau=1, scaling = "none")
+summary(test)
+plot(test)
+head(test$looresults)
+head(test$loocoefs)
+
+test=fitSmap(thetalog2pop, y="Abundance", pop="Population", time="Time", E=2, tau=1, scaling = "local")
+summary(test)
+plot(test)
+
+test2=predict(test, predictmethod = "lto")
+plot(test2)
+
+pA=subset(thetalog2pop,Population=="PopA")
+pB=subset(thetalog2pop,Population=="PopB")
+
+pAlags=makelags(pA, y = "Abundance", E=2, tau=1)
+pAdata=cbind(pA,pAlags)
+pAtrain=pAdata[1:40,]
+pAtest=pAdata[41:50,]
+tlogtest3=fitSmap(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Time", newdata = pAtest)
+plot(tlogtest3)
+```
+
+
+## Nonstationary S-map
+
+```{r}
+round1=read.csv("data-raw/round1_all.csv", stringsAsFactors = F)
+
+#ln_post is the log likelihood
+#df is estimated df
+
+r1results=unique.data.frame(round1[,1:3])
+r1results$delta_agg=NA
+
+Emax=10
+
+test=subset(round1, seriesnum==r1results$seriesnum[1])
+
+#how to make this faster
+start=Sys.time()
+tt=fitSmap(data=test, y="val", time="timestep", E=2, tau=1, scaling = "none", parallel = T)
+end=Sys.time()
+end-start
+summary(tt)
+
+start=Sys.time()
+tt=fitSmap(data=test, y="val", time="timestep", E=2, tau=1, scaling = "none", thetafixed = 2)
+end=Sys.time()
+end-start
+
+start=Sys.time()
+tg=fitGP(data=test, y="val", time="timestep", E=2, tau=1, scaling = "global")
+end=Sys.time()
+end-start
+
+res=Smap_NStest(data=test, y="val", time="timestep", Emax=6, summaryonly=T, scaling = "none")
+res
+plot(res, main=paste(test$model[1], test$ns[1]))
+
+for(i in seq_along(r1results$seriesnum)) {
+  test=subset(round1, seriesnum==r1results$seriesnum[i])
+  res=NStest(df=test, y="val", time="timestep", Emax=6, plot=T, summaryonly=T, name=paste(test$model[1], test$ns[1]))
+  r1results$phi_agg[i]=res$phi_agg
+  r1results$phi_agg_SSE[i]=res$phi_agg_SSE
+}
+
+n=nrow(test)
+Y=test$val[7:n]
+X=makelags(test,y="val",E=6, tau=1)[7:n,]
+Time=test$timestep[7:n]
+Pop=rep(1, length(Y))
+
+start=Sys.time()
+getlikegrad_smap(pars = c(2,0), X = X, Y = Y, Time = Time, Pop=Pop, thetafixed = NULL, deltafixed = 0, returngradonly = T, exclradius = 0)
+end=Sys.time()
+end-start
+
+# 5 cores seems optimal, at least for this dataset
+registerDoParallel(cores=5)
+start=Sys.time()
+getlikegrad_smap(pars = c(2,0), X = X, Y = Y, Time = Time, Pop=Pop, thetafixed = NULL, deltafixed = 0, returngradonly = T, exclradius = 0)
+end=Sys.time()
+end-start
+stopImplicitCluster()
+
+microbenchmark("pinv"={MASS::ginv(W*M)},
+               "base"={solve(t(M) %*% diag(W)^2 %*% M) %*% t(M) %*% diag(W)},
+               "matrix"={Matrix::solve(t(M) %*% diag(W)^2 %*% M) %*% t(M) %*% diag(W)},
+               "svd"={L=Matrix::chol(t(M) %*% diag(W)^2 %*% M)
+               Matrix::chol2inv(L) %*% t(M) %*% diag(W)})
+
+microbenchmark("1"={solve(t(M) %*% diag(W)^2 %*% M, t(M) %*% diag(W)^2 %*% Y)},
+               "2"={t(t(MASS::ginv(W*M)) * W) %*% Y}, #fastest
+               "3"={solve(t(M) %*% diag(W)^2 %*% M) %*% t(M) %*% diag(W)^2 %*% Y})
+
+microbenchmark("1"={drop(sqrt(laGP::distance(x,X)))},
+               "2"={drop(as.matrix(dist(X))[1,])})
+
+microbenchmark("1"={drop(sqrt(laGP::distance(X,X)))},
+               "2"={drop(as.matrix(dist(X)))})
+
+# par(mfrow=c(2,2))
+# thetagrid=seq(0,10, by=0.5)
+# thetagrad <- nllike <- numeric(length = length(thetagrid))
+# for(i in seq_along(thetagrid)) {
+#   test=getlikegrad_smap(pars = c(thetagrid[i],0),X = X, Y = Y, Time = Time, thetafixed = NULL, deltafixed = 0, returngradonly = T)
+#   nllike[i]=test$nll
+#   thetagrad[i]=test$grad[1]
+```
+
+
