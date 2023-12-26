@@ -234,6 +234,6 @@ Get conditional responses using \code{\link{getconditionals}}.
 
 }
 \seealso{
-\code{\link{predict.Smap}}, \code{\link{plot.Smappred}}, \code{\link{getconditionals}}}
+\code{\link{predict.Smap}}, \code{\link{plot.Smappred}}, \code{\link{getconditionals}}
 }
 \keyword{functions}

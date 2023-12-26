@@ -164,7 +164,7 @@
 #' \item{loofitstats}{Fit statistics for leave-one-out out-of-sample predictions.}
 #' \item{loofitstatspop}{If >1 population, fit statistics for leave-one-out out-of-sample predictions by population.}
 #' \item{call}{Function call. Allows use of \code{\link{update}}.}
-#' @seealso \code{\link{predict.Smap}}, \code{\link{plot.Smappred}}, \code{\link{getconditionals}}}
+#' @seealso \code{\link{predict.Smap}}, \code{\link{plot.Smappred}}, \code{\link{getconditionals}}
 #' @references 
 #' @examples 
 #' 
@@ -346,8 +346,8 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   Primary=primary[completerows]
   
   if(parallel) {
-    registerDoParallel(cores=5)
-    on.exit(stopImplicitCluster())
+    doParallel::registerDoParallel(cores=5)
+    on.exit(doParallel::stopImplicitCluster())
   }
   
   #optimize model
@@ -643,7 +643,7 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
     }
     
   } else { #parallel
-    
+    `%dopar%` <- foreach::`%dopar%`
     results=foreach::foreach(i=1:n) %dopar% {
       #exclude adjacent points
       exclude=(i-exclradius):(i+exclradius)
