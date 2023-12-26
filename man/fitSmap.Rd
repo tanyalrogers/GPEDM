@@ -21,6 +21,7 @@ fitSmap(
   initpars = NULL,
   augdata = NULL,
   returninsamp = FALSE,
+  parallel = FALSE,
   predictmethod = NULL,
   newdata = NULL,
   xnew = NULL,
