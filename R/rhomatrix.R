@@ -205,7 +205,7 @@ posdef=function(mat) {
   # matpd=V%*%diag(sqrt(L))%*%t(V)
   # colnames(matpd)=colnames(mat)
   # rownames(matpd)=rownames(mat)
-  matpd=Matrix::nearPD(Rhomat, corr = T)
+  matpd=Matrix::nearPD(mat, corr = T)
   matpd=as.matrix(matpd$mat)
   return(matpd)
 }
