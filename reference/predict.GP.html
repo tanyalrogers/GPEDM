@@ -87,6 +87,7 @@ The same goes for <code>"sequential"</code> and <code>"lto"</code>.</p>
 <span>  popnew <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timenew <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ynew <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  returnGPgrad <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -125,6 +126,13 @@ original model.</p></dd>
 lieu of <code>x</code>. Not required if <code>newdata</code> is supplied.</p></dd>
 
 
+<dt>returnGPgrad</dt>
+<dd><p>Return the gradient (derivative) of the GP model at each time point with
+respect to each input. This is only computed for out-of-sample predictions using <code>newdata</code>,
+<code>loo</code>, or <code>lto</code>. If you want the in-sample gradient, pass the original dataset as
+<code>newdata</code>. Defaults to FALSE.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>Other args (not used).</p></dd>
 
@@ -140,11 +148,15 @@ deviation of the GP function, <code>predsd</code> includes process error.</p></d
 
 <dt>outsampfitstats</dt>
 <dd><p>Fit statistics for out-of-sample predictions.
-Only computed if using <code>"loo"</code> or <code>"sequential"</code>, if <code>y</code> is found in <code>newdata</code>,
+Only computed if using a <code>predictmethod</code>, if <code>y</code> is found in <code>newdata</code>,
 or if <code>ynew</code> supplied (i.e. if the observed values are known).</p></dd>
 
 <dt>outsampfitstatspop</dt>
 <dd><p>If &gt;1 population, fit statistics for out-of-sample predictions by population.</p></dd>
+
+<dt>GPgrad</dt>
+<dd><p>If <code>returnGPgrad=T</code>, a data frame with the partial derivatives of the
+function with respect to each input.</p></dd>
 
 </dl></div>
 

@@ -247,11 +247,11 @@
 <span><span class="co">#&gt;        predictor posteriormode</span></span>
 <span><span class="co">#&gt; phi1 Abundance_1       0.59103</span></span>
 <span><span class="co">#&gt; phi2 Abundance_2       0.00000</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.00315844</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.389532</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.003158423</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.389629</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
 <span><span class="co">#&gt; In-sample R-squared: 0.9972318 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.9973222</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.9973224</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tlogtest3_update</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
@@ -412,6 +412,32 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 <h2 id="variable-timestep-method-for-missing-data">Variable Timestep Method (for missing data)<a class="anchor" aria-label="anchor" href="#variable-timestep-method-for-missing-data"></a>
 </h2>
 <p>See <a href="https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html">this vignette</a> for more detail about the variable timestep method (VS-EDM) for missing data.</p>
+</div>
+<div class="section level2">
+<h2 id="gradient-of-the-gp">Gradient of the GP<a class="anchor" aria-label="anchor" href="#gradient-of-the-gp"></a>
+</h2>
+<p>The partial derivatives of the fitted GP function at each time point with respect to each input can be obtained from the <code>predict</code> function, setting <code>returnGPgrad = T</code>. They will be under <code>model$GPgrad</code>. The gradient will be computed for each out-of-sample prediction point requested (using methods <code>"loo"</code>, <code>"lto"</code>, or <code>newdata</code>). If you want the in-sample gradient, pass the original (training) data as back in as <code>newdata</code>.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">grad1</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">tlogtest</span>, predictmethod <span class="op">=</span> <span class="st">"loo"</span>, returnGPgrad <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">gradplot</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">grad1</span><span class="op">$</span><span class="va">outsampresults</span>,<span class="va">grad1</span><span class="op">$</span><span class="va">GPgrad</span>, <span class="va">lags1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">predmean</span><span class="op">~</span><span class="va">Abundance_1</span>, data<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">gradplot</span>, <span class="va">pop</span><span class="op">==</span><span class="st">"PopA"</span><span class="op">)</span>, main<span class="op">=</span><span class="st">"PopA"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">predmean</span><span class="op">~</span><span class="va">Abundance_1</span>, data<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">gradplot</span>, <span class="va">pop</span><span class="op">==</span><span class="st">"PopB"</span><span class="op">)</span>, main<span class="op">=</span><span class="st">"PopB"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">d_Abundance_1</span><span class="op">~</span><span class="va">Abundance_1</span>, data<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">gradplot</span>, <span class="va">pop</span><span class="op">==</span><span class="st">"PopA"</span><span class="op">)</span>, main<span class="op">=</span><span class="st">"PopA"</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>h<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">d_Abundance_1</span><span class="op">~</span><span class="va">Abundance_1</span>, data<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">gradplot</span>, <span class="va">pop</span><span class="op">==</span><span class="st">"PopB"</span><span class="op">)</span>, main<span class="op">=</span><span class="st">"PopB"</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>h<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-gpgrad-1.png" width="100%"></p>
+<p>More examples:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">grad2</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">tlogtest3</span>, newdata <span class="op">=</span> <span class="va">pAtest</span>, returnGPgrad <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">grad2</span><span class="op">$</span><span class="va">GPgrad</span></span>
+<span></span>
+<span><span class="co">#it can also be done at the same time as model fitting</span></span>
+<span><span class="va">tlogtest3</span><span class="op">=</span><span class="fu"><a href="reference/fitGP.html">fitGP</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">pAtrain</span>, y <span class="op">=</span> <span class="st">"Abundance"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pAlags</span><span class="op">)</span>, time <span class="op">=</span> <span class="st">"Time"</span>, </span>
+<span>                newdata <span class="op">=</span> <span class="va">pAtest</span>, returnGPgrad <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">#in sample</span></span>
+<span><span class="va">grad3</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">tlogtest3</span>, newdata <span class="op">=</span> <span class="va">pAtrain</span>, returnGPgrad <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

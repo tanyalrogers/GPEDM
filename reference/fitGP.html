@@ -103,7 +103,8 @@ See Details for more information.</p>
 <span>  xnew <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  popnew <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timenew <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ynew <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  ynew <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  returnGPgrad <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -218,6 +219,13 @@ original model.</p></dd>
 <dd><p>New response vector. Optional, unless <code>E</code> and <code>tau</code> were supplied in
 lieu of <code>x</code>. Not required if <code>newdata</code> is supplied.</p></dd>
 
+
+<dt>returnGPgrad</dt>
+<dd><p>Return the gradient (derivative) of the GP model at each time point with
+respect to each input. This is only computed for out-of-sample predictions using <code>newdata</code>,
+<code>loo</code>, or <code>lto</code>. If you want the in-sample gradient, pass the original dataset as
+<code>newdata</code>. Defaults to FALSE.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -273,6 +281,10 @@ or if <code>ynew</code> supplied (i.e. if the observed values are known).</p></d
 
 <dt>outsampfitstatspop</dt>
 <dd><p>If &gt;1 population, fit statistics for out-of-sample predictions (if requested) by population.</p></dd>
+
+<dt>GPgrad</dt>
+<dd><p>If <code>returnGPgrad=T</code>, a data frame with the partial derivatives of the
+function with respect to each input.</p></dd>
 
 <dt>call</dt>
 <dd><p>Function call. Allows use of <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></code>.</p></dd>
@@ -334,6 +346,12 @@ Get conditional responses using <code><a href="getconditionals.html">getconditio
 <p>It should be noted that <code>"loo"</code> is not a "true" leave-one-out, for although each prediction is
 made by removing one of the training points, the hyperparameters are fit using all of the training data.
 The same goes for <code>"sequential"</code>.</p>
+<p>For the out-of-sample prediction methods <code>"loo"</code>, <code>"lto"</code>, and
+<code>newdata</code>, the partial derivatives of the fitted GP function at each
+time point with respect to each input can be obtained by setting
+<code>returnGPgrad = T</code>. If you want the in-sample gradient, pass the
+original (training) data as back in as <code>newdata</code>. It automatic scaling
+was used, the gradient will also be backtransformed to the original units.</p>
     </div>
     <div id="references">
     <h2>References</h2>
