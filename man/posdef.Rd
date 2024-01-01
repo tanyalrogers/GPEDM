@@ -14,7 +14,7 @@ An approximate version of \code{mat} that is positive definite. Row and column n
 }
 \description{
 If the output matrix from \code{\link{getrhomatrix}} is not positive
-definite, this will find an approximate matrix that is using \code{\link{Matrix::nearPD()}}
+definite, this will find an approximate matrix that is using \code{Matrix::nearPD()}
 with \code{corr=TRUE}.
 }
 \seealso{

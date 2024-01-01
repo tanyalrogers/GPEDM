@@ -3,6 +3,7 @@
 * Fix bug so that parameter values from prior model can be used in `initpars`. Initial values for `ve` and `sigma2` previously had to be constrained to (0,1), but can now be in (0,5).
 * Create `predict_seq` function.
 * Add `fixedpars` option to fix phi, ve, sigma2
+* Add `returnGPgrad` option to `predict.GP`
 
 # GPEDM 0.0.0.9006
 

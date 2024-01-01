@@ -24,7 +24,8 @@ fitGP(
   xnew = NULL,
   popnew = NULL,
   timenew = NULL,
-  ynew = NULL
+  ynew = NULL,
+  returnGPgrad = FALSE
 )
 }
 \arguments{
@@ -97,6 +98,11 @@ original model.}
 
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
 lieu of \code{x}. Not required if \code{newdata} is supplied.}
+
+\item{returnGPgrad}{Return the gradient (derivative) of the GP model at each time point with
+respect to each input. This is only computed for out-of-sample predictions using \code{newdata},
+\code{loo}, or \code{lto}. If you want the in-sample gradient, pass the original dataset as
+\code{newdata}. Defaults to FALSE.}
 }
 \value{
 A list (class GP and GPpred) with the following elements:
@@ -124,6 +130,8 @@ deviation of the GP function, \code{predsd} includes process error.}
 Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
 \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
+\item{GPgrad}{If \code{returnGPgrad=T}, a data frame with the partial derivatives of the
+function with respect to each input.}
 \item{call}{Function call. Allows use of \code{\link{update}}.}
 }
 \description{
@@ -220,6 +228,13 @@ Get conditional responses using \code{\link{getconditionals}}.
 It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
 made by removing one of the training points, the hyperparameters are fit using all of the training data.
 The same goes for \code{"sequential"}.
+
+For the out-of-sample prediction methods \code{"loo"}, \code{"lto"}, and
+\code{newdata}, the partial derivatives of the fitted GP function at each
+time point with respect to each input can be obtained by setting
+\code{returnGPgrad = T}. If you want the in-sample gradient, pass the
+original (training) data as back in as \code{newdata}. It automatic scaling
+was used, the gradient will also be backtransformed to the original units.
 }
 \examples{
 yrand=rnorm(20)

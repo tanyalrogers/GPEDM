@@ -304,11 +304,11 @@ summary(tlogtest3_update)
 #>        predictor posteriormode
 #> phi1 Abundance_1       0.59103
 #> phi2 Abundance_2       0.00000
-#> Process variance (ve): 0.00315844
-#> Pointwise prior variance (sigma2): 2.389532
+#> Process variance (ve): 0.003158423
+#> Pointwise prior variance (sigma2): 2.389629
 #> Number of populations: 1
 #> In-sample R-squared: 0.9972318 
-#> Out-of-sample R-squared: 0.9973222
+#> Out-of-sample R-squared: 0.9973224
 
 plot(tlogtest3_update)
 #> Plotting out of sample results.
@@ -503,6 +503,43 @@ See [this
 vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
 for more detail about the variable timestep method (VS-EDM) for missing
 data.
+
+## Gradient of the GP
+
+The partial derivatives of the fitted GP function at each time point
+with respect to each input can be obtained from the `predict` function,
+setting `returnGPgrad = T`. They will be under `model$GPgrad`. The
+gradient will be computed for each out-of-sample prediction point
+requested (using methods `"loo"`, `"lto"`, or `newdata`). If you want
+the in-sample gradient, pass the original (training) data as back in as
+`newdata`.
+
+``` r
+grad1=predict(tlogtest, predictmethod = "loo", returnGPgrad = T)
+gradplot=cbind(grad1$outsampresults,grad1$GPgrad, lags1)
+
+par(mfrow=c(2,2),mar=c(4,4,2,1))
+plot(predmean~Abundance_1, data=subset(gradplot, pop=="PopA"), main="PopA")
+plot(predmean~Abundance_1, data=subset(gradplot, pop=="PopB"), main="PopB")
+plot(d_Abundance_1~Abundance_1, data=subset(gradplot, pop=="PopA"), main="PopA"); abline(h=0)
+plot(d_Abundance_1~Abundance_1, data=subset(gradplot, pop=="PopB"), main="PopB"); abline(h=0)
+```
+
+<img src="man/figures/README-gpgrad-1.png" width="100%" />
+
+More examples:
+
+``` r
+grad2=predict(tlogtest3, newdata = pAtest, returnGPgrad = T)
+grad2$GPgrad
+
+#it can also be done at the same time as model fitting
+tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Time", 
+                newdata = pAtest, returnGPgrad = T)
+
+#in sample
+grad3=predict(tlogtest3, newdata = pAtrain, returnGPgrad = T)
+```
 
 ## References
 
