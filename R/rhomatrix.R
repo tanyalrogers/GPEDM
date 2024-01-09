@@ -188,7 +188,7 @@ getrhomatrix=function(data=NULL,y,x=NULL,pop,time=NULL,E=NULL,tau=NULL,
 #' Find nearest positive definite matrix
 #'
 #' If the output matrix from \code{\link{getrhomatrix}} is not positive
-#' definite, this will find an approximate matrix that is using \code{\link{Matrix::nearPD()}} 
+#' definite, this will find an approximate matrix that is using \code{Matrix::nearPD()} 
 #' with `corr=TRUE`.
 #' 
 #' @param mat A symmetrical square matrix with 1's on diagonal.
@@ -205,7 +205,7 @@ posdef=function(mat) {
   # matpd=V%*%diag(sqrt(L))%*%t(V)
   # colnames(matpd)=colnames(mat)
   # rownames(matpd)=rownames(mat)
-  matpd=Matrix::nearPD(Rhomat, corr = T)
+  matpd=Matrix::nearPD(mat, corr = T)
   matpd=as.matrix(matpd$mat)
   return(matpd)
 }
