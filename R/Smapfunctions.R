@@ -527,7 +527,7 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclr
   maxiter=200
   
   #initialize 
-  output=getlikegrad_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returngradonly=T,parallel)
+  output=getlikegrad_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=F,parallel=parallel)
   nll=output$nll
   grad=output$grad
   s=drop(sqrt(grad%*%grad))
@@ -543,7 +543,7 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclr
     #step 1-move
     panew=pa-sign(grad)*del
     panew=pmax(0,panew) #pars cannot be less than 0
-    output_new=getlikegrad_smap(panew,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returngradonly=T,parallel)
+    output_new=getlikegrad_smap(panew,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=F,reusegrad=grad,parallel=parallel)
     nll_new=output_new$nll
     grad_new=output_new$grad
     #panew=output_new$parst #prevent parst from changing if using fixedpars (probably not necessary?)
@@ -563,24 +563,32 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclr
   
   #print(iter)
   paopt=pa
-  output_new=getlikegrad_smap(paopt,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returngradonly=F,parallel)
+  output_new=getlikegrad_smap(paopt,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=T,reusegrad=grad,parallel=parallel)
   output_new$iter=iter
   
   return(output_new)
 }
 
 #Function to get likelihood, gradient, df, predictions
-getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclradius, returngradonly, parallel) {
+getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclradius, returnpreds, reusegrad=NULL, parallel) {
 
   theta=pars[1]
   delta=pars[2]
   
+  thetagrad <- deltagrad <- TRUE
+  
   #fix parameters
   if(!is.null(thetafixed)) {
     theta=thetafixed
+    if(!is.null(reusegrad)) { 
+      dl_dtheta=reusegrad[1] 
+      thetagrad=FALSE}
   }
   if(!is.null(deltafixed)) {
     delta=deltafixed
+    if(!is.null(reusegrad)) { 
+      dl_ddelta=reusegrad[2] 
+      deltagrad=FALSE}
   }
   
   n = nrow(X)
@@ -596,9 +604,12 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
     SSE = 0
     dof = 0
     
-    ypred_loo <- ypred <- varp_loo <- varp <- numeric(length = n)
-    coefs <- coefs_loo <- matrix(nrow = n, ncol = ncol(X)+1)
-    
+    if(returnpreds) {
+      ypred_loo <- ypred <- numeric(length = n)
+      varp_loo <- varp <- numeric(length = n)
+      coefs <- coefs_loo <- matrix(nrow = n, ncol = ncol(X)+1)
+    }
+
     for(i in 1:n) {
       
       #exclude adjacent points
@@ -615,31 +626,32 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
       Timenoi = Time[-exclude]
       
       #loo
-      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta)
-      loo_dhdtheta = loo_out$dhdtheta
-      loo_dhddelta =loo_out$dhddelta
-      ypred_loo[i] = loo_out$prediction
-      varp_loo[i] = loo_out$varp
-      coefs_loo[i,] = loo_out$coefs
-      
+      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, thetagrad=thetagrad, deltagrad=deltagrad, Yi=Yi)
+      if(returnpreds) {
+        ypred_loo[i] = loo_out$prediction
+        varp_loo[i] = loo_out$varp
+        coefs_loo[i,] = loo_out$coefs        
+      }
+
       #in sample
-      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta)
-      hat_vec = insamp_out$H
-      insamp_dhdtheta = insamp_out$dhdtheta
-      insamp_dhddelta = insamp_out$dhddelta
-      ypred[i] = insamp_out$prediction
-      varp[i] = insamp_out$varp
-      coefs[i,] = insamp_out$coefs
+      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, thetagrad=thetagrad, deltagrad=deltagrad, insampind=i)
+      if(returnpreds) {
+        ypred[i] = insamp_out$prediction
+        varp[i] = insamp_out$varp
+        coefs[i,] = insamp_out$coefs
+      }
       
-      residual = Yi - loo_out$prediction
+      SSE = SSE + loo_out$SSE
+      dof = dof + insamp_out$dof
       
-      SSE = SSE + (residual) ^ 2
-      dof = dof + hat_vec[i] #trace of hat matrix
-      
-      dSSE_dtheta = dSSE_dtheta + -2 * residual * (loo_dhdtheta %*% Ynoi)
-      dSSE_ddelta = dSSE_ddelta + -2 * residual * (loo_dhddelta %*% Ynoi)
-      dDOF_dtheta = dDOF_dtheta + insamp_dhdtheta[i]
-      dDOF_ddelta = dDOF_ddelta + insamp_dhddelta[i]
+      if(thetagrad) {
+        dSSE_dtheta = dSSE_dtheta + loo_out$dSSE_dtheta
+        dDOF_dtheta = dDOF_dtheta + insamp_out$dDOF_dtheta
+      }
+      if(deltagrad) {
+        dSSE_ddelta = dSSE_ddelta + loo_out$dSSE_ddelta
+        dDOF_ddelta = dDOF_ddelta + insamp_out$dDOF_ddelta
+      }
     }
     
   } else { #parallel
@@ -659,44 +671,61 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
       Timenoi = Time[-exclude]
       
       #loo
-      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta)
-      loo_dhdtheta = loo_out$dhdtheta
-      loo_dhddelta =loo_out$dhddelta
-      ypred_loo = loo_out$prediction
-      varp_loo = loo_out$varp
-      coefs_loo = loo_out$coefs
+      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, Yi=Yi)
+      # loo_dhdtheta = loo_out$dhdtheta
+      # loo_dhddelta =loo_out$dhddelta
+      if(returnpreds) {
+        ypred_loo = loo_out$prediction
+        varp_loo = loo_out$varp
+        coefs_loo = loo_out$coefs
+      }
       
       #in sample
-      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta)
-      hat_vec = insamp_out$H
-      insamp_dhdtheta = insamp_out$dhdtheta
-      insamp_dhddelta = insamp_out$dhddelta
-      ypred = insamp_out$prediction
-      varp = insamp_out$varp
-      coefs = insamp_out$coefs
+      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, insampind=i)
+      # hat_vec = insamp_out$H
+      # insamp_dhdtheta = insamp_out$dhdtheta
+      # insamp_dhddelta = insamp_out$dhddelta
+      if(returnpreds) {
+        ypred = insamp_out$prediction
+        varp = insamp_out$varp
+        coefs = insamp_out$coefs
+      }
       
-      residual = Yi - loo_out$prediction
+      # residual = Yi - loo_out$prediction
+      # 
+      # SSEi = (residual) ^ 2
       
-      SSEi = (residual) ^ 2
-      dofi = hat_vec[i] #trace of hat matrix
+      SSEi = loo_out$SSE
+      # dofi = hat_vec[i] #trace of hat matrix
+      dofi = insamp_out$dof
       
-      dSSE_dthetai = -2 * residual * (loo_dhdtheta %*% Ynoi)
-      dSSE_ddeltai = -2 * residual * (loo_dhddelta %*% Ynoi)
-      dDOF_dthetai = insamp_dhdtheta[i]
-      dDOF_ddeltai = insamp_dhddelta[i]
+      # dSSE_dthetai = -2 * residual * (loo_dhdtheta %*% Ynoi)
+      # dSSE_ddeltai = -2 * residual * (loo_dhddelta %*% Ynoi)
+      # dDOF_dthetai = insamp_dhdtheta[i]
+      # dDOF_ddeltai = insamp_dhddelta[i]
+      dSSE_dthetai = loo_out$dSSE_dtheta
+      dSSE_ddeltai = loo_out$dSSE_ddelta
+      dDOF_dthetai = insamp_out$dDOF_dtheta
+      dDOF_ddeltai = insamp_out$dDOF_ddelta
       
-      results=list(ypred_loo=ypred_loo, varp_loo=varp_loo, coefs_loo=coefs_loo,
-                   ypred=ypred, varp=varp, coefs=coefs, SSEi=SSEi, dofi=dofi,
+      results=list(SSEi=SSEi, dofi=dofi,
                    dSSE_dthetai=dSSE_dthetai, dSSE_ddeltai=dSSE_ddeltai,
                    dDOF_dthetai=dDOF_dthetai, dDOF_ddeltai=dDOF_ddeltai)
+      if(returnpreds) {
+        results=c(list(ypred_loo=ypred_loo, varp_loo=varp_loo, coefs_loo=coefs_loo,
+                       ypred=ypred, varp=varp, coefs=coefs),results)
+      }
+      results
     }
     
-    ypred_loo=sapply(results, function(x) x$ypred_loo)
-    varp_loo=sapply(results, function(x) x$varp_loo)
-    coefs_loo=t(sapply(results, function(x) x$coefs_loo))
-    ypred=sapply(results, function(x) x$ypred)
-    varp=sapply(results, function(x) x$varp)
-    coefs=t(sapply(results, function(x) x$coefs))
+    if(returnpreds) {
+      ypred_loo=sapply(results, function(x) x$ypred_loo)
+      varp_loo=sapply(results, function(x) x$varp_loo)
+      coefs_loo=t(sapply(results, function(x) x$coefs_loo))
+      ypred=sapply(results, function(x) x$ypred)
+      varp=sapply(results, function(x) x$varp)
+      coefs=t(sapply(results, function(x) x$coefs))
+    }
     
     SSE=sum(sapply(results, function(x) x$SSEi))
     dof=sum(sapply(results, function(x) x$dofi))
@@ -708,16 +737,20 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
   }
   
   #likelihood gradient for theta and delta (max prevents divide by 0 errors)
-  dl_dtheta = (-n/2) * ( dSSE_dtheta / max(SSE, 10e-6) + dDOF_dtheta / max(n-dof, 10e-6))
-  dl_ddelta = (-n/2) * ( dSSE_ddelta / max(SSE, 10e-6) + dDOF_ddelta / max(n-dof, 10e-6))
+  if(thetagrad) {
+    dl_dtheta = -1 * (-n/2) * ( dSSE_dtheta / max(SSE, 10e-6) + dDOF_dtheta / max(n-dof, 10e-6))
+  }
+  if(deltagrad) {
+    dl_ddelta = -1 * (-n/2) * ( dSSE_ddelta / max(SSE, 10e-6) + dDOF_ddelta / max(n-dof, 10e-6))
+  }
   
   #log likelihood
   E = ((-n/2) * (log(max(SSE, 10e-6) / max(n-dof, 10e-6)) + log(2*pi) + 1))
   
-  if(returngradonly) { #exit here, return only likelihood and gradient
-    return(list(nll = -E, grad = c(-dl_dtheta, -dl_ddelta)))
+  if(!returnpreds) { #exit here, return only likelihood and gradient
+    return(list(nll = -E, grad = c(dl_dtheta, dl_ddelta)))
   }
-  
+
   #compute sd and other stuff, return predictions
   sigma2_loo=SSE/n
   ysd_loo=sqrt(sigma2_loo*varp_loo)
@@ -726,7 +759,7 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
   ysd=sqrt(sigma2*varp)
   
   out=list(theta=theta, delta=delta, sigma2=sigma2_loo, 
-           df=dof, nll= -E, grad = c(dl_dtheta, dl_ddelta),
+           df=dof, nll= -E, grad = c(-dl_dtheta, -dl_ddelta),
            ypred=ypred, ysd=ysd, ypred_loo=ypred_loo, ysd_loo=ysd_loo,
            coefs=coefs, coefs_loo=coefs_loo)
   return(out)
@@ -740,7 +773,8 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
 #       t - (scalar) current time to predict
 #       theta - (scalar) hyperparameter
 #       delta - (scalar) hyperparameter
-NSMap=function(X, Y, Time, x, t, theta, delta) {
+NSMap=function(X, Y, Time, x, t, theta, delta, 
+               returnpreds=TRUE, returngrad=FALSE, thetagrad=TRUE, deltagrad=TRUE, Yi=NULL, insampind=NULL) {
   
   n = nrow(X)
   norms = drop(sqrt(laGP::distance(x,X))) #la.norm(X - x, axis=1) #euclidean distance of each point from x
@@ -757,27 +791,59 @@ NSMap=function(X, Y, Time, x, t, theta, delta) {
   pinv = MASS::ginv(W*M) #pinv = la.pinv(W*M)
   #pinv2 = solve(t(M) %*% diag(W)^2 %*% M) %*% t(M) %*% diag(W) #same
   
-  H = xaug %*% t(t(pinv) * W) #hat matrix row (needed for dof calculation)
-  coefs = t(t(pinv) * W) %*% Y #smap coefs row
-  prediction = drop(H %*% Y) #prediction for point x
+  Wmat = matrix(W,nrow = nrow(pinv), ncol=ncol(pinv), byrow = T)
+  PinvW = multMat(pinv, Wmat) #same as t(t(pinv) * W)
+  H = xaug %*% PinvW #hat matrix row (needed for dof calculation)
+  prediction = innerProd(H,Y) # drop(H %*% Y) #prediction for point x
   # prediction = drop(xaug %*% pinv %*% diag(W) %*% Y) #same
-  varp=diag(H %*% t(H))+1 #to get sd=sqrt(sigma2*varp)
+  
+  if(returnpreds) {
+    coefs = PinvW %*% Y #smap coefs row
+    varp=diag(H %*% t(H))+1 #to get sd=sqrt(sigma2*varp)
+    if(!returngrad) {
+      return(list(prediction=prediction, varp=varp, coefs=t(coefs))) #output for predict()
+    }
+  }
+  
+  #gradient calculation
   
   # compute the derivatives of the hat matrix wrt theta and delta
-  dWdtheta = -1 * W * norms / d 
-  dWddelta = -1 * W * ((Time-t)^2)
-  
-  dthetapinv = t(dWdtheta * t(pinv))
-  ddeltapinv = t(dWddelta * t(pinv))
-  
-  dhdtheta = 2 * xaug %*% (dthetapinv - dthetapinv %*% M %*% t(t(pinv) * W))
-  dhddelta = 2 * xaug %*% (ddeltapinv - ddeltapinv %*% M %*% t(t(pinv) * W))
-  
+  if(thetagrad) {
+    dWdtheta = -1 * W * norms / d 
+    dWdthetaM = matrix(dWdtheta, nrow = nrow(pinv), ncol=ncol(pinv), byrow = T)
+    dthetapinv = multMat(pinv, dWdthetaM) # t(dWdtheta * t(pinv))
+    dhdtheta = 2 * xaug %*% (dthetapinv - dthetapinv %*% M %*% PinvW)
+  }
+  if(deltagrad) {
+    dWddelta = -1 * W * ((Time-t)^2)
+    dWddeltaM = matrix(dWddelta, nrow = nrow(pinv), ncol=ncol(pinv), byrow = T)
+    ddeltapinv = multMat(pinv, dWddeltaM) # t(dWddelta * t(pinv))
+    dhddelta = 2 * xaug %*% (ddeltapinv - ddeltapinv %*% M %*% PinvW)
+  }
   #same (divided by 2) ** why are lines above multipled by 2? Is it because of W being squared?
   # dhdtheta2 = xaug %*% pinv %*% (diag(dWdtheta) - diag(dWdtheta) %*% M %*% pinv %*% diag(W))
   # dhddelta2 = xaug %*% pinv %*% (diag(dWddelta) - diag(dWddelta) %*% M %*% pinv %*% diag(W))
   
-  return(list(prediction=prediction, varp=varp, H=H, coefs=t(coefs), dhdtheta=dhdtheta, dhddelta=dhddelta))
+  if(!is.null(insampind)) { #in samp
+    out=list(dof=H[insampind], dDOF_dtheta=ifelse(thetagrad,dhdtheta[insampind],0), dDOF_ddelta=ifelse(deltagrad,dhddelta[insampind],0))
+  }
+  if(!is.null(Yi)) { #loo
+    residual = Yi - prediction
+    SSE = (residual) ^ 2
+    if(thetagrad) {
+      dSSE_dtheta = -2 * residual * innerProd(dhdtheta, Y)
+    }
+    if(deltagrad) {
+      dSSE_ddelta = -2 * residual * innerProd(dhddelta, Y)
+    }
+    out=list(SSE=SSE, dSSE_dtheta=ifelse(thetagrad,dSSE_dtheta,0), dSSE_ddelta=ifelse(deltagrad,dSSE_ddelta,0))
+  }
+  
+  if(returnpreds) { 
+    return(c(list(prediction=prediction, varp=varp, coefs=t(coefs)), out))
+  } else {
+    return(out)
+  }
   
   # else{
   #     # use least squares to solve if hat matrix derivates aren't needed,
@@ -930,10 +996,10 @@ predict.Smap=function(object,predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NU
     Popnew=popnew[completerowsnew]
     Timenew=timenew[completerowsnew]
     
-    ymean <- varp <- numeric(length = Tslp)
-    coefs <- matrix(nrow = Tslp, ncol = ncol(X)+1)
+    ymean <- varp <- numeric(length = nrow(Xnew))
+    coefs <- matrix(nrow = nrow(Xnew), ncol = ncol(X)+1)
     
-    for(i in 1:Tslp) {
+    for(i in 1:nrow(Xnew)) {
       Xi = Xnew[i,,drop=F]
       Timei = Timenew[i]
       

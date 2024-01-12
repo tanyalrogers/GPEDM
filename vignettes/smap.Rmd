@@ -80,13 +80,18 @@ test=subset(round1, seriesnum==r1results$seriesnum[1])
 
 #how to make this faster
 start=Sys.time()
-tt=fitSmap(data=test, y="val", time="timestep", E=2, tau=1, scaling = "none", parallel = T)
+tt=fitSmap(data=test, y="val", time="timestep", E=2, tau=1, scaling = "none", parallel = F)
 end=Sys.time()
 end-start
 summary(tt)
 
 start=Sys.time()
-tt=fitSmap(data=test, y="val", time="timestep", E=2, tau=1, scaling = "none", thetafixed = 2)
+predtest=predict(tt, newdata = test)
+end=Sys.time()
+end-start
+
+start=Sys.time()
+ttf=fitSmap(data=test, y="val", time="timestep", E=2, tau=1, scaling = "none", thetafixed = 2)
 end=Sys.time()
 end-start
 
@@ -113,7 +118,7 @@ Time=test$timestep[7:n]
 Pop=rep(1, length(Y))
 
 start=Sys.time()
-getlikegrad_smap(pars = c(2,0), X = X, Y = Y, Time = Time, Pop=Pop, thetafixed = NULL, deltafixed = 0, returngradonly = T, exclradius = 0)
+getlikegrad_smap(pars = c(2,0), X = X, Y = Y, Time = Time, Pop=Pop, thetafixed = NULL, deltafixed = 0, returnpreds = F, parallel = F, exclradius = 0)
 end=Sys.time()
 end-start
 
@@ -140,6 +145,9 @@ microbenchmark("1"={drop(sqrt(laGP::distance(x,X)))},
 
 microbenchmark("1"={drop(sqrt(laGP::distance(X,X)))},
                "2"={drop(as.matrix(dist(X)))})
+
+microbenchmark("1"={Wmat=matrix(W,nrow = nrow(pinv), ncol=ncol(pinv),byrow = T); multMat(pinv, Wmat)},
+               "2"={t(t(pinv) * W)})
 
 # par(mfrow=c(2,2))
 # thetagrid=seq(0,10, by=0.5)
