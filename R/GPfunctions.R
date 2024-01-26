@@ -187,7 +187,8 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                rhomatrix=NULL,augdata=NULL,
-               predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,returnGPgrad=FALSE) {
+               predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,returnGPgrad=FALSE,
+               kmsubset=FALSE, nclust=NULL, clustsize=NULL, subtotal=NULL) {
 
   cl <- match.call()
   
@@ -388,6 +389,19 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   
   #remove missing values
   completerows=complete.cases(cbind(yds,xds))
+  #if subsetting, treat values not in the subset as missing values
+  if(kmsubset) {
+    kmsub=getsubset(xds,yds,nclust,clustsize,subtotal)
+    completerows=kmsub$subrows
+    if(!is.null(predictmethod)|!is.null(xnew)|!is.null(newdata)) {
+      message("Ignoring prediction-related inputs and setting full training dataset as newdata.\n
+              Use predict() to get other predictions.")
+    }
+    xnew=x
+    ynew=y
+    popnew=pop
+    timenew=time
+  }
   Y=yds[completerows]
   X=as.matrix(xds[completerows,,drop=FALSE])
   Pop=popd[completerows]
