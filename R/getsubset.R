@@ -1,6 +1,6 @@
 #' Subset training data using kmeans clustering
 #'
-#' Reduces the sizes of the training dataset for 'big data' GP applications. This
+#' Reduces the size of the training dataset for 'big data' GP applications. This
 #' function is used internally in \code{fitGP} when \code{kmsubset=TRUE} (after
 #' data scaling but before subsetting out missing data - rows not in the subset
 #' are treated as 'missing'). However, this function can also be used on its own for
@@ -23,19 +23,22 @@
 #' @param xds Predictor variables as a matrix. These should be scaled! Can contain
 #'   missing values.
 #' @param yds Response variable as a vector. This is only used to exclude rows 
-#'   with missing values for y, it is not used for clustering.
+#'   with missing values for y; it is not used for clustering.
 #' @param nclust The number of clusters.
 #' @param clustsize The number of observations per cluster.
 #' @param subtotal The total number of observations in the subset. The 
 #'   number of observations per cluster will be subtotal/nclust. If subtotal
 #'   is not an exact multiple of nclust, then the remainder is assigned to
 #'   random clusters.
+#' @param returnclusters Return the cluster assignments for each data point.
+#'   Potentially useful for diagnostics.
 #'   
 #' @return A vector of indices indicating the rows of xds and yds that should be included,
-#'   which can be used for subsetting.
+#'   which can be used for subsetting. If returnclusters=TRUE, a list with a vector of indices
+#'   and a vector of cluster assignments.
 #' @export
 #' @keywords functions
-getsubset=function(xds, yds, nclust, clustsize=NULL, subtotal=NULL) {
+getsubset=function(xds, yds, nclust, clustsize=NULL, subtotal=NULL, returnclusters=FALSE) {
   
   if(!is.null(clustsize) & !is.null(subtotal)) {
     stop("Provide either clustsize or subtotal, not both")
@@ -75,8 +78,11 @@ getsubset=function(xds, yds, nclust, clustsize=NULL, subtotal=NULL) {
     }
   }
   
-  clustvec=yds*NA
-  clustvec[completerows]=clust
-  
-  return(list(subrows=sort(subrows), clusters=clustvec))
+  if(returnclusters) {
+    clustvec=yds*NA
+    clustvec[completerows]=clust
+    return(list(subrows=sort(subrows), clusters=clustvec))
+  }
+
+  return(sort(subrows))
 }

@@ -25,7 +25,11 @@ fitGP(
   popnew = NULL,
   timenew = NULL,
   ynew = NULL,
-  returnGPgrad = FALSE
+  returnGPgrad = FALSE,
+  kmsubset = FALSE,
+  nclust = NULL,
+  clustsize = NULL,
+  subtotal = NULL
 )
 }
 \arguments{
@@ -103,6 +107,22 @@ lieu of \code{x}. Not required if \code{newdata} is supplied.}
 respect to each input. This is only computed for out-of-sample predictions using \code{newdata},
 \code{loo}, or \code{lto}. If you want the in-sample gradient, pass the original dataset as
 \code{newdata}. Defaults to FALSE.}
+
+\item{kmsubset}{Use kmeans subsetting to reduce training data size;
+potentially useful for large datasets. Defaults to FALSE. Arguments
+\code{nclust}, \code{clustsize}, and \code{subtotal} apply only if
+\code{kmsubset=TRUE}. If TRUE, any prediction-related inputs are ignored,
+and the full training dataset will be used as \code{newdata} (will appear under
+outsamp results). See \code{\link{getsubset}} for more details.}
+
+\item{nclust}{The number of clusters.}
+
+\item{clustsize}{The number of observations per cluster.}
+
+\item{subtotal}{The total number of observations in the subset. The
+number of observations per cluster will be subtotal/nclust. If subtotal
+is not an exact multiple of nclust, then the remainder is assigned to
+random clusters.}
 }
 \value{
 A list (class GP and GPpred) with the following elements:
