@@ -1,0 +1,155 @@
+---
+title: "Methods for Large Datasets"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Methods for large datasets}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(GPEDM)
+```
+
+## Introduction
+
+The GP model does not scale well as the number of data points increases (order $n^3$), so it can become very slow for large datasets. Here we present some *experimental* methods for speeding up the GP for large datasets with (hopefully) minimal loss to prediction accuracy. Right now, we just have the "kmeans subsetting" method, but may add more in the future.
+
+## Kmeans subsetting
+
+The idea here is to subset the training dataset to a smaller, representative sample and use this for the slow step of model fitting. Predictions can then be made from the fitted model to the entire dataset. Some tests suggest that rather than picking training points randomly, it may help to divide the training points into clusters, and to select points randomly within each cluster, so that the points better cover the attractor. Tests also suggest that if we repeat the random sampling many times and average the predictions, we can obtain performance similar to using the entire training dataset. 
+
+As an example, we'll use the Hastings-Powell 3 species model (n=500) with some observation noise added.
+
+```{r}
+data(HastPow3sp)
+HastPow3sp$X2=HastPow3sp$X+rnorm(nrow(HastPow3sp),0,0.05)
+plot(X2~Time, data=HastPow3sp, type="l")
+
+#with all training data
+start=Sys.time()
+hpdemo=fitGP(data=HastPow3sp, y="X2", time="Time", E=3, tau=1)
+Sys.time()-start
+
+summary(hpdemo)
+plot(hpdemo)
+
+#with a subset of 50 points
+start=Sys.time()
+hpclust=fitGP(data=HastPow3sp, y="X2", time="Time", E=3, tau=1, 
+              kmsubset=TRUE, nclust=5, clustsize=10)
+Sys.time()-start
+
+summary(hpclust)
+plot(hpclust, plotinsamp = T)
+plot(hpclust)
+
+#with a subset of 50 points, repeated 20 times
+reps=20
+preds=matrix(nrow = nrow(HastPow3sp), ncol = reps)
+start=Sys.time()
+for(i in 1:reps) {
+  hpclusti=fitGP(data=HastPow3sp, y="X2", time="Time", E=3, tau=1, 
+                 kmsubset=TRUE, nclust=5, clustsize=10)
+  preds[,i]=hpclusti$outsampresults$predmean
+}
+predavg=rowMeans(preds)
+R2modavg=getR2(hpclusti$outsampresults$obs, predavg)
+Sys.time()-start
+
+R2modavg
+(R2all=hpdemo$insampfitstats["R2"])
+```
+
+How is performance affected by the number of clusters and the size of the subsample? At least in this example, the size of the subset seems to matter more than the number of clusters. 
+
+Averaging the predictions from mutiple subsets generally gives us better performance than the best performing individual subset (and the average individual subset). This improvement is greater if the observation noise is increased.
+
+```{r}
+#fix subtotal and vary number of clusters
+clustersvec=1:20
+subtotal=40
+reps=20
+R2clust=matrix(nrow = reps, ncol = length(clustersvec))
+R2combo=numeric(length = length(clustersvec))
+preds=matrix(nrow = nrow(HastPow3sp), ncol = reps)
+
+for(i in seq_along(clustersvec)) {
+  for(j in 1:reps) {
+    hpclust=fitGP(data=HastPow3sp, y="X2", time="Time", E=3, tau=1, 
+                  kmsubset=TRUE, nclust=clustersvec[i], subtotal=subtotal)
+    R2clust[j,i]=hpclust$outsampfitstats["R2"]
+    preds[,j]=hpclust$outsampresults$predmean
+  }
+  predavg=rowMeans(preds)
+  R2combo[i]=getR2(hpclust$outsampresults$obs, predavg)
+}
+R2clustmean=colMeans(R2clust)
+R2clustmax=apply(R2clust,2,max)
+
+plot(clustersvec, R2clustmean, type = "o", ylim = range(R2clustmean,R2combo,R2all), col="red",
+     ylab="R2", xlab="Number of clusters (nclust)", main = paste("Subset size = ", subtotal))
+lines(clustersvec, R2clustmax, type = "o", col="red", lty=2)
+lines(clustersvec, R2combo, type = "o", col="blue")
+abline(h=R2all)
+legend(x="bottomright", legend=c("all data", "model average","best indiv model", "average indiv model"), lty=c(1,1,2,1), col=c("black","blue","red","red"))
+```
+
+
+```{r}
+#fix number of clusters and vary subtotal
+clusters=5
+subtotalvec=seq(10,100,by=10)
+reps=20
+R2sub=matrix(nrow = reps, ncol = length(subtotalvec))
+R2subcombo=numeric(length = length(subtotalvec))
+preds=matrix(nrow = nrow(HastPow3sp), ncol = reps)
+
+for(i in seq_along(subtotalvec)) {
+  for(j in 1:reps) {
+    hpclust=fitGP(data=HastPow3sp, y="X2", time="Time", E=3, tau=1, 
+                  kmsubset=TRUE, nclust=clusters, subtotal=subtotalvec[i])
+    R2sub[j,i]=hpclust$outsampfitstats["R2"]
+    preds[,j]=hpclust$outsampresults$predmean
+  }
+  predavg=rowMeans(preds)
+  R2subcombo[i]=getR2(hpclust$outsampresults$obs, predavg)
+}
+R2submean=colMeans(R2sub)
+R2submax=apply(R2sub,2,max)
+
+plot(subtotalvec, R2submean, type = "o", ylim = range(R2submean,R2subcombo), col="red",
+     ylab="R2", xlab="Subset size (subtotal)", main = paste("Clusters = ", clusters))
+lines(subtotalvec, R2submax, type = "o", col="red", lty=2)
+lines(subtotalvec, R2subcombo, type = "o", col="blue")
+abline(h=R2all)
+legend(x="bottomright", legend=c("all data", "model average","best indiv model", "average indiv model"), lty=c(1,1,2,1), col=c("black","blue","red","red"))
+```
+
+If you want to see the cluster assignments and plot them, here is how you might do that. The `getsubset` function is used interally, but it can be used on its own to obtain a subset and return the cluster assignments. Generally, x and y should be scaled here, but for a univariate analysis it's not as critital.
+
+```{r eval=FALSE}
+#using X with no observation noise in this case
+HPlags=makelags(HastPow3sp, y="X", E=3, tau=2)
+HPsub=getsubset(xds = HPlags, yds = HastPow3sp$X, nclust = 5, clustsize = 10, returnclusters = T)
+HastPow3sp$clusters=HPsub$clusters
+HPsubplot=HastPow3sp[HPsub$subrows,]
+
+library(rgl)
+#native coords all data
+plot3d(x=HastPow3sp$X, y=HastPow3sp$Y, z=HastPow3sp$Z, col=HastPow3sp$clusters, type="p")
+#delay coords all data
+plot3d(x=HastPow3sp$X, y=HPlags[,1], z=HPlags[,2], col=HastPow3sp$clusters, type="p")
+#native coords subset
+plot3d(x=HPsubplot$X, y=HPsubplot$Y, z=HPsubplot$Z, col=HPsubplot$clusters, type="p")
+#delay coords subset
+plot3d(x=HPsubplot$X, y=HPlags[HPsub$subrows,1], z=HPlags[HPsub$subrows,2], 
+       col=HPsubplot$clusters, type="p")
+```

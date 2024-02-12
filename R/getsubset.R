@@ -40,6 +40,9 @@
 #' @keywords functions
 getsubset=function(xds, yds, nclust, clustsize=NULL, subtotal=NULL, returnclusters=FALSE) {
   
+  if(is.null(nclust)) {
+    stop("nclust required")
+  }
   if(!is.null(clustsize) & !is.null(subtotal)) {
     stop("Provide either clustsize or subtotal, not both")
   }
