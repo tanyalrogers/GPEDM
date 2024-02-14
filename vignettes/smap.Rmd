@@ -76,7 +76,7 @@ r1results$delta_agg=NA
 
 Emax=10
 
-test=subset(round1, seriesnum==r1results$seriesnum[1])
+test=subset(round1, seriesnum==r1results$seriesnum[5])
 
 #how to make this faster
 start=Sys.time()
@@ -101,8 +101,8 @@ end=Sys.time()
 end-start
 
 res=Smap_NStest(data=test, y="val", time="timestep", Emax=6, summaryonly=T, scaling = "none")
-res
-plot(res, main=paste(test$model[1], test$ns[1]))
+res$results
+plot(res, main=paste(test$model[5], test$ns[5]))
 
 for(i in seq_along(r1results$seriesnum)) {
   test=subset(round1, seriesnum==r1results$seriesnum[i])
@@ -158,4 +158,45 @@ microbenchmark("1"={Wmat=matrix(W,nrow = nrow(pinv), ncol=ncol(pinv),byrow = T);
 #   thetagrad[i]=test$grad[1]
 ```
 
+statistically NS, dynamically S
+
+```{r}
+ti=1:100
+yi=sin(2*pi/12*ti)+rnorm(100,0,0.05)
+plot(ti,yi,type="l")
+
+yii=numeric(100)
+yii[1]=10
+a=0.95
+for(i in 2:100) {
+  yii[i]=yii[i-1]*a+rnorm(1,0,0.5)
+}
+
+yiii=yi+yii
+yvi=yi+0.3*yii
+
+plot(ti,yii,type="l")
+plot(dplyr::lag(yii),yii)
+plot(ti,yiii,type="l")
+plot(ti,yvi,type="l")
+
+df=data.frame(ti=ti/100, yi=yi, yii=yii, yiii=yiii, yvi=yvi)
+
+res=Smap_NStest(data=df, y="yi", time="ti", Emax=4, summaryonly=T, scaling = "none")
+res$results
+plot(res)
+
+res=Smap_NStest(data=df, y="yii", time="ti", Emax=8, summaryonly=T, scaling = "none")
+res$results
+plot(res)
+
+res=Smap_NStest(data=df, y="yiii", time="ti", Emax=4, summaryonly=T, scaling = "none")
+res$results
+plot(res)
+
+res=Smap_NStest(data=df, y="yvi", time="ti", Emax=8, summaryonly=T, scaling = "none")
+res$results
+plot(res)
+
+```
 

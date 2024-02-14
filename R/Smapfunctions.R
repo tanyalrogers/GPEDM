@@ -497,7 +497,7 @@ Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, theta
   W_E=pmax(0,exp(results$logL_NS)-exp(results$logL))
   if(sum(W_E)!=0) W_E=round(W_E/sum(W_E),8)
   results$W_E=W_E
-  delta_agg=round(sum(results$phi_time*W_E),8)
+  delta_agg=round(sum(results$delta*W_E),8)
   
   bestR2=max(results$R2, results$R2_NS)
   
