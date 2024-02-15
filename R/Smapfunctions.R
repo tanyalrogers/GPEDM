@@ -467,33 +467,60 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
 Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, thetafixed=NULL,
                      exclradius=0,nsvar=time,
                      scaling=c("global","local","none"),
-                     initpars=NULL, augdata=NULL, summaryonly=TRUE) {
+                     initpars=NULL, augdata=NULL, summaryonly=TRUE, parallel=FALSE) {
   
   df=as.data.frame(data) #plot won't work with class 'tbl', must be data.frame
   dflag=GPEDM::makelags(df, y=y, E=Emax, tau=tau, append = T)
   
-  results=data.frame(E=Emin:Emax, theta=NA, theta_NS=NA, delta=NA, logL=NA, logL_NS=NA, dfs=NA, dfs_NS=NA, R2=NA, R2_NS=NA)
-  mods <- mods_NS <- list() 
-  for(i in Emin:Emax) {
-    #Stationary
-    mods[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
-                      exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
-    results$theta[i]=mods[[i]]$theta
-    results$logL[i]=mods[[i]]$loofitstats["ln_L"]
-    results$dfs[i]=mods[[i]]$loofitstats["df"]
-    results$R2[i]=mods[[i]]$loofitstats["R2"]
-    #Nonstationary
-    mods_NS[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
-                         exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
-    results$theta_NS[i]=mods_NS[[i]]$theta
-    results$logL_NS[i]=mods_NS[[i]]$loofitstats["ln_L"]
-    results$dfs_NS[i]=mods_NS[[i]]$loofitstats["df"]
-    results$R2_NS[i]=mods_NS[[i]]$loofitstats["R2"]
-    results$delta[i]=mods_NS[[i]]$delta
+  if(parallel) {
+    
+    doParallel::registerDoParallel(cores=5)
+    on.exit(doParallel::stopImplicitCluster())
+    `%dopar%` <- foreach::`%dopar%`
+    
+    results=foreach::foreach(i=Emin:Emax, .combine = rbind) %dopar% {
+      #Stationary
+      mods=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                   exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
+      theta=mods$theta
+      logL=mods$loofitstats["ln_L"]
+      dfs=mods$loofitstats["df"]
+      R2=mods$loofitstats["R2"]
+      #Nonstationary
+      mods_NS=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                      exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
+      theta_NS=mods_NS$theta
+      logL_NS=mods_NS$loofitstats["ln_L"]
+      dfs_NS=mods_NS$loofitstats["df"]
+      R2_NS=mods_NS$loofitstats["R2"]
+      delta=mods_NS$delta
+      results=data.frame(E=i, theta=theta, theta_NS=theta_NS, delta=delta, logL=logL, logL_NS=logL_NS, dfs=dfs, dfs_NS=dfs_NS, R2=R2, R2_NS=R2_NS)
+      
+    }
+  } else { #not parallel
+    results=data.frame(E=Emin:Emax, theta=NA, theta_NS=NA, delta=NA, logL=NA, logL_NS=NA, dfs=NA, dfs_NS=NA, R2=NA, R2_NS=NA)
+    mods <- mods_NS <- list() 
+    for(i in Emin:Emax) {
+      #Stationary
+      mods[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                        exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
+      results$theta[i]=mods[[i]]$theta
+      results$logL[i]=mods[[i]]$loofitstats["ln_L"]
+      results$dfs[i]=mods[[i]]$loofitstats["df"]
+      results$R2[i]=mods[[i]]$loofitstats["R2"]
+      #Nonstationary
+      mods_NS[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                           exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
+      results$theta_NS[i]=mods_NS[[i]]$theta
+      results$logL_NS[i]=mods_NS[[i]]$loofitstats["ln_L"]
+      results$dfs_NS[i]=mods_NS[[i]]$loofitstats["df"]
+      results$R2_NS[i]=mods_NS[[i]]$loofitstats["R2"]
+      results$delta[i]=mods_NS[[i]]$delta
+    }
   }
-  
   rownames(results)=NULL
   
+  #This part is wrong and needs updating
   W_E=pmax(0,exp(results$logL_NS)-exp(results$logL))
   if(sum(W_E)!=0) W_E=round(W_E/sum(W_E),8)
   results$W_E=W_E
@@ -503,7 +530,7 @@ Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, theta
   
   series=df[,c(time,y)]
   
-  if(summaryonly) {
+  if(summaryonly | parallel) {
     out=list(delta_agg=delta_agg, bestR2=bestR2, results=results, series=series)
     class(out)=c("NStest")
     return(out)

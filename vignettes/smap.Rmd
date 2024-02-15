@@ -161,6 +161,8 @@ microbenchmark("1"={Wmat=matrix(W,nrow = nrow(pinv), ncol=ncol(pinv),byrow = T);
 statistically NS, dynamically S
 
 ```{r}
+set.seed(1)
+
 ti=1:100
 yi=sin(2*pi/12*ti)+rnorm(100,0,0.05)
 plot(ti,yi,type="l")
@@ -180,7 +182,7 @@ plot(dplyr::lag(yii),yii)
 plot(ti,yiii,type="l")
 plot(ti,yvi,type="l")
 
-df=data.frame(ti=ti/100, yi=yi, yii=yii, yiii=yiii, yvi=yvi)
+df=data.frame(ti=ti, yi=yi, yii=yii, yiii=yiii, yvi=yvi)
 
 res=Smap_NStest(data=df, y="yi", time="ti", Emax=4, summaryonly=T, scaling = "none")
 res$results
