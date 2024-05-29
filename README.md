@@ -363,6 +363,98 @@ ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
 
 <img src="man/figures/README-forecast-1.png" width="100%" />
 
+### Making iterated forecasts
+
+The `predict_iter` function can be used to obtain iterated predictions
+from `fitGP` models with lag predictors. This method also requires
+pre-generated lags and the use of `newdata` (see [Specifying training
+data](#specifying-training-data) option 1). The `time` argument is
+required.
+
+Starting with the first row of `newdata`, the predicted `y` variable is
+inserted as the first lag for the next timestep, the other lags are
+shifted right by 1, and a new prediction is made. This continues for as
+many rows as are in `newdata`. Thus, this procedure assumes that all
+lags are present, evenly spaced, and in order (first lag is the first
+column). Time steps are assumed to be evenly spaced. The units of `y`
+and its lags are assumed to be the same.
+
+Unless otherwise specified, all values of `x` are assumed to be time
+lags of `y`. If this is not the case (the model contains a mixture of
+lags and covariates), you must specify which columns are the time lags
+(argument `xlags` in `predict_iter`). The exception is for “fisheries
+models” (`fitGP_fish`), where the lags and covariates are already
+separately specified.
+
+As with other prediction methods, `newdata` should contain all values of
+`x`, as well as `time`. Only the first row of lags in `newdata` (for
+each population) needs to be completely filled in. Subsequent time
+points can be NA or filled in - they will be overwritten with the
+predictions as the model iterates. The values of `time` and must be
+filled in. If the model has covariates, values for the covariates need
+to be supplied for all timepoints in `newdata`. If there are multiple
+populations, `newdata` should contain `pop` and there should be
+duplicated timesteps for each population.
+
+As expected for a chaotic system, the iterated predictions from the
+simulated 2 population theta logistic model become very poor after a few
+timesteps.
+
+``` r
+xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time = "Time", E=3, tau=1, append=T)
+xdatatrain=subset(xdata, Time<=40)
+#get iterated predictions for the last 10 timesteps
+xdatafore=subset(xdata, Time>40)
+
+tlog=fitGP(data = xdatatrain, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
+           pop = "Population", time = "Time", scaling = "local")
+predtest=predict_iter(tlog, newdata = xdatafore)
+
+plot(predtest)
+#> Plotting out of sample results.
+```
+
+<img src="man/figures/README-itergeneral-1.png" width="100%" />
+
+If you want to iterate forecasts beyond the end of the time series, here
+is how you might set that up. Note that because there are no observed
+values, we can’t evaluate fit or make plots of observed vs. predicted.
+
+``` r
+xdata=makelags(data = thetalog2pop, y="Abundance", pop="Population", time="Time", E=3, tau=1, append=T)
+#use forecast feature to get first rows
+xdatafore=makelags(data = thetalog2pop, y="Abundance", pop="Population", time="Time", E=3, tau=1, forecast=T)
+#create remaining timepoints for each population
+xdatafore2=expand.grid(Time=52:65, Population=unique(thetalog2pop$Population))
+#create empty matrix for future values
+xdatafore3=matrix(NA, nrow=nrow(xdatafore2), ncol=3,
+                  dimnames=list(NULL,c("Abundance_1","Abundance_2","Abundance_3")))
+#combine everything
+xdatafore=rbind(xdatafore,cbind(xdatafore2,xdatafore3))
+
+head(xdatafore)
+#>   Time Population Abundance_1 Abundance_2 Abundance_3
+#> 1   51       PopA  0.01543102    1.574257   0.7120728
+#> 2   51       PopB  0.72389740    1.122106   0.9477896
+#> 3   52       PopA          NA          NA          NA
+#> 4   53       PopA          NA          NA          NA
+#> 5   54       PopA          NA          NA          NA
+#> 6   55       PopA          NA          NA          NA
+
+tlog2=fitGP(data = xdata, y = "Abundance", x=c("Abundance_1","Abundance_2","Abundance_3"), 
+           pop = "Population", time = "Time", scaling = "local")
+predtest2=predict_iter(tlog2, newdata = xdatafore)
+#plot(predtest2)
+head(predtest2$outsampresults)
+#>   timestep  pop   predmean    predfsd     predsd
+#> 1       51 PopA 0.04932054 0.01647408 0.06829043
+#> 2       51 PopB 1.41625389 0.01679414 0.04612410
+#> 3       52 PopA 0.15774996 0.01367564 0.06766986
+#> 4       52 PopB 0.26582495 0.01688767 0.04615824
+#> 5       53 PopA 0.53367538 0.01829694 0.06875293
+#> 6       53 PopB 0.83186406 0.01782242 0.04650837
+```
+
 ## Specifying training data
 
 There are several ways that the training data for a model can be
@@ -391,11 +483,11 @@ variables, including use of mixed embeddings, and use of different
 variables for the response and predictors. Options 2 and 3 exist for
 convenience, but for the most control over the model and to use the more
 elaborate features in this package, it is best to use option 1: use
-`makelags()` to generate any lags beforehand and pass appropriate
-columns to `fitGP`, rather than rely on `fitGP` to generate lags
-internally. Option A will make more sense if your data are already in a
-data frame, option B may make more sense if you are doing simulations
-and just have a bunch of vectors and matrices.
+`makelags` to generate any lags beforehand and pass appropriate columns
+to `fitGP`, rather than rely on `fitGP` to generate lags internally.
+Option A will make more sense if your data are already in a data frame,
+option B may make more sense if you are doing simulations and just have
+a bunch of vectors and matrices.
 
 The `pop` argument is optional in all of the above cases. Beware that if
 omitted, a single population is assumed.
@@ -533,13 +625,17 @@ tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Tim
 #in sample
 grad3=predict(tlogtest3, newdata = pAtrain, returnGPgrad = T)
 ```
-
 ## Extensions
 
 See [this
 vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
 for more detail about the variable timestep method (VS-EDM) for missing
 data.
+
+See [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html)
+for more detail on an alternative parameterization of the GP model,
+`fitGP_fish`, designed for use in fisheries applications.
 
 This package can also fit EDM models using S-map (local linear
 regression). See [this

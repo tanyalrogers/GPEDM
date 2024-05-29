@@ -61,6 +61,86 @@ colnames(HastPow3sp)=c("Time","X","Y","Z")
 
 usethis::use_data(HastPow3sp, overwrite = TRUE)
 
+# Ricker fisheries model
+
+# parameters
+r=3; K=1000
+q=0.01 #catchability
+sd=0.1
+a=0.1
+sdc=0.2
+
+#time 
+Tsl=100
+
+#initialize
+B=numeric(Tsl) #biomass
+C=B #catch
+x=B #cpue
+u=B #exploitation 'rate'
+
+set.seed(10)
+
+B[1]=K*(1+runif(1)) #biomass
+u[1]=0.01 #exploitation
+C[1]=u[1]*B[1] #catch
+S=B[1]-C[1] #escapement
+x[1]=q*B[1] #index
+
+for (i in 1:(Tsl-1)) {
+  B[i+1]=S*exp(r-S/K+sd*rnorm(1)) #next biomass
+  u[i+1]=(1-a)*u[i]+a*u[i]*(B[i+1]-B[i])/B[i] #next exploitation
+  realu=u[i+1]*(1+sdc*(runif(1)-.5)*2) #add noise to next exploitation
+  C[i+1]=realu*B[i+1] #next catch
+  S=B[i+1]-C[i+1] #next escapement
+  x[i+1]=q*B[i+1] #next index
+}
+
+plot(1:Tsl,B,ylab='Biomass', type="l")
+plot(1:Tsl,x,ylab='Index', type="l")
+plot(1:Tsl,u,ylab='Exploitation', type="l")
+plot(1:Tsl,C,ylab='Catch', type="l")
+
+RickerHarvest=data.frame(Time=1:Tsl, CPUE_index=x, Catch=C, Region="A")
+
+#second population
+
+q=0.005 #catchability
+a=0.1
+
+#initialize
+B=numeric(Tsl) #biomass
+C=B #catch
+x=B #cpue
+u=B #exploitation 'rate'
+
+set.seed(20)
+
+B[1]=K*(1+runif(1)) #biomass
+u[1]=0.8 #exploitation
+C[1]=u[1]*B[1] #catch
+S=B[1]-C[1] #escapement
+x[1]=q*B[1] #index
+
+for (i in 1:(Tsl-1)) {
+  B[i+1]=S*exp(r-S/K+sd*rnorm(1)) #next biomass
+  u[i+1]=(1-a)*u[i]+a*u[i]*(B[i+1]-B[i])/B[i] #next exploitation
+  realu=u[i+1]*(1+sdc*(runif(1)-.5)*2) #add noise to next exploitation
+  C[i+1]=realu*B[i+1] #next catch
+  S=B[i+1]-C[i+1] #next escapement
+  x[i+1]=q*B[i+1] #next index
+}
+
+plot(1:Tsl,B,ylab='Biomass', type="l")
+plot(1:Tsl,x,ylab='Index', type="l")
+plot(1:Tsl,u,ylab='Exploitation', type="l")
+plot(1:Tsl,C,ylab='Catch', type="l")
+
+RickerHarvest2=data.frame(Time=1:Tsl, CPUE_index=x, Catch=C, Region="B")
+RickerHarvest=rbind(RickerHarvest,RickerHarvest2)
+
+usethis::use_data(RickerHarvest, overwrite = TRUE)
+
 # Stationary and Nonstationary series
 NSseries=read.csv("data-raw/round1_all.csv", stringsAsFactors = F)
 usethis::use_data(NSseries, overwrite = TRUE)

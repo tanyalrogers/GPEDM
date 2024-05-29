@@ -1,5 +1,11 @@
-# GPEDM 0.0.0.9008
+# GPEDM 0.0.0.9009
 * Add `fitSmap` and related functions. 
+
+# GPEDM 0.0.0.9008
+* Add `fitGP_fish`, `predict_iter`, and fisheries vignette.
+* Add `RickerHarvest` dataset for `fitGP_fish` demo.
+* Fix problem with `extrap` feature in `getconditionals`.
+* Fix typos in documentation.
 
 # GPEDM 0.0.0.9007
 * Enable use of `update.default` with `fitGP` by storing function call in output.

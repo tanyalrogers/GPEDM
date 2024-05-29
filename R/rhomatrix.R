@@ -21,7 +21,7 @@
 
 getrhomatrix=function(data=NULL,y,x=NULL,pop,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
-               initpars=NULL,modeprior=1,augdata=NULL) {
+               initpars=NULL,modeprior=1,fixedpars=NULL,augdata=NULL) {
   
   #this is duplicated from fitGP
   scaling <- match.arg(scaling)
@@ -175,7 +175,7 @@ getrhomatrix=function(data=NULL,y,x=NULL,pop,time=NULL,E=NULL,tau=NULL,
       timedij=timed[popind]
       fittemp=suppressWarnings( #to not get scaling warnings
         fitGP(y=ydsij,x=xdsij,pop=popdij,time=timedij,
-              scaling="none",initpars=initpars,modeprior=modeprior)
+              scaling="none",initpars=initpars,modeprior=modeprior,fixedpars=fixedpars)
       )
       rhomat[i,j]=fittemp$pars["rho"]
     }

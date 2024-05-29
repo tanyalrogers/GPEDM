@@ -104,20 +104,20 @@
 #'
 #' @param data A data frame, or matrix with named columns.
 #' @param y The response variable (required). If \code{data} is supplied, a column name
-#'   (character) of index (numeric). If \code{data} is not supplied, a numeric vector.
+#'   (character) or index (numeric). If \code{data} is not supplied, a numeric vector.
 #' @param x Predictor variables. If \code{data} is supplied, column names
-#'   (character vector) of indices (numeric vector). If \code{data} is not supplied, a numeric matrix 
+#'   (character vector) or indices (numeric vector). If \code{data} is not supplied, a numeric matrix 
 #'   (or vector, if there is only one predictor variable). If \code{x} is not supplied,
 #'   values for \code{E} and \code{tau} must be provided to construct it internally.
 #' @param pop Identifies separate populations (optional, if not supplied, defaults to 1
 #'   population). Population values can be either numeric, character, or factor. 
-#'   If \code{data} is supplied, a column name (character) of index (numeric). 
+#'   If \code{data} is supplied, a column name (character) or index (numeric). 
 #'   If \code{data} is not supplied, a vector (numeric, character, or factor).
 #' @param time A time index (optional, if not supplied, defaults to a numeric index). 
 #'   Important: The time index is not used for model fitting (timesteps are 
 #'   assumed to be evenly spaced) but supplying \code{time} will be add these values to the output table, 
 #'   which may be useful for later plotting purposes. If \code{data} is supplied, a column name
-#'   (character) of index (numeric). If \code{data} is not supplied, a numeric vector.
+#'   (character) or index (numeric). If \code{data} is not supplied, a numeric vector.
 #' @param E Embedding dimension. If supplied, will be used to constuct lags of \code{x} (or
 #'   lags of \code{y} if \code{x} is not supplied).
 #' @param tau Time delay. If supplied, will be used to constuct lags of \code{x} (or
@@ -840,6 +840,28 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   
   if(!is.null(newdata)|!is.null(xnew)) {
     
+    #if fisheries model, calculate escapement values in newdata if not already provided
+    if(!is.null(object$b)) {  
+      if(!is.null(xnew)) {stop("Must use `newdata` for fisheries models")}
+      if(!all(object$inputs$x_names %in% colnames(newdata))) {
+        b=object$b
+        #extract variables
+        md=newdata[,object$inputs$m_names,drop=F]
+        hd=newdata[,object$inputs$h_names,drop=F]
+        #compute composite variable in newdata
+        x2=md-b*hd
+        colnames(x2)=object$inputs$x_names[1:ncol(x2)]
+        newdata=cbind(newdata,x2)
+      }
+      if(object$inputs$y0_names %in% colnames(newdata)) {
+        #get transformed y
+        y0=object$inputs$y0
+        yd=ytransfun(y=newdata[,y0], m1=md[,1], e1=x2[,1], ytrans=object$inputs$ytrans)
+        yd=data.frame(yd); colnames(yd)=y
+        newdata=cbind(newdata,yd)
+      }
+    }
+    
     #if data frame is supplied, take columns from it
     if(!is.null(newdata)) {
       if(is.character(object$inputs$y_names)) {
@@ -955,6 +977,14 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   } else {
     
     predictmethod=match.arg(predictmethod)
+    
+    #get training data m and e values from fisheries models
+    #(not used for prediction, but potentially needed for backtransform)
+    if(!is.null(object$b)) {
+      md=object$inputs$m
+      x2=object$inputs$x
+      colnames(x2)=object$inputs$x_names[1:ncol(x2)]
+    }
     
     if(predictmethod=="loo") {
       Cd=object$covm$Cd
@@ -1184,8 +1214,30 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
   
   #probably need to output xnew (combine with table?, only if 1 predictor?)
   out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=ypred,predfsd=yfsd,predsd=ysd))
+  if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults, obs=ynew) }
+  
+  if(!is.null(object$b)) { #for fisheries models
+    #backtransform predictions
+    ypred_trans=ypred
+    ypred=ytransfuninv(y=ypred_trans, m1=md[,1], e1=x2[,1], ytrans=object$inputs$ytrans)
+    if(!is.null(ynew)) {
+      ynew_trans=ynew
+      ynew=ytransfuninv(y=ynew_trans, m1=md[,1], e1=x2[,1], ytrans=object$inputs$ytrans)
+    }
+    #change outsampresults 
+    out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean_trans=ypred_trans,
+                                       predfsd_trans=yfsd,predsd_trans=ysd))
+    if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults,obs_trans=ynew_trans) }
+    out$outsampresults=cbind(out$outsampresults,predmean=ypred)
+    if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults,obs=ynew) }
+    out$outsampresults=cbind(out$outsampresults,x2) #add escapement values
+  }
+  
+  # if(!is.null(object$b) & !is.null(newdata)) { #add escapement values for newdata
+  # out$outsampresults=cbind(out$outsampresults,newdata[,object$inputs$x_names[1:ncol(x2)],drop=F])
+  # }
+  
   if(!is.null(ynew)) {
-    out$outsampresults$obs=ynew
     out$outsampfitstats=c(R2=getR2(ynew,ypred), 
                           rmse=sqrt(mean((ynew-ypred)^2,na.rm=T)))
     if(length(unique(popnew))>1) { #within site fit stats

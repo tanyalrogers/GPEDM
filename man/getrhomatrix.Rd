@@ -15,6 +15,7 @@ getrhomatrix(
   scaling = c("global", "local", "none"),
   initpars = NULL,
   modeprior = 1,
+  fixedpars = NULL,
   augdata = NULL
 )
 }
@@ -22,23 +23,23 @@ getrhomatrix(
 \item{data}{A data frame, or matrix with named columns.}
 
 \item{y}{The response variable (required). If \code{data} is supplied, a column name
-(character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
+(character) or index (numeric). If \code{data} is not supplied, a numeric vector.}
 
 \item{x}{Predictor variables. If \code{data} is supplied, column names
-(character vector) of indices (numeric vector). If \code{data} is not supplied, a numeric matrix
+(character vector) or indices (numeric vector). If \code{data} is not supplied, a numeric matrix
 (or vector, if there is only one predictor variable). If \code{x} is not supplied,
 values for \code{E} and \code{tau} must be provided to construct it internally.}
 
 \item{pop}{Identifies separate populations (optional, if not supplied, defaults to 1
 population). Population values can be either numeric, character, or factor.
-If \code{data} is supplied, a column name (character) of index (numeric).
+If \code{data} is supplied, a column name (character) or index (numeric).
 If \code{data} is not supplied, a vector (numeric, character, or factor).}
 
 \item{time}{A time index (optional, if not supplied, defaults to a numeric index).
 Important: The time index is not used for model fitting (timesteps are
 assumed to be evenly spaced) but supplying \code{time} will be add these values to the output table,
 which may be useful for later plotting purposes. If \code{data} is supplied, a column name
-(character) of index (numeric). If \code{data} is not supplied, a numeric vector.}
+(character) or index (numeric). If \code{data} is not supplied, a numeric vector.}
 
 \item{E}{Embedding dimension. If supplied, will be used to constuct lags of \code{x} (or
 lags of \code{y} if \code{x} is not supplied).}
@@ -57,6 +58,11 @@ vector with length \code{ncol(x)+3}. Defaults used if not supplied: \code{c(rep(
 
 \item{modeprior}{This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.}
+
+\item{fixedpars}{Fixes values of the hyperparameters phi, ve, and sigma2 (if desired). Should be a numeric
+vector with length \code{ncol(x)+2} in the order \code{c(phi,ve,sigma2)} in constrained
+(non-transformed) space. Hyperparameters to estimate should be input as NA. The value of rho is
+fixed separately using argument \code{rhofixed}.}
 
 \item{augdata}{A data frame with augmentation data (see Details).}
 }
