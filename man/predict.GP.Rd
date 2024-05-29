@@ -12,6 +12,7 @@
   popnew = NULL,
   timenew = NULL,
   ynew = NULL,
+  returnGPgrad = FALSE,
   ...
 )
 }
@@ -34,6 +35,11 @@ original model.}
 \item{ynew}{New response vector. Optional, unless \code{E} and \code{tau} were supplied in
 lieu of \code{x}. Not required if \code{newdata} is supplied.}
 
+\item{returnGPgrad}{Return the gradient (derivative) of the GP model at each time point with
+respect to each input. This is only computed for out-of-sample predictions using \code{newdata},
+\code{loo}, or \code{lto}. If you want the in-sample gradient, pass the original dataset as
+\code{newdata}. Defaults to FALSE.}
+
 \item{...}{Other args (not used).}
 }
 \value{
@@ -41,9 +47,11 @@ A list (class GPpred) with the following elements:
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
-Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
+Only computed if using a \code{predictmethod}, if \code{y} is found in \code{newdata},
 or if \code{ynew} supplied (i.e. if the observed values are known).}
 \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
+\item{GPgrad}{If \code{returnGPgrad=T}, a data frame with the partial derivatives of the
+function with respect to each input.}
 }
 \description{
 Obtain predictions from a fitted GP model. There are several options:

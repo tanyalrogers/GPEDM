@@ -94,6 +94,13 @@
 #' It should be noted that \code{"loo"} is not a "true" leave-one-out, for although each prediction is
 #' made by removing one of the training points, the hyperparameters are fit using all of the training data.
 #' The same goes for \code{"sequential"}.
+#' 
+#' For the out-of-sample prediction methods \code{"loo"}, \code{"lto"}, and
+#' \code{newdata}, the partial derivatives of the fitted GP function at each
+#' time point with respect to each input can be obtained by setting
+#' \code{returnGPgrad = T}. If you want the in-sample gradient, pass the
+#' original (training) data as back in as \code{newdata}. It automatic scaling
+#' was used, the gradient will also be backtransformed to the original units.
 #'
 #' @param data A data frame, or matrix with named columns.
 #' @param y The response variable (required). If \code{data} is supplied, a column name
@@ -162,6 +169,8 @@
 #'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions (if requested) by population.}
+#' \item{GPgrad}{If \code{returnGPgrad=T}, a data frame with the partial derivatives of the 
+#'   function with respect to each input.}
 #' \item{call}{Function call. Allows use of \code{\link{update}}.}
 #' @seealso \code{\link{predict.GP}}, \code{\link{plot.GPpred}}, \code{\link{getconditionals}}, \code{\link{getrhomatrix}}
 #' @references Munch, S. B., Poynor, V., and Arriaza, J. L. 2017. Circumventing structural uncertainty: 
@@ -178,7 +187,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                rhomatrix=NULL,augdata=NULL,
-               predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
+               predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,returnGPgrad=FALSE) {
 
   cl <- match.call()
   
@@ -444,7 +453,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   #may eventually want to exclude some more outputs
   
   if(!is.null(predictmethod)|!is.null(xnew)|!is.null(newdata)) { #generate predictions if requested
-    predictresults=predict.GP(output,predictmethod,newdata,xnew,popnew,timenew,ynew) 
+    predictresults=predict.GP(output,predictmethod,newdata,xnew,popnew,timenew,ynew,returnGPgrad) 
     output=c(output,predictresults)
   }
   
@@ -793,17 +802,25 @@ getcovinv=function(Sigma) {
 #' @param timenew New time vector. Not required if \code{newdata} is supplied.
 #' @param ynew New response vector. Optional, unless \code{E} and \code{tau} were supplied in 
 #'   lieu of \code{x}. Not required if \code{newdata} is supplied.
+#' @param returnGPgrad Return the gradient (derivative) of the GP model at each time point with 
+#'   respect to each input. This is only computed for out-of-sample predictions using \code{newdata},
+#'   \code{loo}, or \code{lto}. If you want the in-sample gradient, pass the original dataset as
+#'   \code{newdata}. Defaults to FALSE.
 #' @param ... Other args (not used).
 #' @return A list (class GPpred) with the following elements:
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
 #' \item{outsampfitstats}{Fit statistics for out-of-sample predictions.
-#'   Only computed if using \code{"loo"} or \code{"sequential"}, if \code{y} is found in \code{newdata},
+#'   Only computed if using a \code{predictmethod}, if \code{y} is found in \code{newdata},
 #'   or if \code{ynew} supplied (i.e. if the observed values are known).}
 #' \item{outsampfitstatspop}{If >1 population, fit statistics for out-of-sample predictions by population.}
+#' \item{GPgrad}{If \code{returnGPgrad=T}, a data frame with the partial derivatives of the 
+#'  function with respect to each input.}
 #' @export
 #' @keywords functions
-predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL, ...) { 
+predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NULL,
+                    xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,
+                    returnGPgrad=FALSE, ...) { 
   
   iKVs=object$covm$iKVs
   phi=object$pars[grepl("phi",names(object$pars))]
@@ -936,8 +953,23 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       yvar[i]=sigma2-Cs[i,]%*%iKVs%*%Cs[i,]
     }
     
+    #get GP gradient
+    if(returnGPgrad) {
+      GPgrad=Xnew*NA
+      for(i in 1:nrow(Xnew)) {
+        Xnewi=Xnew[i,]
+        Csi=Cs[i,,drop=FALSE]
+        GPgrad[i,]=getGPgrad(phi = phi, Xnew = Xnewi, X = X, Cdi = Csi, iKVs = iKVs, Y = Y)
+      }
+      gpgrad=xnew*NA
+      if(!is.null(object$inputs$x_names2))
+        {xnames=object$inputs$x_names2} else {xnames=object$inputs$x_names}
+      colnames(gpgrad)=paste0("d_", xnames)
+      gpgrad[completerowsnew,]=GPgrad
+    }
+    
     #backfill missing values
-    ypred<-ysd<-yfsd<-ynew*NA
+    ypred<-ysd<-yfsd<-numeric(Tslp)*NA
     ypred[completerowsnew]=ymean
     yfsd[completerowsnew]=sqrt(yvar)
     ysd[completerowsnew]=sqrt(yvar+ve)
@@ -962,6 +994,9 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       nd=length(which(Primary))
       ymean=numeric(length=nd)
       yvar=numeric(length=nd)
+      if(returnGPgrad) {
+        GPgrad=matrix(NA, nrow = nd, ncol=ncol(X))
+      }
       for(i in 1:nd) {
         #check for duplicates in aug data
         dups=which(paste0(Pop[i],Time[i])==paste0(Pop[!Primary],Time[!Primary]))+nd
@@ -973,6 +1008,11 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         iKVs_noi=icov_noi$iKVs
         ymean[i]=Cdi%*%iKVs_noi%*%Y_noi
         yvar[i]=sigma2-Cdi%*%iKVs_noi%*%t(Cdi)
+        if(returnGPgrad) {
+          Xi=X[i,]
+          Xnoi=X[-c(i,dups),]
+          GPgrad[i,]=getGPgrad(phi = phi, Xnew = Xi, X = Xnoi, Cdi = Cdi, iKVs = iKVs_noi, Y = Y_noi)
+        }
       }
       
       #backfill missing values
@@ -980,6 +1020,13 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       ypred[object$inputs$completerows[1:length(y)]]=ymean
       yfsd[object$inputs$completerows[1:length(y)]]=sqrt(yvar)
       ysd[object$inputs$completerows[1:length(y)]]=sqrt(yvar+ve)
+      
+      if(returnGPgrad) {
+        if(!is.null(object$inputs$x_names2))
+          {xnames=object$inputs$x_names2} else {xnames=object$inputs$x_names}
+        gpgrad=matrix(NA,nrow=length(y),ncol=ncol(X),dimnames = list(NULL, paste0("d_", xnames)))
+        gpgrad[object$inputs$completerows[1:length(y)],]=GPgrad
+      }
       
       popnew=object$inputs$pop
       timenew=object$inputs$time
@@ -1030,6 +1077,9 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       nd=length(which(Primary))
       ymean=numeric(length=nd)*NA
       yvar=numeric(length=nd)*NA
+      if(returnGPgrad) {
+        GPgrad=matrix(NA, nrow = nd, ncol=ncol(X))
+      }
       for(i in 1:nt) {
         ind=which(Time[Primary]==timevals[i])
         train=which(Time!=timevals[i]) #this should also exclude any dups in the aug data
@@ -1041,6 +1091,14 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         iKVs_noi=icov_noi$iKVs
         ymean[ind]=Cdi%*%iKVs_noi%*%Y_noi
         yvar[ind]=diag(sigma2-Cdi%*%iKVs_noi%*%t(Cdi))
+        if(returnGPgrad) {
+          for(j in ind) {
+            Xi=X[j,]
+            Xnoi=X[train,]
+            Cdii=Cd[j,train,drop=F]
+            GPgrad[j,]=getGPgrad(phi = phi, Xnew = Xi, X = Xnoi, Cdi = Cdii, iKVs = iKVs_noi, Y = Y_noi)
+          }
+        }
       }
       
       #backfill missing values
@@ -1048,6 +1106,13 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       ypred[object$inputs$completerows[1:length(y)]]=ymean
       yfsd[object$inputs$completerows[1:length(y)]]=sqrt(yvar)
       ysd[object$inputs$completerows[1:length(y)]]=sqrt(yvar+ve)
+      
+      if(returnGPgrad) {
+        if(!is.null(object$inputs$x_names2))
+          {xnames=object$inputs$x_names2} else {xnames=object$inputs$x_names}
+        gpgrad=matrix(NA,nrow=length(y),ncol=ncol(X),dimnames = list(NULL, paste0("d_", xnames)))
+        gpgrad[object$inputs$completerows[1:length(y)],]=GPgrad
+      }
       
       popnew=object$inputs$pop
       timenew=object$inputs$time
@@ -1076,6 +1141,10 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       ymean1=matrix(0,nrow=length(Y),ncol=nt)
       ysd1=(sigma2+ve)*matrix(1,nrow=length(Y),ncol=nt)
       
+      if(returnGPgrad) {
+        message("returnGPgrad not available for predictmethod='sequential'")
+        returnGPgrad=FALSE
+      }
       
       for(i in 1:(nt-1)) {
         ind=which(Time==timevals[i])
@@ -1119,6 +1188,11 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     ypred=ypred*ysds+ymeans
     yfsd=sqrt(yfsd^2*ysds^2)
     ysd=sqrt(ysd^2*ysds^2)
+    if(returnGPgrad) {
+      for(i in 1:ncol(gpgrad)) {
+        gpgrad[,i]=gpgrad[,i]*ysds/object$scaling$xsds[i]
+      }
+    }
   }
   if(scaling=="local") {
     up=unique(popnew)
@@ -1128,6 +1202,13 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       ypred[popnew==up[i]]=ypred[popnew==up[i]]*locsd+locmean
       yfsd[popnew==up[i]]=sqrt(yfsd[popnew==up[i]]^2*locsd^2)
       ysd[popnew==up[i]]=sqrt(ysd[popnew==up[i]]^2*locsd^2)
+      if(returnGPgrad) {
+        for(j in 1:ncol(gpgrad)) {
+          xsds=object$scaling$xsds
+          locsdx=xsds[[which(as.character(up[i])==names(xsds))]][j]
+          gpgrad[popnew==up[i],j]=gpgrad[popnew==up[i],j]*locsd/locsdx
+        }
+      }
     }
   }
   
@@ -1172,6 +1253,9 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
       }
       out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
     }
+  }
+  if(returnGPgrad) {
+    out$GPgrad=as.data.frame(gpgrad)
   }
   class(out)="GPpred"
   return(out)
@@ -1623,4 +1707,8 @@ makelags_subrt=function(y, #matrix
 
 is.wholenumber=function(x, tol = .Machine$double.eps^0.5) {
   abs(x - round(x)) < tol
+}
+
+getGPgrad=function(phi, Xnew, X, Cdi, iKVs, Y) {
+  grad = t(-2 * t(t(Xnew-t(X)) %*% diag(phi)) %*% (t(Cdi) * iKVs %*% Y))
 }
