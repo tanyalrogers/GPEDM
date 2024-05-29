@@ -1,6 +1,6 @@
 Package: GPEDM
 Title: Gaussian Process regression for Empirical Dynamic Modeling
-Version: 0.0.0.9007
+Version: 0.0.0.9008
 Date: 2022-04-22
 Authors@R: 
     c(person(given = "Stephan",
@@ -27,9 +27,7 @@ Imports:
     Matrix,
     laGP,
     Rcpp,
-    MASS,
-    foreach,
-    doParallel
+    MASS
 Depends: 
     R (>= 2.10)
 URL: https://tanyalrogers.github.io/GPEDM

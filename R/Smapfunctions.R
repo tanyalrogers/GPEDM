@@ -175,7 +175,7 @@
 fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixed=NULL,
                  exclradius=0,ns=FALSE,nsvar=time,deltafixed=NULL,
                  scaling=c("global","local","none"),
-                 initpars=NULL, augdata=NULL, returninsamp=FALSE, parallel=FALSE,
+                 initpars=NULL, augdata=NULL, returninsamp=FALSE, 
                  predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL) {
   
   cl <- match.call()
@@ -345,13 +345,13 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
   Time=timed[completerows]
   Primary=primary[completerows]
   
-  if(parallel) {
-    doParallel::registerDoParallel(cores=5)
-    on.exit(doParallel::stopImplicitCluster())
-  }
+  # if(parallel) {
+  #   doParallel::registerDoParallel(cores=5)
+  #   on.exit(doParallel::stopImplicitCluster())
+  # }
   
   #optimize model
-  output=fmingrad_Rprop_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,parallel)
+  output=fmingrad_Rprop_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius)
   # contains: list(theta,delta,sigma2,df,nllpost,grad,ypred,ysd,ypred_loo,ysd_loo,coefs,coefs_loo,iter)
   
   #backfill missing values
@@ -443,8 +443,8 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
 
 #' S-map test for nonstationarity
 #'
-#' loop over values of E, fitSmap model, return table and delta agg value
-#' 
+#' Fits S-map models over a range of E values. Returns table of results 
+#' and the likelihood weighted average delta_agg value.
 #' 
 #' @inheritParams fitSmap
 #' @param covar Any additional predictors (these will not be lagged)
@@ -453,6 +453,8 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
 #' @param tau Time delay. Defaults to 1.
 #' @param summaryonly Return just the summary tables, not the lists of model output for
 #'   each value of E.
+#' @param fitStationary Fit models with theta fixed to 0, for comparision. Not 
+#'   necessary to get delta_agg.
 #' 
 #' @return A list (class NStest) with the following elements:
 #' \item{delta_agg}{The nonstationarity test statistic.}
@@ -463,44 +465,47 @@ fitSmap=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,thetafixe
 #' \item{mods}{If \code{summaryonly=FALSE}, list of all stationary models.}
 #' \item{mods_NS}{If \code{summaryonly=FALSE}, list of all nonstationary models.}
 #' 
-#' 
+#' @export
+#' @keywords functions
 Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, thetafixed=NULL,
-                     exclradius=0,nsvar=time,
-                     scaling=c("global","local","none"),
-                     initpars=NULL, augdata=NULL, summaryonly=TRUE, parallel=FALSE) {
+                     exclradius=0,nsvar=time,scaling=c("global","local","none"),
+                     initpars=NULL, augdata=NULL, summaryonly=TRUE, fitStationary=TRUE) {
   
   df=as.data.frame(data) #plot won't work with class 'tbl', must be data.frame
   dflag=GPEDM::makelags(df, y=y, E=Emax, tau=tau, append = T)
   
-  if(parallel) {
-    
-    doParallel::registerDoParallel(cores=5)
-    on.exit(doParallel::stopImplicitCluster())
-    `%dopar%` <- foreach::`%dopar%`
-    
-    results=foreach::foreach(i=Emin:Emax, .combine = rbind) %dopar% {
-      #Stationary
-      mods=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
-                   exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
-      theta=mods$theta
-      logL=mods$loofitstats["ln_L"]
-      dfs=mods$loofitstats["df"]
-      R2=mods$loofitstats["R2"]
-      #Nonstationary
-      mods_NS=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
-                      exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
-      theta_NS=mods_NS$theta
-      logL_NS=mods_NS$loofitstats["ln_L"]
-      dfs_NS=mods_NS$loofitstats["df"]
-      R2_NS=mods_NS$loofitstats["R2"]
-      delta=mods_NS$delta
-      results=data.frame(E=i, theta=theta, theta_NS=theta_NS, delta=delta, logL=logL, logL_NS=logL_NS, dfs=dfs, dfs_NS=dfs_NS, R2=R2, R2_NS=R2_NS)
-      
-    }
-  } else { #not parallel
-    results=data.frame(E=Emin:Emax, theta=NA, theta_NS=NA, delta=NA, logL=NA, logL_NS=NA, dfs=NA, dfs_NS=NA, R2=NA, R2_NS=NA)
-    mods <- mods_NS <- list() 
-    for(i in Emin:Emax) {
+  # if(parallel) {
+  #   
+  #   doParallel::registerDoParallel(cores=5)
+  #   on.exit(doParallel::stopImplicitCluster())
+  #   `%dopar%` <- foreach::`%dopar%`
+  #   
+  #   results=foreach::foreach(i=Emin:Emax, .combine = rbind) %dopar% {
+  #     #Stationary
+  #     mods=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+  #                  exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
+  #     theta=mods$theta
+  #     logL=mods$loofitstats["ln_L"]
+  #     dfs=mods$loofitstats["df"]
+  #     R2=mods$loofitstats["R2"]
+  #     #Nonstationary
+  #     mods_NS=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+  #                     exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
+  #     theta_NS=mods_NS$theta
+  #     logL_NS=mods_NS$loofitstats["ln_L"]
+  #     dfs_NS=mods_NS$loofitstats["df"]
+  #     R2_NS=mods_NS$loofitstats["R2"]
+  #     delta=mods_NS$delta
+  #     results=data.frame(E=i, theta=theta, theta_NS=theta_NS, delta=delta, logL=logL, logL_NS=logL_NS, dfs=dfs, dfs_NS=dfs_NS, R2=R2, R2_NS=R2_NS)
+  #     
+  #   }
+  # } else { #not parallel
+  
+  
+  results=data.frame(E=Emin:Emax, theta=NA, theta_NS=NA, delta=NA, logL=NA, logL_NS=NA, dfs=NA, dfs_NS=NA, R2=NA, R2_NS=NA)
+  mods <- mods_NS <- list() 
+  for(i in Emin:Emax) {
+    if(fitStationary) {
       #Stationary
       mods[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
                         exclradius=exclradius, ns = FALSE, initpars=initpars, augdata=augdata)
@@ -508,29 +513,34 @@ Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, theta
       results$logL[i]=mods[[i]]$loofitstats["ln_L"]
       results$dfs[i]=mods[[i]]$loofitstats["df"]
       results$R2[i]=mods[[i]]$loofitstats["R2"]
-      #Nonstationary
-      mods_NS[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
-                           exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
-      results$theta_NS[i]=mods_NS[[i]]$theta
-      results$logL_NS[i]=mods_NS[[i]]$loofitstats["ln_L"]
-      results$dfs_NS[i]=mods_NS[[i]]$loofitstats["df"]
-      results$R2_NS[i]=mods_NS[[i]]$loofitstats["R2"]
-      results$delta[i]=mods_NS[[i]]$delta
     }
+    #Nonstationary
+    mods_NS[[i]]=fitSmap(dflag, y=y, x=c(paste0(y,"_",Emin:i),covar), pop=pop, time=time, thetafixed=thetafixed,
+                         exclradius=exclradius, ns = TRUE, nsvar=nsvar, initpars=initpars, augdata=augdata)
+    results$theta_NS[i]=mods_NS[[i]]$theta
+    results$logL_NS[i]=mods_NS[[i]]$loofitstats["ln_L"]
+    results$dfs_NS[i]=mods_NS[[i]]$loofitstats["df"]
+    results$R2_NS[i]=mods_NS[[i]]$loofitstats["R2"]
+    results$delta[i]=mods_NS[[i]]$delta
   }
+  # }
   rownames(results)=NULL
   
-  #This part is wrong and needs updating
-  W_E=pmax(0,exp(results$logL_NS)-exp(results$logL))
-  if(sum(W_E)!=0) W_E=round(W_E/sum(W_E),8)
-  results$W_E=W_E
-  delta_agg=round(sum(results$delta*W_E),8)
+  #This part is wrong
+  # W_E=pmax(0,exp(results$logL_NS)-exp(results$logL))
+  # if(sum(W_E)!=0) W_E=round(W_E/sum(W_E),8)
+  # results$W_E=W_E
+  # delta_agg=round(sum(results$delta*W_E),8)
   
-  bestR2=max(results$R2, results$R2_NS)
+  W_E=exp(results$logL_NS)/sum(exp(results$logL_NS))
+  results$W_E=W_E
+  delta_agg=sum(results$delta*exp(results$logL_NS))/sum(exp(results$logL_NS))
+  
+  bestR2=max(results$R2, results$R2_NS, na.rm = T)
   
   series=df[,c(time,y)]
   
-  if(summaryonly | parallel) {
+  if(summaryonly) {
     out=list(delta_agg=delta_agg, bestR2=bestR2, results=results, series=series)
     class(out)=c("NStest")
     return(out)
@@ -541,7 +551,7 @@ Smap_NStest=function(data,y,covar=NULL,pop=NULL,time, Emin=1, Emax, tau=1, theta
   }
 }
 
-fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,parallel) {
+fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius) {
   
   p=length(initpars)
   
@@ -554,7 +564,7 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclr
   maxiter=200
   
   #initialize 
-  output=getlikegrad_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=F,parallel=parallel)
+  output=getlikegrad_smap(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=F)
   nll=output$nll
   grad=output$grad
   s=drop(sqrt(grad%*%grad))
@@ -570,7 +580,7 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclr
     #step 1-move
     panew=pa-sign(grad)*del
     panew=pmax(0,panew) #pars cannot be less than 0
-    output_new=getlikegrad_smap(panew,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=F,reusegrad=grad,parallel=parallel)
+    output_new=getlikegrad_smap(panew,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=F,reusegrad=grad)
     nll_new=output_new$nll
     grad_new=output_new$grad
     #panew=output_new$parst #prevent parst from changing if using fixedpars (probably not necessary?)
@@ -590,14 +600,14 @@ fmingrad_Rprop_smap = function(initpars,Y,X,Pop,Time,thetafixed,deltafixed,exclr
   
   #print(iter)
   paopt=pa
-  output_new=getlikegrad_smap(paopt,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=T,reusegrad=grad,parallel=parallel)
+  output_new=getlikegrad_smap(paopt,Y,X,Pop,Time,thetafixed,deltafixed,exclradius,returnpreds=T,reusegrad=grad)
   output_new$iter=iter
   
   return(output_new)
 }
 
 #Function to get likelihood, gradient, df, predictions
-getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclradius, returnpreds, reusegrad=NULL, parallel) {
+getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclradius, returnpreds, reusegrad=NULL) {
 
   theta=pars[1]
   delta=pars[2]
@@ -621,147 +631,147 @@ getlikegrad_smap = function(pars, Y, X, Pop, Time, thetafixed, deltafixed, exclr
   n = nrow(X)
   dimnames(X) = NULL
   
-  if(!parallel) {
-    
-    dSSE_dtheta = 0
-    dDOF_dtheta = 0
-    dSSE_ddelta = 0
-    dDOF_ddelta = 0
-    
-    SSE = 0
-    dof = 0
-    
-    if(returnpreds) {
-      ypred_loo <- ypred <- numeric(length = n)
-      varp_loo <- varp <- numeric(length = n)
-      coefs <- coefs_loo <- matrix(nrow = n, ncol = ncol(X)+1)
-    }
-
-    for(i in 1:n) {
-      
-      #exclude adjacent points
-      exclude=(i-exclradius):(i+exclradius)
-      #exclude=exclude[exclude>0 & exclude<=n]
-      exclude=exclude[exclude %in% which(Pop==Pop[i])]
-      
-      Xi = X[i,,drop=F]
-      Yi = Y[i]
-      Timei = Time[i]
-      
-      Xnoi = X[-exclude,,drop=F]
-      Ynoi = Y[-exclude]
-      Timenoi = Time[-exclude]
-      
-      #loo
-      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, thetagrad=thetagrad, deltagrad=deltagrad, Yi=Yi)
-      if(returnpreds) {
-        ypred_loo[i] = loo_out$prediction
-        varp_loo[i] = loo_out$varp
-        coefs_loo[i,] = loo_out$coefs        
-      }
-
-      #in sample
-      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, thetagrad=thetagrad, deltagrad=deltagrad, insampind=i)
-      if(returnpreds) {
-        ypred[i] = insamp_out$prediction
-        varp[i] = insamp_out$varp
-        coefs[i,] = insamp_out$coefs
-      }
-      
-      SSE = SSE + loo_out$SSE
-      dof = dof + insamp_out$dof
-      
-      if(thetagrad) {
-        dSSE_dtheta = dSSE_dtheta + loo_out$dSSE_dtheta
-        dDOF_dtheta = dDOF_dtheta + insamp_out$dDOF_dtheta
-      }
-      if(deltagrad) {
-        dSSE_ddelta = dSSE_ddelta + loo_out$dSSE_ddelta
-        dDOF_ddelta = dDOF_ddelta + insamp_out$dDOF_ddelta
-      }
-    }
-    
-  } else { #parallel
-    `%dopar%` <- foreach::`%dopar%`
-    results=foreach::foreach(i=1:n) %dopar% {
-      #exclude adjacent points
-      exclude=(i-exclradius):(i+exclradius)
-      #exclude=exclude[exclude>0 & exclude<=n]
-      exclude=exclude[exclude %in% which(Pop==Pop[i])]
-      
-      Xi = X[i,,drop=F]
-      Yi = Y[i]
-      Timei = Time[i]
-      
-      Xnoi = X[-exclude,,drop=F]
-      Ynoi = Y[-exclude]
-      Timenoi = Time[-exclude]
-      
-      #loo
-      loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, Yi=Yi)
-      # loo_dhdtheta = loo_out$dhdtheta
-      # loo_dhddelta =loo_out$dhddelta
-      if(returnpreds) {
-        ypred_loo = loo_out$prediction
-        varp_loo = loo_out$varp
-        coefs_loo = loo_out$coefs
-      }
-      
-      #in sample
-      insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, insampind=i)
-      # hat_vec = insamp_out$H
-      # insamp_dhdtheta = insamp_out$dhdtheta
-      # insamp_dhddelta = insamp_out$dhddelta
-      if(returnpreds) {
-        ypred = insamp_out$prediction
-        varp = insamp_out$varp
-        coefs = insamp_out$coefs
-      }
-      
-      # residual = Yi - loo_out$prediction
-      # 
-      # SSEi = (residual) ^ 2
-      
-      SSEi = loo_out$SSE
-      # dofi = hat_vec[i] #trace of hat matrix
-      dofi = insamp_out$dof
-      
-      # dSSE_dthetai = -2 * residual * (loo_dhdtheta %*% Ynoi)
-      # dSSE_ddeltai = -2 * residual * (loo_dhddelta %*% Ynoi)
-      # dDOF_dthetai = insamp_dhdtheta[i]
-      # dDOF_ddeltai = insamp_dhddelta[i]
-      dSSE_dthetai = loo_out$dSSE_dtheta
-      dSSE_ddeltai = loo_out$dSSE_ddelta
-      dDOF_dthetai = insamp_out$dDOF_dtheta
-      dDOF_ddeltai = insamp_out$dDOF_ddelta
-      
-      results=list(SSEi=SSEi, dofi=dofi,
-                   dSSE_dthetai=dSSE_dthetai, dSSE_ddeltai=dSSE_ddeltai,
-                   dDOF_dthetai=dDOF_dthetai, dDOF_ddeltai=dDOF_ddeltai)
-      if(returnpreds) {
-        results=c(list(ypred_loo=ypred_loo, varp_loo=varp_loo, coefs_loo=coefs_loo,
-                       ypred=ypred, varp=varp, coefs=coefs),results)
-      }
-      results
-    }
-    
-    if(returnpreds) {
-      ypred_loo=sapply(results, function(x) x$ypred_loo)
-      varp_loo=sapply(results, function(x) x$varp_loo)
-      coefs_loo=t(sapply(results, function(x) x$coefs_loo))
-      ypred=sapply(results, function(x) x$ypred)
-      varp=sapply(results, function(x) x$varp)
-      coefs=t(sapply(results, function(x) x$coefs))
-    }
-    
-    SSE=sum(sapply(results, function(x) x$SSEi))
-    dof=sum(sapply(results, function(x) x$dofi))
-    
-    dSSE_dtheta=sum(sapply(results, function(x) x$dSSE_dthetai))
-    dSSE_ddelta=sum(sapply(results, function(x) x$dSSE_ddeltai))
-    dDOF_dtheta=sum(sapply(results, function(x) x$dDOF_dthetai))
-    dDOF_ddelta=sum(sapply(results, function(x) x$dDOF_ddeltai))
+  #if(!parallel) {
+  
+  dSSE_dtheta = 0
+  dDOF_dtheta = 0
+  dSSE_ddelta = 0
+  dDOF_ddelta = 0
+  
+  SSE = 0
+  dof = 0
+  
+  if(returnpreds) {
+    ypred_loo <- ypred <- numeric(length = n)
+    varp_loo <- varp <- numeric(length = n)
+    coefs <- coefs_loo <- matrix(nrow = n, ncol = ncol(X)+1)
   }
+  
+  for(i in 1:n) {
+    
+    #exclude adjacent points
+    exclude=(i-exclradius):(i+exclradius)
+    #exclude=exclude[exclude>0 & exclude<=n]
+    exclude=exclude[exclude %in% which(Pop==Pop[i])]
+    
+    Xi = X[i,,drop=F]
+    Yi = Y[i]
+    Timei = Time[i]
+    
+    Xnoi = X[-exclude,,drop=F]
+    Ynoi = Y[-exclude]
+    Timenoi = Time[-exclude]
+    
+    #loo
+    loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, thetagrad=thetagrad, deltagrad=deltagrad, Yi=Yi)
+    if(returnpreds) {
+      ypred_loo[i] = loo_out$prediction
+      varp_loo[i] = loo_out$varp
+      coefs_loo[i,] = loo_out$coefs        
+    }
+    
+    #in sample
+    insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, thetagrad=thetagrad, deltagrad=deltagrad, insampind=i)
+    if(returnpreds) {
+      ypred[i] = insamp_out$prediction
+      varp[i] = insamp_out$varp
+      coefs[i,] = insamp_out$coefs
+    }
+    
+    SSE = SSE + loo_out$SSE
+    dof = dof + insamp_out$dof
+    
+    if(thetagrad) {
+      dSSE_dtheta = dSSE_dtheta + loo_out$dSSE_dtheta
+      dDOF_dtheta = dDOF_dtheta + insamp_out$dDOF_dtheta
+    }
+    if(deltagrad) {
+      dSSE_ddelta = dSSE_ddelta + loo_out$dSSE_ddelta
+      dDOF_ddelta = dDOF_ddelta + insamp_out$dDOF_ddelta
+    }
+  }
+  
+  #   else { #parallel
+  #   `%dopar%` <- foreach::`%dopar%`
+  #   results=foreach::foreach(i=1:n) %dopar% {
+  #     #exclude adjacent points
+  #     exclude=(i-exclradius):(i+exclradius)
+  #     #exclude=exclude[exclude>0 & exclude<=n]
+  #     exclude=exclude[exclude %in% which(Pop==Pop[i])]
+  #     
+  #     Xi = X[i,,drop=F]
+  #     Yi = Y[i]
+  #     Timei = Time[i]
+  #     
+  #     Xnoi = X[-exclude,,drop=F]
+  #     Ynoi = Y[-exclude]
+  #     Timenoi = Time[-exclude]
+  #     
+  #     #loo
+  #     loo_out = NSMap(Xnoi, Ynoi, Timenoi, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, Yi=Yi)
+  #     # loo_dhdtheta = loo_out$dhdtheta
+  #     # loo_dhddelta =loo_out$dhddelta
+  #     if(returnpreds) {
+  #       ypred_loo = loo_out$prediction
+  #       varp_loo = loo_out$varp
+  #       coefs_loo = loo_out$coefs
+  #     }
+  #     
+  #     #in sample
+  #     insamp_out = NSMap(X, Y, Time, Xi, Timei, theta, delta, returnpreds, returngrad=TRUE, insampind=i)
+  #     # hat_vec = insamp_out$H
+  #     # insamp_dhdtheta = insamp_out$dhdtheta
+  #     # insamp_dhddelta = insamp_out$dhddelta
+  #     if(returnpreds) {
+  #       ypred = insamp_out$prediction
+  #       varp = insamp_out$varp
+  #       coefs = insamp_out$coefs
+  #     }
+  #     
+  #     # residual = Yi - loo_out$prediction
+  #     # 
+  #     # SSEi = (residual) ^ 2
+  #     
+  #     SSEi = loo_out$SSE
+  #     # dofi = hat_vec[i] #trace of hat matrix
+  #     dofi = insamp_out$dof
+  #     
+  #     # dSSE_dthetai = -2 * residual * (loo_dhdtheta %*% Ynoi)
+  #     # dSSE_ddeltai = -2 * residual * (loo_dhddelta %*% Ynoi)
+  #     # dDOF_dthetai = insamp_dhdtheta[i]
+  #     # dDOF_ddeltai = insamp_dhddelta[i]
+  #     dSSE_dthetai = loo_out$dSSE_dtheta
+  #     dSSE_ddeltai = loo_out$dSSE_ddelta
+  #     dDOF_dthetai = insamp_out$dDOF_dtheta
+  #     dDOF_ddeltai = insamp_out$dDOF_ddelta
+  #     
+  #     results=list(SSEi=SSEi, dofi=dofi,
+  #                  dSSE_dthetai=dSSE_dthetai, dSSE_ddeltai=dSSE_ddeltai,
+  #                  dDOF_dthetai=dDOF_dthetai, dDOF_ddeltai=dDOF_ddeltai)
+  #     if(returnpreds) {
+  #       results=c(list(ypred_loo=ypred_loo, varp_loo=varp_loo, coefs_loo=coefs_loo,
+  #                      ypred=ypred, varp=varp, coefs=coefs),results)
+  #     }
+  #     results
+  #   }
+  #   
+  #   if(returnpreds) {
+  #     ypred_loo=sapply(results, function(x) x$ypred_loo)
+  #     varp_loo=sapply(results, function(x) x$varp_loo)
+  #     coefs_loo=t(sapply(results, function(x) x$coefs_loo))
+  #     ypred=sapply(results, function(x) x$ypred)
+  #     varp=sapply(results, function(x) x$varp)
+  #     coefs=t(sapply(results, function(x) x$coefs))
+  #   }
+  #   
+  #   SSE=sum(sapply(results, function(x) x$SSEi))
+  #   dof=sum(sapply(results, function(x) x$dofi))
+  #   
+  #   dSSE_dtheta=sum(sapply(results, function(x) x$dSSE_dthetai))
+  #   dSSE_ddelta=sum(sapply(results, function(x) x$dSSE_ddeltai))
+  #   dDOF_dtheta=sum(sapply(results, function(x) x$dDOF_dthetai))
+  #   dDOF_ddelta=sum(sapply(results, function(x) x$dDOF_ddeltai))
+  # }
   
   #likelihood gradient for theta and delta (max prevents divide by 0 errors)
   if(thetagrad) {
@@ -872,13 +882,6 @@ NSMap=function(X, Y, Time, x, t, theta, delta,
     return(out)
   }
   
-  # else{
-  #     # use least squares to solve if hat matrix derivates aren't needed,
-  #     # as this is much faster than computing the penrose inverse
-  #     # and gives the same output
-  #     prediction = xaug %*% la.lstsq( W * M, W * Y, rcond=None)[1]
-  #     return(prediction=prediction)
-  #   }
 }
 
 #' Get predictions from an S-map model
@@ -950,7 +953,7 @@ predict.Smap=function(object,predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NU
       if(is.numeric(object$inputs$y_names)) {
         if(object$inputs$y_names <= ncol(newdata)) { ynew=newdata[,object$inputs$y_names] }
       }
-      if(!is.null(object$inputs$x_names)) { xnew=newdata[,object$inputs$x_names] }
+      if(!is.null(object$inputs$x_names)) { xnew=newdata[,object$inputs$x_names,drop=F] }
       if(!is.null(object$inputs$pop_names)) { popnew=newdata[,object$inputs$pop_names] }
       if(!is.null(object$inputs$time_names)) { timenew=newdata[,object$inputs$time_names] }
     }
@@ -1242,7 +1245,3 @@ predict.Smap=function(object,predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NU
 # test2=fmingrad_Rprop_smap(c(0,0), Y, X, Time, thetafixed = NULL, deltafixed = 0)
 # test3=fmingrad_Rprop_smap(c(0,0), Y, X, Time, thetafixed = NULL, deltafixed = NULL)
 # test4=fmingrad_Rprop_smap(c(0,0), Y, X, Time, thetafixed = 8, deltafixed = NULL)
-
-
-#unresolved:
-# - squaring of weighting kernel, matching rEDM

@@ -344,7 +344,9 @@ plot.Smappred=function(x, plotloo=F, ...) {
 
 #' Plot results from an S-map nonstationarity test
 #' 
-#' Makes some plots of results from the nonstationarity test.
+#' Plots some of the results from the S-map nonstationarity test. The first plot
+#' is the time series. The others are the logL, delta value, weights, degrees of freedom,
+#' and leave-one-out R2 as functions of E.
 #'
 #' @param x Output from \code{Smap_NStest}.
 #' @param ... Other graphical parameters for the time series plot, like 'main'.
@@ -362,7 +364,7 @@ plot.NStest=function(x, ...) {
   
   plot(x=series[,1], y=series[,2], type="o", ylab=colnames(series)[2], xlab=colnames(series)[1], ...)
   
-  plot(x=results$E, y=results$logL_NS, type="o", col="red", ylab="logL", xlab="E", lwd=2, ylim=range(results$logL,results$logL_NS))
+  plot(x=results$E, y=results$logL_NS, type="o", col="red", ylab="logL", xlab="E", lwd=2, ylim=range(results$logL,results$logL_NS, na.rm = T))
   points(x=results$E, y=results$logL, type="o")
   legend(x="bottomright", col=c("black","red"), legend=c("Stationary","Nonstationary"), lty=1, pch=1, lwd=c(1,2), cex=0.6)
   
@@ -371,11 +373,11 @@ plot.NStest=function(x, ...) {
   
   plot(x=results$E, y=results$W_E, type="o", ylab="W_E", xlab="E", ylim=c(0,1))
 
-  plot(x=results$E, y=results$dfs_NS, type="o", col="red", ylab="df", xlab="E", lwd=2, ylim=range(results$dfs, results$dfs_NS))
+  plot(x=results$E, y=results$dfs_NS, type="o", col="red", ylab="df", xlab="E", lwd=2, ylim=range(results$dfs, results$dfs_NS, na.rm = T))
   points(x=results$E, y=results$dfs, type="o")
   legend(x="bottomright", col=c("black","red"), legend=c("Stationary","Nonstationary"), lty=1, pch=1, lwd=c(1,2), cex=0.6)
   
-  plot(x=results$E, y=results$R2_NS, type="o", col="red", ylab="loo R2", xlab="E", lwd=2, ylim=range(results$R2, results$R2_NS))
+  plot(x=results$E, y=results$R2_NS, type="o", col="red", ylab="loo R2", xlab="E", lwd=2, ylim=range(results$R2, results$R2_NS, na.rm = T))
   points(x=results$E, y=results$R2, type="o")
   legend(x="bottomright", col=c("black","red"), legend=c("Stationary","Nonstationary"), lty=1, pch=1, lwd=c(1,2), cex=0.6)
   

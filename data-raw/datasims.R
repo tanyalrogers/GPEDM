@@ -61,6 +61,10 @@ colnames(HastPow3sp)=c("Time","X","Y","Z")
 
 usethis::use_data(HastPow3sp, overwrite = TRUE)
 
+# Stationary and Nonstationary series
+NSseries=read.csv("data-raw/round1_all.csv", stringsAsFactors = F)
+usethis::use_data(NSseries, overwrite = TRUE)
+
 # Other models (not used)
 
 ricker=function(N,Nb,r,s) {

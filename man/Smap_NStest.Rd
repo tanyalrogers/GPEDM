@@ -19,7 +19,8 @@ Smap_NStest(
   scaling = c("global", "local", "none"),
   initpars = NULL,
   augdata = NULL,
-  summaryonly = TRUE
+  summaryonly = TRUE,
+  fitStationary = TRUE
 )
 }
 \arguments{
@@ -69,6 +70,9 @@ if not supplied: \code{c(0,0)}.}
 
 \item{summaryonly}{Return just the summary tables, not the lists of model output for
 each value of E.}
+
+\item{fitStationary}{Fit models with theta fixed to 0, for comparision. Not
+necessary to get delta_agg.}
 }
 \value{
 A list (class NStest) with the following elements:
@@ -81,5 +85,7 @@ nonstationary model at each value of E.}
 \item{mods_NS}{If \code{summaryonly=FALSE}, list of all nonstationary models.}
 }
 \description{
-loop over values of E, fitSmap model, return table and delta agg value
+Fits S-map models over a range of E values. Returns table of results
+and the likelihood weighted average delta_agg value.
 }
+\keyword{functions}

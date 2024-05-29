@@ -12,6 +12,8 @@
 \item{...}{Other graphical parameters for the time series plot, like 'main'.}
 }
 \description{
-Makes some plots of results from the nonstationarity test.
+Plots some of the results from the S-map nonstationarity test. The first plot
+is the time series. The others are the logL, delta value, weights, degrees of freedom,
+and leave-one-out R2 as functions of E.
 }
 \keyword{functions}

@@ -81,3 +81,24 @@
 #' https://doi.org/10.1139/cjfas-2022-0029
 #' @keywords datasets
 "shrimp"
+
+#' Simulated stationary and nonstationary time series from 3 models
+#' 
+#' Contains simulated time series from 3 models (food chain, logistic, linear) that 
+#' are either stationary or nonstationary. Time series have length 200. Details of
+#' the simulations can be found in Gee et al (in prep).
+#' 
+#' @format A data frame with 1200 rows and 5 variables:
+#' \describe{
+#'   \item{seriesnum}{Numeric index}
+#'   \item{model}{Model name}
+#'   \item{ns}{stationary or nonstationary}
+#'   \item{timestep}{Time index}
+#'   \item{val}{Value}
+#' }
+#' 
+#' @source Gee et al (in prep)
+#' @references 
+#' Gee K, Rogers TL, Munch SB. In prep. Quantifying nonstationarity in ecological time series.
+#' @keywords datasets
+"NSseries"

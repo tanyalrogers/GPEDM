@@ -9,7 +9,7 @@
 **Disclaimer: This is very much a work in progress. Use at your own risk
 and please report any problems.**
 
-This is version 0.0.0.9007
+This is version 0.0.0.9008
 
 This package contains functions for fiting hierarchical, separable
 length scale Gaussian process (GP) models with automatic relevance
@@ -497,13 +497,6 @@ summary(ma3)
 #> PopB 0.9856039
 ```
 
-## Variable Timestep Method (for missing data)
-
-See [this
-vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
-for more detail about the variable timestep method (VS-EDM) for missing
-data.
-
 ## Gradient of the GP
 
 The partial derivatives of the fitted GP function at each time point
@@ -540,6 +533,19 @@ tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Tim
 #in sample
 grad3=predict(tlogtest3, newdata = pAtrain, returnGPgrad = T)
 ```
+
+## Extensions
+
+See [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
+for more detail about the variable timestep method (VS-EDM) for missing
+data.
+
+This package can also fit EDM models using S-map (local linear
+regression). See [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/smap.html) for
+more detail about fitting S-map models, including nonstationary S-map
+models.
 
 ## References
 
