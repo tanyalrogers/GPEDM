@@ -10,6 +10,9 @@
     <loc>https://tanyalrogers.github.io/GPEDM/articles/choosingE.html</loc>
   </url>
   <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/articles/fisheries.html</loc>
+  </url>
+  <url>
     <loc>https://tanyalrogers.github.io/GPEDM/articles/hierarchical.html</loc>
   </url>
   <url>
@@ -34,7 +37,13 @@
     <loc>https://tanyalrogers.github.io/GPEDM/reference/HastPow3sp.html</loc>
   </url>
   <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/RickerHarvest.html</loc>
+  </url>
+  <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/fitGP.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/fitGP_fish.html</loc>
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/getR2.html</loc>
@@ -59,6 +68,9 @@
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/predict.GP.html</loc>
+  </url>
+  <url>
+    <loc>https://tanyalrogers.github.io/GPEDM/reference/predict_iter.html</loc>
   </url>
   <url>
     <loc>https://tanyalrogers.github.io/GPEDM/reference/predict_seq.html</loc>

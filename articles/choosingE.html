@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Choosing Embedding Parameters • GPEDM</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9007</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9008</span>
       </span>
     </div>
 
@@ -230,10 +230,12 @@ least 2.</p>
 <span><span class="co">#if not aleady in order</span></span>
 <span><span class="co">#Etaugrid=Etaugrid[order(Etaugrid$tau,Etaugrid$E),] </span></span>
 <span><span class="op">(</span><span class="va">bestE</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">E</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2</span></span>
-<span><span class="op">(</span><span class="va">besttau</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">tau</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span></span>
+<span><span class="co">#&gt; [1] 2</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="op">(</span><span class="va">besttau</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">tau</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
 <span><span class="va">demo</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">HP_train</span>, y<span class="op">=</span><span class="st">"X"</span>,</span>
 <span>           x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"X_"</span>,<span class="va">besttau</span><span class="op">*</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">bestE</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>           time<span class="op">=</span><span class="st">"Time"</span>, newdata <span class="op">=</span> <span class="va">HP_test</span><span class="op">)</span></span>
@@ -247,8 +249,9 @@ least 2.</p>
 <span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.365049</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
 <span><span class="co">#&gt; In-sample R-squared: 0.9998473 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.9979118</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.9979118</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-2-3.png" width="700"></p>
 </div>
@@ -270,13 +273,13 @@ performance, although only minorly over <span class="math inline">\(E=4\)</span>
 justified in selecting either <span class="math inline">\(E=4\)</span>
 or <span class="math inline">\(E=6\)</span>, perhaps going for the
 smaller one if you were interested in parsimony.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#we'll just consider one population for this example</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">trawl</span><span class="op">)</span></span>
 <span><span class="va">squid</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">trawl</span>,<span class="va">REGION</span><span class="op">==</span><span class="st">"GME"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/qplot.html" class="external-link">qplot</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">shortfin_squid</span>, x<span class="op">=</span><span class="va">YEAR</span>, data<span class="op">=</span><span class="va">squid</span>, geom <span class="op">=</span> <span class="st">"line"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-3-1.png" width="700"></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co">#growth rate and log abundance</span></span>
 <span><span class="va">squid</span><span class="op">$</span><span class="va">squidlog</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">squid</span><span class="op">$</span><span class="va">shortfin_squid</span><span class="op">)</span></span>
@@ -315,16 +318,18 @@ smaller one if you were interested in parsimony.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>panel.background <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_rect</a></span><span class="op">(</span>fill<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span>, </span>
 <span>        panel.border <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_rect</a></span><span class="op">(</span>color<span class="op">=</span><span class="st">"black"</span>, fill<span class="op">=</span><span class="st">"transparent"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-3-2.png" width="700"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2</span>,<span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#if not aleady in order</span></span>
 <span><span class="co">#Etaugrid=Etaugrid[order(Etaugrid$tau,Etaugrid$E),] </span></span>
 <span><span class="op">(</span><span class="va">bestE</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">E</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 6</span></span>
-<span><span class="op">(</span><span class="va">besttau</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">tau</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span></span>
+<span><span class="co">#&gt; [1] 6</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="op">(</span><span class="va">besttau</span><span class="op">=</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">tau</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">Etaugrid</span><span class="op">$</span><span class="va">R2round</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
 <span><span class="va">demo</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">squidlags</span>, y<span class="op">=</span><span class="st">"squidgr"</span>, </span>
 <span>           x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"squidlog_"</span>,<span class="va">besttau</span><span class="op">*</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">bestE</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>           time<span class="op">=</span><span class="st">"YEAR"</span>, </span>
@@ -343,8 +348,9 @@ smaller one if you were interested in parsimony.</p>
 <span><span class="co">#&gt; Pointwise prior variance (sigma2): 2.647853</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
 <span><span class="co">#&gt; In-sample R-squared: 0.8892768 </span></span>
-<span><span class="co">#&gt; Out-of-sample R-squared: 0.5833364</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Out-of-sample R-squared: 0.5833364</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-3-3.png" width="700"></p>
 <p>This grid search method of selecting models, while thorough, can be
@@ -380,7 +386,7 @@ actually be.</p>
 <h4 id="hastings-powell-model-1">Hastings Powell model<a class="anchor" aria-label="anchor" href="#hastings-powell-model-1"></a>
 </h4>
 <p>Here, we can clearly see that <span class="math inline">\(E=2\)</span> is sufficient.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Emax</span><span class="op">=</span><span class="fl">8</span></span>
 <span><span class="va">R2vals</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="va">Emax</span><span class="op">)</span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="va">Emax</span><span class="op">)</span> <span class="op">{</span></span>
@@ -406,8 +412,9 @@ actually be.</p>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6     phi7 </span></span>
 <span><span class="co">#&gt; 0.055749 0.000000 0.038347 0.000000 0.008479 0.000000 0.000000 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6     phi7     phi8 </span></span>
-<span><span class="co">#&gt; 0.046518 0.000000 0.000471 0.000471 0.033521 0.012773 0.002145 0.000000</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span>, <span class="va">R2vals</span>, type<span class="op">=</span><span class="st">"o"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.046518 0.000000 0.000471 0.000471 0.033521 0.012773 0.002145 0.000000</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span>, <span class="va">R2vals</span>, type<span class="op">=</span><span class="st">"o"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
 </div>
 <div class="section level4">
@@ -416,7 +423,7 @@ actually be.</p>
 <p>As before, you would be justified in selecting either <span class="math inline">\(E=4\)</span> or <span class="math inline">\(E=6\)</span> in this case. We can see that the
 inverse length scale <code>phi</code> for lag 6 is quite small, so it is
 not providing much information.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Emax</span><span class="op">=</span><span class="fl">6</span></span>
 <span><span class="va">squidlags</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">squid</span>,<span class="st">"squidlog"</span>,E<span class="op">=</span><span class="va">Emax</span>, tau<span class="op">=</span><span class="fl">1</span>, append <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
 <span><span class="va">R2vals</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="va">Emax</span><span class="op">)</span></span>
@@ -441,8 +448,9 @@ not providing much information.</p>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5 </span></span>
 <span><span class="co">#&gt; 0.062538 0.307994 0.049649 0.077748 0.000000 </span></span>
 <span><span class="co">#&gt;     phi1     phi2     phi3     phi4     phi5     phi6 </span></span>
-<span><span class="co">#&gt; 0.047337 0.243734 0.065694 0.007457 0.020671 0.001297</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span>, <span class="va">R2vals</span>, type<span class="op">=</span><span class="st">"o"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.047337 0.243734 0.065694 0.007457 0.020671 0.001297</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span>, <span class="va">R2vals</span>, type<span class="op">=</span><span class="st">"o"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosingE_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
 </div>
 </div>
@@ -467,7 +475,7 @@ though.</p>
 <div class="section level4">
 <h4 id="hastings-powell-model-2">Hastings Powell model<a class="anchor" aria-label="anchor" href="#hastings-powell-model-2"></a>
 </h4>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Emax</span><span class="op">=</span><span class="fl">8</span></span>
 <span><span class="va">demo</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">HP_train</span>, y<span class="op">=</span><span class="st">"X"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"X_"</span>,<span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span><span class="op">)</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, newdata <span class="op">=</span> <span class="va">HP_test</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">demo</span><span class="op">)</span></span>
@@ -491,7 +499,7 @@ though.</p>
 <div class="section level4">
 <h4 id="squid-data-2">Squid data<a class="anchor" aria-label="anchor" href="#squid-data-2"></a>
 </h4>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Emax</span><span class="op">=</span><span class="fl">6</span></span>
 <span><span class="va">demo</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">squidlags</span>, y<span class="op">=</span><span class="st">"squidgr"</span>, x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"squidlog_"</span>,<span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">Emax</span><span class="op">)</span><span class="op">)</span>, </span>
 <span>           time<span class="op">=</span><span class="st">"YEAR"</span>, predictmethod <span class="op">=</span> <span class="st">"loo"</span><span class="op">)</span></span>
@@ -582,7 +590,7 @@ ecosystems. Nature Ecology and Evolution 6:1105–1111</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
 </div>
 
       </footer>
