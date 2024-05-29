@@ -304,11 +304,11 @@ summary(tlogtest3_update)
 #>        predictor posteriormode
 #> phi1 Abundance_1       0.59103
 #> phi2 Abundance_2       0.00000
-#> Process variance (ve): 0.00315844
-#> Pointwise prior variance (sigma2): 2.389532
+#> Process variance (ve): 0.003158423
+#> Pointwise prior variance (sigma2): 2.389629
 #> Number of populations: 1
 #> In-sample R-squared: 0.9972318 
-#> Out-of-sample R-squared: 0.9973222
+#> Out-of-sample R-squared: 0.9973224
 
 plot(tlogtest3_update)
 #> Plotting out of sample results.
@@ -589,19 +589,17 @@ summary(ma3)
 #> PopB 0.9856039
 ```
 
-## Variable Timestep Method (for missing data)
+## Extensions
 
 See [this
 vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)
 for more detail about the variable timestep method (VS-EDM) for missing
 data.
 
-## GPEDM Model For Fisheries Applications
-
 See [this
 vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html)
 for more detail on an alternative parameterization of the GP model,
-`fitGP_fish`, designed for use fisheries applications.
+`fitGP_fish`, designed for use in fisheries applications.
 
 ## References
 

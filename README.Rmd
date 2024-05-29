@@ -314,13 +314,11 @@ summary(mb2)
 summary(ma3)
 ```
 
-## Variable Timestep Method (for missing data)
+## Extensions
 
 See [this vignette](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html) for more detail about the variable timestep method (VS-EDM) for missing data. 
 
-## GPEDM Model For Fisheries Applications
-
-See [this vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html) for more detail on an alternative parameterization of the GP model, `fitGP_fish`, designed for use fisheries applications.
+See [this vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html) for more detail on an alternative parameterization of the GP model, `fitGP_fish`, designed for use in fisheries applications.
 
 ## References
 
