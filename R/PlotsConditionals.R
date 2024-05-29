@@ -89,9 +89,8 @@ plot.GPpred=function(x, plotinsamp=FALSE, ytrans=FALSE, ...) {
   on.exit(par(old.par),add = T,after = F)
   
   par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
-  
-  if(ytrans==FALSE) {
 
+  if(ytrans==FALSE) {
     for(i in 1:np) {
       dploti=subset(dplot,pop==up[i])
       plot(dploti$timestep,dploti$predmean,type="o",ylab=yl,xlab="Time",
