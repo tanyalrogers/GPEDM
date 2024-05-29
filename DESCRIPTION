@@ -1,7 +1,7 @@
 Package: GPEDM
 Title: Gaussian Process regression for Empirical Dynamic Modeling
 Version: 0.0.0.9008
-Date: 2023-09-29
+Date: 2024-05-29
 Authors@R: 
     c(person(given = "Stephan",
            family = "Munch",

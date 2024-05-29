@@ -341,4 +341,4 @@ plot(fishfit0_trans, ytrans = TRUE)
 
 ## References
 
-Tsai CH, Munch SB, Masi MD, Stevens MH (in prep) Empirical dynamic modelling for sustainable benchmarks of short-lived species: an example of brown shrimp fisheries in the Gulf of Mexico.
+Tsai CH, Munch SB, Masi MD, Stevens MH (in press) Empirical dynamic modelling for sustainable benchmarks of short-lived species: an example of brown shrimp fisheries in the Gulf of Mexico. ICES Journal of Marine Science
