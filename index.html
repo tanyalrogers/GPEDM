@@ -19,7 +19,7 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9008</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9009</span>
       </span>
     </div>
 
@@ -60,7 +60,7 @@
 </div>
 <!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="contents col-md-9">
@@ -70,7 +70,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <p><strong>Disclaimer: This is very much a work in progress. Use at your own risk and please report any problems.</strong></p>
-<p>This is version 0.0.0.9008</p>
+<p>This is version 0.0.0.9009</p>
 <p>This package contains functions for fiting hierarchical, separable length scale Gaussian process (GP) models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.</p>
 <p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary</code> to view a summary, <code>predict</code> to generate other or additional predictions from a fitted model, <code>plot</code> to plot observed and predicted values, <code>update</code> to update an existing model, and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See <a href="#specifying-training-data">Specifying training data</a> and the function documentation for more detailed instructions.</p>
 <div class="section level2">
@@ -178,7 +178,7 @@
 <div class="section level3">
 <h3 id="plot-inverse-length-scales">Plot inverse length scales<a class="anchor" aria-label="anchor" href="#plot-inverse-length-scales"></a>
 </h3>
-<p>The model hyperparameters are located under <code>model$pars</code>. If you have <span class="math inline"><em>n</em></span> predictors, the first <span class="math inline"><em>n</em></span> values of <code>pars</code> will be the length scales. Note that if you use <code>E</code> and <code>tau</code>, the names of the predictors in the input data frame will be stored under <code>model$inputs$x_names</code>, and the names of the lagged predictors corresponding to the inverse length scales will be stored under <code>model$inputs$x_names2</code>.</p>
+<p>The model hyperparameters are located under <code>model$pars</code>. If you have <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math> predictors, the first <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math> values of <code>pars</code> will be the length scales. Note that if you use <code>E</code> and <code>tau</code>, the names of the predictors in the input data frame will be stored under <code>model$inputs$x_names</code>, and the names of the lagged predictors corresponding to the inverse length scales will be stored under <code>model$inputs$x_names2</code>.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">predvars</span><span class="op">=</span><span class="va">tlogtest</span><span class="op">$</span><span class="va">inputs</span><span class="op">$</span><span class="va">x_names2</span></span>
 <span><span class="va">npreds</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">predvars</span><span class="op">)</span></span>
@@ -548,16 +548,16 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer>
 </div>
 
-  
 
 
-  
+
+
 
   </body>
 </html>

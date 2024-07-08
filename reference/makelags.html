@@ -6,7 +6,7 @@ vtimestep=TRUE to use the variable timestep method."><!-- mathjax --><script src
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-reference-topic">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -20,7 +20,7 @@ vtimestep=TRUE to use the variable timestep method."><!-- mathjax --><script src
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9008</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9009</span>
       </span>
     </div>
 
@@ -41,13 +41,13 @@ vtimestep=TRUE to use the variable timestep method."><!-- mathjax --><script src
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Generate delay vectors</h1>
-    
+
     <div class="hidden name"><code>makelags.Rd</code></div>
     </div>
 
@@ -80,11 +80,13 @@ can be provided. Use <code>forecast=TRUE</code> to generate a forecast matrix. U
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>data</dt>
+
+
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame, or matrix with named columns.</p></dd>
 
 
-<dt>y</dt>
+<dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
 <dd><p>A vector containing a time series (usually the response variable).
 Alternatively, a matrix or data frame where each column is a time series
 (usually the response variable and covariates). In the case of multiple
@@ -92,74 +94,72 @@ time series, lags will be generated for each variable. If <code>data</code> is
 supplied, the column names or indices.</p></dd>
 
 
-<dt>pop</dt>
+<dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
 <dd><p>A vector of populations (optional, if not supplied defaults to 1
 population). If <code>data</code> is supplied, the column name or index.</p></dd>
 
 
-<dt>E</dt>
+<dt id="arg-e">E<a class="anchor" aria-label="anchor" href="#arg-e"></a></dt>
 <dd><p>Embedding dimension. Required.</p></dd>
 
 
-<dt>tau</dt>
+<dt id="arg-tau">tau<a class="anchor" aria-label="anchor" href="#arg-tau"></a></dt>
 <dd><p>Time delay. Required.</p></dd>
 
 
-<dt>yname</dt>
+<dt id="arg-yname">yname<a class="anchor" aria-label="anchor" href="#arg-yname"></a></dt>
 <dd><p>Optional, name of the variable if <code>y</code> is input as a vector, or variables
 if <code>y</code> is a matrix with unnamed columns. Otherwise not used.
 Defaults to "var" if NULL.</p></dd>
 
 
-<dt>forecast</dt>
+<dt id="arg-forecast">forecast<a class="anchor" aria-label="anchor" href="#arg-forecast"></a></dt>
 <dd><p>Produce a forecast matrix instead of the standard training/test matrix.</p></dd>
 
 
-<dt>vtimestep</dt>
+<dt id="arg-vtimestep">vtimestep<a class="anchor" aria-label="anchor" href="#arg-vtimestep"></a></dt>
 <dd><p>Use variable timestep method.</p></dd>
 
 
-<dt>x</dt>
+<dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>If using <code>vtimestep=TRUE</code>, put the response variable under use <code>y</code>, and
 covariates under <code>x</code> (see details). If <code>vtimestep=FALSE</code>, will be appended
 to <code>y</code>.</p></dd>
 
 
-<dt>time</dt>
+<dt id="arg-time">time<a class="anchor" aria-label="anchor" href="#arg-time"></a></dt>
 <dd><p>Used to generate forecast time if <code>forecast=TRUE</code> and to calculate
 Tdiff if <code>vtimestep=TRUE</code>. If not supplied and <code>vtimestep=TRUE</code>, a numeric index is used.</p></dd>
 
 
-<dt>augment</dt>
+<dt id="arg-augment">augment<a class="anchor" aria-label="anchor" href="#arg-augment"></a></dt>
 <dd><p>If <code>vtimestep=TRUE</code>, produce augmentation lag matrix.</p></dd>
 
 
-<dt>Tdiff_max</dt>
+<dt id="arg-tdiff-max">Tdiff_max<a class="anchor" aria-label="anchor" href="#arg-tdiff-max"></a></dt>
 <dd><p>If <code>vtimestep=TRUE</code>, the maximum Tdiff value to allow in production
 of the lag matrix or augmentation lag matrix.</p></dd>
 
 
-<dt>Tdiff_fore</dt>
+<dt id="arg-tdiff-fore">Tdiff_fore<a class="anchor" aria-label="anchor" href="#arg-tdiff-fore"></a></dt>
 <dd><p>If <code>vtimestep=TRUE</code> and <code>forecast=TRUE</code>, vector of time units to
 forecast beyond the last timestep. Defaults to the minimum time difference between consecutive
 timepoints, multipled by tau.</p></dd>
 
 
-<dt>nreps</dt>
+<dt id="arg-nreps">nreps<a class="anchor" aria-label="anchor" href="#arg-nreps"></a></dt>
 <dd><p>If <code>augment=TRUE</code>, the max number of delay vectors for each
 Tdiff value.</p></dd>
 
 
-<dt>append</dt>
+<dt id="arg-append">append<a class="anchor" aria-label="anchor" href="#arg-append"></a></dt>
 <dd><p>Return <code>data</code> with the lags appended (defaults to FALSE). Only
 relevant if <code>forecast=FALSE</code> and <code>augment=FALSE</code>.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>A matrix with named columns, the appended number indicating the time lag. If
+    <p>A matrix with named columns, the appended number indicating the time lag. If
 <code>y</code> has named columns, named columns in the lag matrix will match. If
 generating forecasts, the output matrix will include a column for
 population if there is more than one, and will include a time column if
@@ -318,15 +318,15 @@ can be provided under <code>Tdiff_fore</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer></div>
 
-  
 
 
-  
+
+
 
   </body></html>
 

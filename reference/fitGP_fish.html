@@ -4,7 +4,7 @@ designed for use in fisheries applications."><!-- mathjax --><script src="https:
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-reference-topic">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -18,7 +18,7 @@ designed for use in fisheries applications."><!-- mathjax --><script src="https:
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9008</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9009</span>
       </span>
     </div>
 
@@ -39,13 +39,13 @@ designed for use in fisheries applications."><!-- mathjax --><script src="https:
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Fit a "fisheries" GP model</h1>
-    
+
     <div class="hidden name"><code>fitGP_fish.Rd</code></div>
     </div>
 
@@ -80,66 +80,68 @@ designed for use in fisheries applications.</p>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>data</dt>
+
+
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame, required.</p></dd>
 
 
-<dt>y</dt>
+<dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
 <dd><p>The response variable (required). Typically CPUE.</p></dd>
 
 
-<dt>m</dt>
+<dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
 <dd><p>Lags of the response variable (required). Typically lags of CPUE.</p></dd>
 
 
-<dt>h</dt>
+<dt id="arg-h">h<a class="anchor" aria-label="anchor" href="#arg-h"></a></dt>
 <dd><p>Lags of the variable to be multipled by b and subtracted from m (required).
 Typically harvest. The dimensions of m and h must match.</p></dd>
 
 
-<dt>z</dt>
+<dt id="arg-z">z<a class="anchor" aria-label="anchor" href="#arg-z"></a></dt>
 <dd><p>Other predictor variables, e.g. covariates, that are unmodified (optional).</p></dd>
 
 
-<dt>pop</dt>
+<dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
 <dd><p>Identifies separate populations (optional, if not supplied, defaults to 1
 population). Population values can be either numeric, character, or factor.</p></dd>
 
 
-<dt>time</dt>
+<dt id="arg-time">time<a class="anchor" aria-label="anchor" href="#arg-time"></a></dt>
 <dd><p>The time index (recommended). If not supplied, defaults to a numeric index.</p></dd>
 
 
-<dt>scaling</dt>
+<dt id="arg-scaling">scaling<a class="anchor" aria-label="anchor" href="#arg-scaling"></a></dt>
 <dd><p>How the variables should be scaled (see Details). Scaling can be <code>"global"</code>
 (default), <code>"local"</code> (only applicable if more than 1 pop), or <code>"none"</code>. Scaling is applied
 to <code>y</code> and each <code>x</code>. For a mix of scalings, do it manually beforehand and
 set scaling to <code>"none"</code>. All outputs are backtransformed to original scale.</p></dd>
 
 
-<dt>initpars</dt>
+<dt id="arg-initpars">initpars<a class="anchor" aria-label="anchor" href="#arg-initpars"></a></dt>
 <dd><p>Starting values for hyperparameters (see Details) in the order
 <code>c(phi,ve,sigma2,rho)</code>, in constrained (non-transformed) space. Should be a numeric
 vector with length <code>ncol(x)+3</code>. Defaults used if not supplied: <code>c(rep(0.1,ncol(x)), 0.001, 1-0.001, 0.5)</code></p></dd>
 
 
-<dt>modeprior</dt>
+<dt id="arg-modeprior">modeprior<a class="anchor" aria-label="anchor" href="#arg-modeprior"></a></dt>
 <dd><p>This value is used by the phi prior and sets the expected number of modes over the unit interval.
 Defaults to 1.</p></dd>
 
 
-<dt>fixedpars</dt>
+<dt id="arg-fixedpars">fixedpars<a class="anchor" aria-label="anchor" href="#arg-fixedpars"></a></dt>
 <dd><p>Fixes values of the hyperparameters phi, ve, and sigma2 (if desired). Should be a numeric
 vector with length <code>ncol(x)+2</code> in the order <code>c(phi,ve,sigma2)</code> in constrained
 (non-transformed) space. Hyperparameters to estimate should be input as NA. The value of rho is
 fixed separately using argument <code>rhofixed</code>.</p></dd>
 
 
-<dt>rhofixed</dt>
+<dt id="arg-rhofixed">rhofixed<a class="anchor" aria-label="anchor" href="#arg-rhofixed"></a></dt>
 <dd><p>Fixes the rho parameter, if desired (see Details).</p></dd>
 
 
-<dt>rhomatrix</dt>
+<dt id="arg-rhomatrix">rhomatrix<a class="anchor" aria-label="anchor" href="#arg-rhomatrix"></a></dt>
 <dd><p>Symmetrical square matrix of fixed pairwise rho values to use, with 1's on the diagonal.
 The rows and columns should be named with the population identifier.
 The output of <code><a href="getrhomatrix.html">getrhomatrix</a></code> can be used here.
@@ -147,40 +149,38 @@ All populations in the dataset must appear in <code>rhomatrix</code>. Population
 <code>rhomatrix</code> that are not in the dataset are allowed and will not be used.</p></dd>
 
 
-<dt>augdata</dt>
+<dt id="arg-augdata">augdata<a class="anchor" aria-label="anchor" href="#arg-augdata"></a></dt>
 <dd><p>A data frame with augmentation data (see Details).</p></dd>
 
 
-<dt>predictmethod</dt>
+<dt id="arg-predictmethod">predictmethod<a class="anchor" aria-label="anchor" href="#arg-predictmethod"></a></dt>
 <dd><p>Using the training data, <code>loo</code> does leave-one-out prediction, <code>lto</code> does
 leave-timepoint-out prediction, and <code>sequential</code> does sequential (leave-future-out)
 prediction.</p></dd>
 
 
-<dt>newdata</dt>
+<dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
 <dd><p>Data frame containing the same columns supplied in the
 original model.</p></dd>
 
 
-<dt>xname</dt>
+<dt id="arg-xname">xname<a class="anchor" aria-label="anchor" href="#arg-xname"></a></dt>
 <dd><p>What the composite variable m-bh should be called. Defaults to "escapement".</p></dd>
 
 
-<dt>ytrans</dt>
+<dt id="arg-ytrans">ytrans<a class="anchor" aria-label="anchor" href="#arg-ytrans"></a></dt>
 <dd><p>Tranformation to apply to y before fitting (m remains untransformed).
 Either "none" (default), "log", "gr1", or "gr2". R2 is calculated on y in its original
 units.</p></dd>
 
 
-<dt>bfixed</dt>
+<dt id="arg-bfixed">bfixed<a class="anchor" aria-label="anchor" href="#arg-bfixed"></a></dt>
 <dd><p>Fixes b and bypasses optimization.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>A list (class GP and GPpred) with the same elements as <code><a href="fitGP.html">fitGP</a></code> and with
+    <p>A list (class GP and GPpred) with the same elements as <code><a href="fitGP.html">fitGP</a></code> and with
 additonal element <code>b</code>, the names of m, h, z stored under <code>inputs</code>, and the
 composite variable (escapement) included in the <code>insampresults</code> table.</p>
     </div>
@@ -218,15 +218,15 @@ model and an example see the vignette. For more elaboration on the inputs,
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
 </div>
 
       </footer></div>
 
-  
 
 
-  
+
+
 
   </body></html>
 
