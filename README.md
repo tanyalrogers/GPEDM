@@ -9,7 +9,7 @@
 **Disclaimer: This is very much a work in progress. Use at your own risk
 and please report any problems.**
 
-This is version 0.0.0.9008
+This is version 0.0.0.9009
 
 This package contains functions for fiting hierarchical, separable
 length scale Gaussian process (GP) models with automatic relevance
@@ -625,6 +625,7 @@ tlogtest3=fitGP(data = pAtrain, y = "Abundance", x=colnames(pAlags), time = "Tim
 #in sample
 grad3=predict(tlogtest3, newdata = pAtrain, returnGPgrad = T)
 ```
+
 ## Extensions
 
 See [this
