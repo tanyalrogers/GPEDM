@@ -13,6 +13,7 @@
   timenew = NULL,
   ynew = NULL,
   returnGPgrad = FALSE,
+  exclradius = 0,
   ...
 )
 }
@@ -39,6 +40,9 @@ lieu of \code{x}. Not required if \code{newdata} is supplied.}
 respect to each input. This is only computed for out-of-sample predictions using \code{newdata},
 \code{loo}, or \code{lto}. If you want the in-sample gradient, pass the original dataset as
 \code{newdata}. Defaults to FALSE.}
+
+\item{exclradius}{For \code{predictmethod="loo"} and \code{predictmethod="lto"}, the number of points
+on either side of the focal point to leave out of the training data. Defaults to 0.}
 
 \item{...}{Other args (not used).}
 }

@@ -1,5 +1,6 @@
 # GPEDM 0.0.0.9009
 * Add `fitSmap` and related functions. 
+* Add `exclradius` to `predict.GP` options. 
 
 # GPEDM 0.0.0.9008
 * Add `fitGP_fish`, `predict_iter`, and fisheries vignette.

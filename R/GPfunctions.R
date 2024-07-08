@@ -187,7 +187,8 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                rhomatrix=NULL,augdata=NULL,
-               predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,returnGPgrad=FALSE) {
+               predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,
+               returnGPgrad=FALSE, exclradius=0) {
 
   cl <- match.call()
   
@@ -453,7 +454,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
   #may eventually want to exclude some more outputs
   
   if(!is.null(predictmethod)|!is.null(xnew)|!is.null(newdata)) { #generate predictions if requested
-    predictresults=predict.GP(output,predictmethod,newdata,xnew,popnew,timenew,ynew,returnGPgrad) 
+    predictresults=predict.GP(output,predictmethod,newdata,xnew,popnew,timenew,ynew,returnGPgrad,exclradius) 
     output=c(output,predictresults)
   }
   
@@ -806,6 +807,8 @@ getcovinv=function(Sigma) {
 #'   respect to each input. This is only computed for out-of-sample predictions using \code{newdata},
 #'   \code{loo}, or \code{lto}. If you want the in-sample gradient, pass the original dataset as
 #'   \code{newdata}. Defaults to FALSE.
+#' @param exclradius For \code{predictmethod="loo"} and \code{predictmethod="lto"}, the number of points
+#'   on either side of the focal point to leave out of the training data. Defaults to 0. 
 #' @param ... Other args (not used).
 #' @return A list (class GPpred) with the following elements:
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
@@ -820,7 +823,7 @@ getcovinv=function(Sigma) {
 #' @keywords functions
 predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NULL,
                     xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,
-                    returnGPgrad=FALSE, ...) { 
+                    returnGPgrad=FALSE,exclradius=0, ...) { 
   
   iKVs=object$covm$iKVs
   phi=object$pars[grepl("phi",names(object$pars))]
@@ -998,11 +1001,14 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         GPgrad=matrix(NA, nrow = nd, ncol=ncol(X))
       }
       for(i in 1:nd) {
+        #exclude adjacent points
+        exclude=(i-exclradius):(i+exclradius)
+        exclude=exclude[exclude %in% which(Pop==Pop[i])]
         #check for duplicates in aug data
-        dups=which(paste0(Pop[i],Time[i])==paste0(Pop[!Primary],Time[!Primary]))+nd
-        Cdi=Cd[i,-c(i,dups),drop=F]
-        S_noi=Sigma[-c(i,dups),-c(i,dups)]
-        Y_noi=Y[-c(i,dups)]
+        dups=which(paste0(Pop[!Primary],Time[!Primary])%in%paste0(Pop[exclude],Time[exclude]))+nd
+        Cdi=Cd[i,-c(exclude,dups),drop=F]
+        S_noi=Sigma[-c(exclude,dups),-c(exclude,dups)]
+        Y_noi=Y[-c(exclude,dups)]
         S_noi=(S_noi+t(S_noi))/2
         icov_noi=getcovinv(S_noi)
         iKVs_noi=icov_noi$iKVs
@@ -1010,7 +1016,7 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         yvar[i]=sigma2-Cdi%*%iKVs_noi%*%t(Cdi)
         if(returnGPgrad) {
           Xi=X[i,]
-          Xnoi=X[-c(i,dups),]
+          Xnoi=X[-c(exclude,dups),]
           GPgrad[i,]=getGPgrad(phi = phi, Xnew = Xi, X = Xnoi, Cdi = Cdi, iKVs = iKVs_noi, Y = Y_noi)
         }
       }
@@ -1081,8 +1087,12 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         GPgrad=matrix(NA, nrow = nd, ncol=ncol(X))
       }
       for(i in 1:nt) {
-        ind=which(Time[Primary]==timevals[i])
-        train=which(Time!=timevals[i]) #this should also exclude any dups in the aug data
+        #exclude adjacent points
+        exclude=(i-exclradius):(i+exclradius)
+        exclude=exclude[exclude>0 & exclude<=nt]
+        ind=which(Time[Primary]==timevals[i]) #focal point
+        train=which(!(Time %in% timevals[exclude])) #this should also exclude any dups in the aug data
+        #train=which(Time!=timevals[i])
         Cdi=Cd[ind,train,drop=F]
         S_noi=Sigma[train,train]
         Y_noi=Y[train]
