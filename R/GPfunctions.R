@@ -1605,7 +1605,7 @@ makelags=function(data=NULL,y,pop=NULL,E,tau,yname=NULL,
         
         #get existing unique combinations of Tdiffs
         outputi2=cbind(outputi,yi)
-        outbase=as.data.frame(na.omit(outputi2))[,cols]
+        outbase=as.data.frame(na.omit(outputi2))[,cols,drop=F]
         outbase$combo=apply(outbase,1,paste,collapse="")
         outtab=as.data.frame(table(combo=outbase$combo))
         outtab=unique(merge(outbase,outtab))
@@ -1662,7 +1662,7 @@ makelags=function(data=NULL,y,pop=NULL,E,tau,yname=NULL,
         }
         rownames(augmat)=NULL
         out=cbind.data.frame(timeaug,yaug,augmat)
-        colnames(out)[1:2]=c(tname,yname)
+        colnames(out)[1:2]=c(tname,yname[1])
         if(length(up)>1) {
           out=cbind.data.frame(rep(up[k],nrow(out)),out)
           colnames(out)[1]=pname
