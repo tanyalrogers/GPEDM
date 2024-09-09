@@ -149,6 +149,26 @@ lines(cpue~hrate, data=catchresagg, lwd=2, col="red")
 abline(v=fmsy, col="red")
 ```
 
+Let's compare this to the true analytical solution for this model using the simulation parameters.
+
+```{r msy4, fig.height=3}
+r=3; K=1000
+q=0.01 #catchability b
+tbiomass=K/(1-hratevec)*(r-log(1/(1-hratevec))) #steady state biomass
+tcpue=q*tbiomass
+tcatch=hratevec*tbiomass
+
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(catch~hrate, data=catchresagg, type="l", lwd=2, col="red")
+lines(tcatch~hratevec, lwd=2, col="cornflowerblue")
+abline(v=fmsy, col="red")
+legend(x="topleft", legend = c("EDM","true"), col=c("red","cornflowerblue"), lwd=2, cex=0.8)
+plot(cpue~hrate, data=catchresagg, type="l", lwd=2, col="red")
+lines(tcpue~hratevec, lwd=2, col="cornflowerblue")
+abline(v=fmsy, col="red")
+legend(x="topleft", legend = c("EDM","true"), col=c("red","cornflowerblue"), lwd=2, cex=0.8)
+```
+
 It is also possible to set this up using a constant catch value rather than constant catch rate. To do this, omit `hrate` and fill all the catch rows and columns in `newdata` with a constant value. In this example with chaotic dynamics, this can lead to negative escapement, so it was not done here.
 
 ## Multiple populations
