@@ -346,6 +346,25 @@ harvest rate.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/msy3-1.png" width="700"></p>
+<p>Let’s compare this to the true analytical solution for this model
+using the simulation parameters.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">r</span><span class="op">=</span><span class="fl">3</span>; <span class="va">K</span><span class="op">=</span><span class="fl">1000</span></span>
+<span><span class="va">q</span><span class="op">=</span><span class="fl">0.01</span> <span class="co">#catchability b</span></span>
+<span><span class="va">tbiomass</span><span class="op">=</span><span class="va">K</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">hratevec</span><span class="op">)</span><span class="op">*</span><span class="op">(</span><span class="va">r</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">hratevec</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="co">#steady state biomass</span></span>
+<span><span class="va">tcpue</span><span class="op">=</span><span class="va">q</span><span class="op">*</span><span class="va">tbiomass</span></span>
+<span><span class="va">tcatch</span><span class="op">=</span><span class="va">hratevec</span><span class="op">*</span><span class="va">tbiomass</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, type<span class="op">=</span><span class="st">"l"</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">tcatch</span><span class="op">~</span><span class="va">hratevec</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"cornflowerblue"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span>x<span class="op">=</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EDM"</span>,<span class="st">"true"</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>,<span class="st">"cornflowerblue"</span><span class="op">)</span>, lwd<span class="op">=</span><span class="fl">2</span>, cex<span class="op">=</span><span class="fl">0.8</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, type<span class="op">=</span><span class="st">"l"</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">tcpue</span><span class="op">~</span><span class="va">hratevec</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"cornflowerblue"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span>x<span class="op">=</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EDM"</span>,<span class="st">"true"</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>,<span class="st">"cornflowerblue"</span><span class="op">)</span>, lwd<span class="op">=</span><span class="fl">2</span>, cex<span class="op">=</span><span class="fl">0.8</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msy4-1.png" width="700"></p>
 <p>It is also possible to set this up using a constant catch value
 rather than constant catch rate. To do this, omit <code>hrate</code> and
 fill all the catch rows and columns in <code>newdata</code> with a
@@ -370,12 +389,12 @@ estimates for
 the true value of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
 is 0.005. It also has a different catch history.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Catch</span><span class="op">~</span><span class="va">Time</span>, data<span class="op">=</span><span class="va">RickerHarvestB</span>, type<span class="op">=</span><span class="st">"l"</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">Time</span>, data<span class="op">=</span><span class="va">RickerHarvestB</span>, type<span class="op">=</span><span class="st">"l"</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/sampledataB-1.png" width="700"></p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#model for region B</span></span>
 <span><span class="va">RHlagsB</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvestB</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, append<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
 <span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,CPUE_index_1<span class="op">=</span><span class="fl">0</span>,Catch_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
@@ -403,7 +422,7 @@ dynamics should be proportional. You may want to check whether the
 combined model actually produces better within-population fits than the
 models fit separately. If there are sufficient data, there is a good
 chance it will not.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bA</span><span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">b</span></span>
 <span><span class="va">bB</span><span class="op">=</span><span class="va">fishfitB</span><span class="op">$</span><span class="va">b</span></span>
 <span><span class="va">RHlags</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHlags</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHlags</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">bA</span></span>
@@ -413,7 +432,7 @@ chance it will not.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">escapement_1</span>, data<span class="op">=</span><span class="va">RHlags</span>, main<span class="op">=</span><span class="st">"Region A"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">escapement_1</span>, data<span class="op">=</span><span class="va">RHlagsB</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/combomodel-1.png" width="700"></p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co">#alternatively, you could pull escapement out of the insampresults table, </span></span>
 <span><span class="co">#or use it to double check your math</span></span>
@@ -442,7 +461,7 @@ chance it will not.</p>
 <span><span class="co">#&gt; 4    4  30.573418 68.366708      A     1.987008  1.778593     1.969092</span></span>
 <span><span class="co">#&gt; 5    5  31.422368 55.179338      A    30.573418 68.366708    29.884736</span></span>
 <span><span class="co">#&gt; 6    6  28.992217 52.203880      A    31.422368 55.179338    30.866527</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">RHlagscombo</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">RHlags</span>, <span class="va">RHlagsB</span><span class="op">)</span></span>
 <span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Region<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span><span class="op">)</span>,Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,escapement_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
 <span></span>
@@ -484,7 +503,7 @@ values for each population, this gets a little tricky, since
 You will probably have to write a custom loop, like below. This is
 mostly the internal code of <code>predict_iter</code> but with some
 modification.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#number of timesteps to iterate</span></span>
 <span><span class="va">nfore</span><span class="op">=</span><span class="fl">50</span></span>
 <span></span>
@@ -623,7 +642,7 @@ transformed variable.</p>
 plot the transformed variable. The <code>plot</code> method will plot
 the untransformed variable (without standard deviations), unless you
 specify <code>ytrans=TRUE</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fishfit0_trans</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
 <span>                          ytrans<span class="op">=</span><span class="st">"gr2"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">)</span></span>
@@ -655,11 +674,11 @@ specify <code>ytrans=TRUE</code>.</p>
 <span></span>
 <span><span class="fu"><a href="../reference/getconditionals.html">getconditionals</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/ytrans-1.png" width="700"></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting in sample results.</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/ytransplots-1.png" width="700"></p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fishfit0_trans</span>, ytrans <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting in sample results.</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/ytransplots-2.png" width="700"></p>
