@@ -88,7 +88,8 @@ plot.GPpred=function(x, plotinsamp=FALSE, ytrans=FALSE, ...) {
   #old.par <- par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
   on.exit(par(old.par),add = T,after = F)
   
-  par(mfrow=c(min(4,np),2),mar=c(5,4,2,2))
+  cols=ifelse(is.null(dplot$obs),1,2)
+  par(mfrow=c(min(4,np),cols),mar=c(5,4,2,2))
 
   if(ytrans==FALSE) {
     for(i in 1:np) {

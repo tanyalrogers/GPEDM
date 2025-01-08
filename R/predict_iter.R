@@ -120,7 +120,8 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   outsampresults=do.call(rbind, pred)
   out=list(outsampresults=outsampresults)
   if(!is.null(hrate)) {
-    out$outsampresults=cbind(out$outsampresults,newdata[,hlags,drop=F])
+    order=as.numeric(rownames(outsampresults))
+    out$outsampresults=cbind(out$outsampresults,newdata[order,hlags,drop=F])
   }
   
   #return updated model and predictions
