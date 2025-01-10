@@ -11,7 +11,12 @@ summary.GP=function(object, ...) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
   if(!is.null(object$b)) {
-    cat("Fisheries model b:",round(object$b, 5),"\n")
+    if(length(object$b)==1) {
+      cat("Fisheries model b:",round(object$b, 5),"\n")
+    } else {
+      cat("Fisheries model b:\n")
+      print.data.frame(data.frame(b=object$b), digits=5)
+    }
   }
   cat("Length scale parameters:\n")
   if(!is.null(object$inputs$x_names2)) {

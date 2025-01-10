@@ -852,7 +852,13 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         md=newdata[,object$inputs$m_names,drop=F]
         hd=newdata[,object$inputs$h_names,drop=F]
         #compute composite variable in newdata
-        x2=md-b*hd
+        if(length(b)>1) {
+          popvec=newdata[,object$inputs$pop_names]
+          bvec=b[match(popvec, names(b))]
+        } else { #if only one population
+          bvec=rep(b, nrow(md))
+        }
+        x2=md-bvec*hd
         colnames(x2)=object$inputs$x_names[1:ncol(x2)]
         newdata=cbind(newdata,x2)
       }

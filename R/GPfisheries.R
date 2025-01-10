@@ -14,6 +14,15 @@
 #' Parameter \eqn{b} is found using \code{optimize} applied to the posterior likelihood. 
 #' Alternatively, a fixed value for \eqn{b} can be provided under \code{bfixed}.
 #' 
+#' If fitting a hierarchical model, the default behavior is to estimate a single
+#' value of\eqn{b} shared by all pops (\code{bshared=TRUE}). You can fix a
+#' single shared value of \eqn{b} by providing a single value under
+#' \code{bfixed}. Alternatively, you can estimate different values of \eqn{b}
+#' for each population by setting \code{bshared=FALSE}. This will use the
+#' Nelder-Mead method of \code{optim} (and will be quite a bit slower than the
+#' single parameter optimization). You can fix different values of \eqn{b} for
+#' each population by supplying a named vector under \code{bfixed}. 
+#' 
 #' Parameter \code{ytrans} applies a transformation to \eqn{y} before fitting the model. 
 #' Inputs \code{y} and \code{m} should be in untransformed CPUE. \code{ytrans="none"} (the
 #' default) will apply no tranformation, \code{ytrans="log"} with compute \eqn{log(y)},
@@ -38,7 +47,13 @@
 #' @param ytrans Tranformation to apply to y before fitting (m remains untransformed). 
 #'   Either "none" (default), "log", "gr1", or "gr2". R2 is calculated on y in its original
 #'   units.
-#' @param bfixed Fixes b and bypasses optimization.
+#' @param bfixed Fixes b and bypasses optimization. If there are multiple pops, can be 
+#'   a scalar (shared across pops), or a named vector with different b's for each pop.
+#' @param bshared If there are multiple pops, should they share the same b (TRUE, 
+#'   default) or have different values of b (FALSE)? Note that optimizing multiple b
+#'   values can be slow. Ignored if \code{bfixed} is supplied. If \code{bshared=FALSE} 
+#'   and either \code{pop} is not supplied or there is only one pop, reverts back to a single b
+#'   estimate. 
 #' 
 #' @inheritParams fitGP
 #' @inheritParams predict.GP
@@ -54,7 +69,8 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
                 initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                 rhomatrix=NULL,augdata=NULL,
                 predictmethod=NULL,newdata=NULL,
-                xname="escapement",ytrans=c("none","log","gr1","gr2"),bfixed=NULL) {
+                xname="escapement",ytrans=c("none","log","gr1","gr2"),
+                bfixed=NULL,bshared=TRUE) {
   
   #check that m and h have the same number of columns
   if(length(m)!=length(h)) {
@@ -69,23 +85,72 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
   md=data[,m,drop=F]
   hd=data[,h,drop=F] 
   
-  if(!is.null(bfixed)) {
+  if(!is.null(bfixed)) { #fixed b
     b=bfixed
-  } else {
-    #optimize b
-    bmax=min(md/hd, na.rm=T)
-    boptim=optimize(GPlike_fish, interval = c(0, bmax), maximum = TRUE,
-                    data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
-                    initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
-                    rhomatrix=rhomatrix,augdata=augdata,xname=xname,ytrans=ytrans)
-    #get value of b
-    b=boptim$maximum
+    if(length(b)>1) { #multiple fixed b, check format
+      if(is.null(pop)) {
+        stop("pop must be supplied if multiple b values supplied")
+      }
+      popvec=data[,pop]
+      np=length(unique(popvec))
+      if(length(b)!=np | !all(unique(popvec) %in% names(b))) {
+        stop("bfixed must have length equal to number of pops and be named accordingly. Pop names: ", unique(popvec))
+      }
+    }
+    
+  } else { #optimize b
+    
+    if(!is.null(pop)) {
+      popvec=data[,pop]
+      np=length(unique(popvec))
+    } else {
+      np=1
+    }  
+    
+    if(bshared | np==1) { #single b (no pop, single pop, or multiple pops with bshared=T)
+      bmax=min(md/hd, na.rm=T)
+      #optimize b
+      boptim=optimize(GPnlike_fish, interval = c(0, bmax),
+                      data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
+                      initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
+                      rhomatrix=rhomatrix,augdata=augdata,xname=xname,ytrans=ytrans)
+      #get value of b
+      b=boptim$minimum
+      
+    } else { #multiple b values
+      up=unique(popvec)
+      bmax=vector(length = np)
+      for(i in 1:np) {
+        bmax[i]=min(md[popvec==up[i],]/hd[popvec==up[i],], na.rm=T)
+      }
+      bmin=rep(0,np)
+      parinits=bmax/2
+      names(parinits)=up
+      
+      #optimize b
+      boptim=optim(parinits, GPnlike_fish, #lower=bmin, upper=bmax,
+                   data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
+                   initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
+                   rhomatrix=rhomatrix,augdata=augdata,xname=xname,ytrans=ytrans)
+      #get value of b
+      b=boptim$par
+      if(any(b<bmin) | any(b>bmax)) {
+        warning("one or more b estimates outside of reasonable bounds")
+      }
+    }
   }
   
   #get final model fit
   
   #compute composite variable and append z to create new x
-  x2=md-b*hd
+  if(length(b)>1) {
+    popvec=data[,pop]
+    bvec=b[match(popvec, names(b))]
+  } else { #if only one population
+    bvec=rep(b, nrow(md))
+  }
+  
+  x2=md-bvec*hd
   x=paste(xname,1:ncol(x2),sep="_")
   colnames(x2)=x
   data=cbind(data,x2)
@@ -100,8 +165,14 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
     #extract variables
     maug=augdata[,m,drop=F]
     haug=augdata[,h,drop=F]
+    if(length(b)>1) {
+      popvecaug=augdata[,pop]
+      bvecaug=b[match(popvecaug, names(b))]
+    } else { #if only one population
+      bvecaug=rep(b, nrow(maug))
+    }
     #compute composite variable and append z to create new x
-    x2aug=maug-b*haug
+    x2aug=maug-bvecaug*haug
     colnames(x2aug)=x
     augdata=cbind(augdata,x2aug)
     #get transformed y
@@ -163,13 +234,21 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
 }
 
 
-GPlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,xname="escapement",ytrans) {
+GPnlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,xname="escapement",ytrans) {
   
   #extract variables
   md=data[,m,drop=F]
   hd=data[,h,drop=F]
+    
+  if(length(b)>1) {
+    popvec=data[,pop]
+    bvec=b[match(popvec, names(b))]
+  } else { #if only one population
+    bvec=rep(b, nrow(md))
+  }
+
   #compute composite variable and append z to create new x
-  x2=md-b*hd
+  x2=md-bvec*hd
   x=paste(xname,1:ncol(x2),sep="_")
   colnames(x2)=x
   data=cbind(data,x2)
@@ -184,8 +263,16 @@ GPlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpar
     #extract variables
     maug=augdata[,m,drop=F]
     haug=augdata[,h,drop=F]
+  
+    if(length(b)>1) {
+      popvecaug=augdata[,pop]
+      bvecaug=b[match(popvecaug, names(b))]
+    } else { #if only one population
+      bvecaug=rep(b, nrow(maug))
+    }
+    
     #compute composite variable and append z to create new x
-    x2aug=maug-b*haug
+    x2aug=maug-bvecaug*haug
     colnames(x2aug)=x
     augdata=cbind(augdata,x2aug)
     #get transformed y
@@ -200,8 +287,8 @@ GPlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpar
   mfit=fitGP(data=data,y=yt,x=x,pop=pop,time=time,scaling=scaling,initpars=initpars,
              modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
   
-  #return posterior likelihood
-  return(mfit$insampfitstats["ln_post"])
+  #return posterior likelihood (negative)
+  return(-mfit$insampfitstats["ln_post"])
 }
 
 
