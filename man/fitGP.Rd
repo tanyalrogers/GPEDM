@@ -126,7 +126,8 @@ deviation of the GP function, \code{predsd} includes process error.}
 (log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
 the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.}
+comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.
+If there are multiple populations, also includes R2centered and R2scaled.}
 \item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
@@ -239,6 +240,33 @@ time point with respect to each input can be obtained by setting
 \code{returnGPgrad = T}. If you want the in-sample gradient, pass the
 original (training) data as back in as \code{newdata}. It automatic scaling
 was used, the gradient will also be backtransformed to the original units.
+
+\strong{Fit statistics:}
+
+The R2 and other fit statistics are always computed for \code{y} in the units in which it was
+supplied to the function. The R2 is specifically computed as:
+\deqn{R^2=1-SS_{err}/SS_{y}}
+which is equivalent to
+\deqn{R^2=1-MSE/Var_{y}}
+As a result, the returned R-squared may be negative, particularly for out-of-sample
+predictions, which are not guaranteed to pass through the mean. A negative R2 indicates
+that the model predictions are worse than just using the mean (MSE is larger than the variance).
+
+If there are multiple populations, there will be a total R2, which is the R2
+across populations, as well as within-population R2 values. For the total R2,
+the denominator is the variance across all datapoints, ignoring population.
+Note that if the populations have very different local means, the total R2 can
+be potentially misleading because the across-population variance will be much
+larger than the within population variance, increasing R2 even if MSE is
+constant. Put another way, simply getting the local means right can
+explain a lot of the across-population variance even if there is
+little prediction accuracy within a population. Very different local
+variances can cause similar issues. In this case, we would recommend looking at
+the within-population R2 values, or at one of the alternative R2 values provided
+in the fit stats: R2centered (total R2 with local means removed) or R2scaled (total R2 with
+local centering and scaling), which may be more accurate measures of
+performance than total R2 if the populations have very different local means
+and/or variances.
 }
 \examples{
 yrand=rnorm(20)

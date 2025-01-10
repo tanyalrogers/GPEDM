@@ -94,7 +94,8 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
       popvec=data[,pop]
       np=length(unique(popvec))
       if(length(b)!=np | !all(unique(popvec) %in% names(b))) {
-        stop("bfixed must have length equal to number of pops and be named accordingly. Pop names: ", unique(popvec))
+        stop("bfixed must have length equal to number of pops and be named accordingly. Pop names: ", 
+             paste(unique(popvec), collapse=" "))
       }
     }
     
@@ -123,19 +124,21 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
       for(i in 1:np) {
         bmax[i]=min(md[popvec==up[i],]/hd[popvec==up[i],], na.rm=T)
       }
-      bmin=rep(0,np)
       parinits=bmax/2
       names(parinits)=up
       
       #optimize b
-      boptim=optim(parinits, GPnlike_fish, #lower=bmin, upper=bmax,
+      boptim=optim(parinits, GPnlike_fish, bmax=bmax, #lower=rep(0,np), upper=bmax,
                    data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
                    initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
                    rhomatrix=rhomatrix,augdata=augdata,xname=xname,ytrans=ytrans)
       #get value of b
       b=boptim$par
-      if(any(b<bmin) | any(b>bmax)) {
-        warning("one or more b estimates outside of reasonable bounds")
+      if(any(b<0) | any(b>bmax)) {
+        warning("one or more b estimates outside of reasonable bounds.\n",
+                paste(up, collapse = " "),"\n",
+                "bmax: ", paste(round(bmax, 5), collapse = " "),"\n",
+                "b estimated: ", paste(round(b, 5), collapse = " "))
       }
     }
   }
@@ -203,17 +206,9 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
   output$insampfitstats["rmse"]=sqrt(mean((yobs-ypred)^2,na.rm=T))
   pop=output$insampresults$pop
   if(length(unique(pop))>1) { #within site fit stats
-    up=unique(pop)
-    np=length(up)
-    R2pop<-rmsepop<-numeric(np)
-    names(R2pop)=up
-    names(rmsepop)=up
-    for(k in 1:np) {
-      ind=which(pop==up[k])
-      R2pop[k]=getR2(yobs[ind],ypred[ind])
-      rmsepop[k]=sqrt(mean((yobs[ind]-ypred[ind])^2,na.rm=T))
-    }
-    output$insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+    output$insampfitstatspop=getR2pop(yobs,ypred,pop)
+    output$insampfitstats["R2centered"]=getR2pop(yobs,ypred,pop,type = "centered")
+    output$insampfitstats["R2scaled"]=getR2pop(yobs,ypred,pop,type = "scaled")
   }
   
   output$inputs$m=md
@@ -234,8 +229,15 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
 }
 
 
-GPnlike_fish=function(b,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,xname="escapement",ytrans) {
+GPnlike_fish=function(b,bmax=NULL,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,xname="escapement",ytrans) {
   
+  #walls so b can't be outside of bounds
+  if(!is.null(bmax)) {
+    if(any(b<0) | any(b>bmax)) {
+      return(Inf)
+    }
+  }
+
   #extract variables
   md=data[,m,drop=F]
   hd=data[,h,drop=F]

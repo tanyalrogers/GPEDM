@@ -101,6 +101,33 @@
 #' \code{returnGPgrad = T}. If you want the in-sample gradient, pass the
 #' original (training) data as back in as \code{newdata}. It automatic scaling
 #' was used, the gradient will also be backtransformed to the original units.
+#' 
+#' \strong{Fit statistics:}
+#' 
+#' The R2 and other fit statistics are always computed for \code{y} in the units in which it was 
+#' supplied to the function. The R2 is specifically computed as:
+#' \deqn{R^2=1-SS_{err}/SS_{y}}
+#' which is equivalent to
+#' \deqn{R^2=1-MSE/Var_{y}}
+#' As a result, the returned R-squared may be negative, particularly for out-of-sample 
+#' predictions, which are not guaranteed to pass through the mean. A negative R2 indicates 
+#' that the model predictions are worse than just using the mean (MSE is larger than the variance).
+#' 
+#' If there are multiple populations, there will be a total R2, which is the R2
+#' across populations, as well as within-population R2 values. For the total R2,
+#' the denominator is the variance across all datapoints, ignoring population.
+#' Note that if the populations have very different local means, the total R2 can
+#' be potentially misleading because the across-population variance will be much
+#' larger than the within population variance, increasing R2 even if MSE is
+#' constant. Put another way, simply getting the local means right can
+#' explain a lot of the across-population variance even if there is 
+#' little prediction accuracy within a population. Very different local
+#' variances can cause similar issues. In this case, we would recommend looking at
+#' the within-population R2 values, or at one of the alternative R2 values provided
+#' in the fit stats: R2centered (total R2 with local means removed) or R2scaled (total R2 with
+#' local centering and scaling), which may be more accurate measures of
+#' performance than total R2 if the populations have very different local means
+#' and/or variances.
 #'
 #' @param data A data frame, or matrix with named columns.
 #' @param y The response variable (required). If \code{data} is supplied, a column name
@@ -161,7 +188,8 @@
 #'   (log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 #'   leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to 
 #'   the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-#'   comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.}
+#'   comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.
+#'   If there are multiple populations, also includes R2centered and R2scaled.}
 #' \item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
@@ -437,17 +465,10 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                           ln_post=-output$nllpost, ln_prior=output$lp,
                           lnL_LOO=output$lnL_LOO,df=output$df,SS=output$SS,logdet=output$logdet)
   if(length(unique(pop))>1) { #within site fit stats
-    up=unique(pop)
-    np=length(up)
-    R2pop<-rmsepop<-numeric(np)
-    names(R2pop)=up
-    names(rmsepop)=up
-    for(k in 1:np) {
-      ind=which(pop==up[k])
-      R2pop[k]=getR2(yd[ind],ypred[ind])
-      rmsepop[k]=sqrt(mean((yd[ind]-ypred[ind])^2,na.rm=T))
-    }
-    output$insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+    output$insampfitstatspop=getR2pop(yd,ypred,pop)
+    R2centered=getR2pop(yd,ypred,pop,type = "centered")
+    R2scaled=getR2pop(yd,ypred,pop,type = "scaled")
+    output$insampfitstats=c(output$insampfitstats,R2centered=R2centered,R2scaled=R2scaled)
   }
   
   output[c("lnL_LOO","df","nllpost","mean","cov","SS","logdet","lp")]=NULL #take these out of main list
@@ -1257,17 +1278,10 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     out$outsampfitstats=c(R2=getR2(ynew,ypred), 
                           rmse=sqrt(mean((ynew-ypred)^2,na.rm=T)))
     if(length(unique(popnew))>1) { #within site fit stats
-      up=unique(popnew)
-      np=length(up)
-      R2pop<-rmsepop<-numeric(np)
-      names(R2pop)=up
-      names(rmsepop)=up
-      for(k in 1:np) {
-        ind=which(popnew==up[k])
-        R2pop[k]=getR2(ynew[ind],ypred[ind]) 
-        rmsepop[k]=sqrt(mean((ynew[ind]-ypred[ind])^2,na.rm=T))
-      }
-      out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+      out$outsampfitstatspop=getR2pop(ynew,ypred,popnew)
+      R2centered=getR2pop(ynew,ypred,popnew,type = "centered")
+      R2scaled=getR2pop(ynew,ypred,popnew,type = "scaled")
+      out$outsampfitstats=c(out$outsampfitstats,R2centered=R2centered,R2scaled=R2scaled)
     }
   }
   if(returnGPgrad) {
@@ -1289,17 +1303,88 @@ logit=function(x, min=0, max=1) {
 #' 
 #' @details
 #' Returned R-squared might be negative. This indicates that the prediction is 
-#' worse than using the mean.
+#' worse than using the mean. This function specifically computes:
+#' \deqn{R^2=1-SS_{err}/SS_{y}}
+#' which is equivalent to
+#' \deqn{R^2=1-MSE/Var_{y}}
 #'
 #' @param obs Vector of observed values.
 #' @param pred Vector of predicted values.
 #' @return The R-squared value.
+#' @seealso \code{\link{getR2pop}}
 #' @export
 #' @keywords functions
 getR2=function(obs, pred) {
   d=na.omit(cbind(obs, pred))
   R2=1-sum((d[,1]-d[,2])^2)/sum((d[,1]-mean(d[,1]))^2)
   return(R2)
+}
+
+#' Calculate R-squared by population (and other stuff)
+#'
+#' Calculates R-squared values for each population. Can also compute modified 
+#' total R-squared values, with data centered and/or scaled within populations.
+#' This can provide a more useful total fit estimate if the populations have
+#' very different local means.
+#' 
+#' @details
+#' Returned R-squared might be negative. This indicates that the prediction is 
+#' worse than using the mean.
+#'
+#' @param obs Vector of observed values.
+#' @param pred Vector of predicted values.
+#' @param pop Vector of pop identifiers.
+#' @param type The type of R-squared to calculate: \code{"within"} (default) gets
+#'   within-population, \code{"centered"} gets across-population but with local means removed,
+#'   \code{"scaled"} get across-population but with local scaling (local means removed and 
+#'   rescaled to unit variance).
+#' @return If \code{type="within"}, a list of 2 named vectors with R-squared and rmse for
+#'   each populaiton. Otherwise a scalar (the R-squared).
+#' @seealso \code{\link{getR2}}
+#' @export
+#' @keywords functions
+getR2pop=function(obs, pred, pop, type=c("within","centered","scaled")) {
+  type=match.arg(type)
+  up=unique(pop)
+  np=length(up)
+  if(type=="within") {
+    R2pop<-rmsepop<-numeric(np)
+    names(R2pop)=up
+    names(rmsepop)=up
+    for(p in 1:np) {
+      ind=which(pop==up[p])
+      R2pop[p]=getR2(obs[ind],pred[ind])
+      rmsepop[p]=sqrt(mean((obs[ind]-pred[ind])^2,na.rm=T))
+    }
+    insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+    return(insampfitstatspop)
+  }
+  if(type=="centered") {
+    ymeans=tapply(obs,pop,mean,na.rm=T)
+    obs_s=obs
+    pred_s=pred
+    for(p in 1:length(up)) {
+      locmean=ymeans[as.character(up[p])==names(ymeans)]
+      obs_s[pop==up[p]]=(obs_s[pop==up[p]]-locmean)
+      pred_s[pop==up[p]]=(pred_s[pop==up[p]]-locmean)
+    }
+    R2=getR2(obs_s, pred_s)
+    return(R2)
+  }
+  if(type=="scaled") {
+    ymeans=tapply(obs,pop,mean,na.rm=T)
+    ysds=tapply(obs,pop,sd,na.rm=T)
+    obs_s=obs
+    pred_s=pred
+    for(p in 1:length(up)) {
+      locmean=ymeans[as.character(up[p])==names(ymeans)]
+      locsd=ysds[as.character(up[p])==names(ysds)]
+      obs_s[pop==up[p]]=(obs_s[pop==up[p]]-locmean)/locsd
+      pred_s[pop==up[p]]=(pred_s[pop==up[p]]-locmean)/locsd
+    }
+    R2=getR2(obs_s, pred_s)
+    return(R2)
+  }
 }
 
 #' Generate delay vectors

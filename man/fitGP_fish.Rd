@@ -23,7 +23,8 @@ fitGP_fish(
   newdata = NULL,
   xname = "escapement",
   ytrans = c("none", "log", "gr1", "gr2"),
-  bfixed = NULL
+  bfixed = NULL,
+  bshared = TRUE
 )
 }
 \arguments{
@@ -83,7 +84,14 @@ original model.}
 Either "none" (default), "log", "gr1", or "gr2". R2 is calculated on y in its original
 units.}
 
-\item{bfixed}{Fixes b and bypasses optimization.}
+\item{bfixed}{Fixes b and bypasses optimization. If there are multiple pops, can be
+a scalar (shared across pops), or a named vector with different b's for each pop.}
+
+\item{bshared}{If there are multiple pops, should they share the same b (TRUE,
+default) or have different values of b (FALSE)? Note that optimizing multiple b
+values can be slow. Ignored if \code{bfixed} is supplied. If \code{bshared=FALSE}
+and either \code{pop} is not supplied or there is only one pop, reverts back to a single b
+estimate.}
 }
 \value{
 A list (class GP and GPpred) with the same elements as \code{\link{fitGP}} and with
@@ -105,6 +113,15 @@ number of individuals remaining after harvesting (escapement).
 
 Parameter \eqn{b} is found using \code{optimize} applied to the posterior likelihood.
 Alternatively, a fixed value for \eqn{b} can be provided under \code{bfixed}.
+
+If fitting a hierarchical model, the default behavior is to estimate a single
+value of\eqn{b} shared by all pops (\code{bshared=TRUE}). You can fix a
+single shared value of \eqn{b} by providing a single value under
+\code{bfixed}. Alternatively, you can estimate different values of \eqn{b}
+for each population by setting \code{bshared=FALSE}. This will use the
+Nelder-Mead method of \code{optim} (and will be quite a bit slower than the
+single parameter optimization). You can fix different values of \eqn{b} for
+each population by supplying a named vector under \code{bfixed}.
 
 Parameter \code{ytrans} applies a transformation to \eqn{y} before fitting the model.
 Inputs \code{y} and \code{m} should be in untransformed CPUE. \code{ytrans="none"} (the

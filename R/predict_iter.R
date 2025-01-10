@@ -134,17 +134,10 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
       out$outsampfitstats=c(R2=getR2(outsampresults$obs,outsampresults$predmean), 
                             rmse=sqrt(mean((outsampresults$obs-outsampresults$predmean)^2,na.rm=T)))
       if(length(unique(outsampresults$pop))>1) { #within site fit stats
-        up=unique(outsampresults$pop)
-        np=length(up)
-        R2pop<-rmsepop<-numeric(np)
-        names(R2pop)=up
-        names(rmsepop)=up
-        for(k in 1:np) {
-          ind=which(outsampresults$pop==up[k])
-          R2pop[k]=getR2(outsampresults$obs[ind],outsampresults$predmean[ind]) 
-          rmsepop[k]=sqrt(mean((outsampresults$obs[ind]-outsampresults$predmean[ind])^2,na.rm=T))
-        }
-        out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+        out$outsampfitstatspop=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop)
+        R2centered=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop,type = "centered")
+        R2scaled=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop,type = "scaled")
+        out$outsampfitstats=c(out$outsampfitstats,R2centered=R2centered,R2scaled=R2scaled)
       }
     }
   }
@@ -157,13 +150,22 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
 #' Creates a lag matrix that can be used for making iterated predictions. 
 #' Runs \code{makelags} with specified parameters and \code{forecast=TRUE},
 #' then appends \code{nfore-1} empty rows for each pop with timesteps iterated by 1.
+#' Requires use of a dataframe and provision of column names.
 #' 
 #' @inheritParams makelags
+#' @param data A data frame
 #' @param nfore Number of steps to forecast
+#' @param y Vector of column names 
+#' @param pop Column name for pop. Optional.
+#' @param time Column name for time. Required.
 #' @param ... Additional arguments passed to makelags
 #' @return A data frame.
 #' @export
 #' @keywords functions
+#' @examples 
+#' RHfore2pop=makelags_iter(nfore=50, data=RickerHarvest, 
+#'   y=c("CPUE_index","Catch"), 
+#'   time="Time", tau=1, E=1, pop="Region")
 makelags_iter=function(data, nfore, y, pop=NULL, E, tau, time, ...) {
   skipcols=ifelse(is.null(pop), 1, 2)
   #use the forecast feature to create the first row

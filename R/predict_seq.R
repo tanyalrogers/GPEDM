@@ -89,17 +89,10 @@ predict_seq=function(object,newdata,restart.initpars=F,refit.b=F) {
   modelupdated$outsampfitstats=c(R2=getR2(outsampresults$obs,outsampresults$predmean), 
                                  rmse=sqrt(mean((outsampresults$obs-outsampresults$predmean)^2,na.rm=T)))
   if(length(unique(outsampresults$pop))>1) { #within site fit stats
-    up=unique(outsampresults$pop)
-    np=length(up)
-    R2pop<-rmsepop<-numeric(np)
-    names(R2pop)=up
-    names(rmsepop)=up
-    for(k in 1:np) {
-      ind=which(outsampresults$pop==up[k])
-      R2pop[k]=getR2(outsampresults$obs[ind],outsampresults$predmean[ind]) 
-      rmsepop[k]=sqrt(mean((outsampresults$obs[ind]-outsampresults$predmean[ind])^2,na.rm=T))
-    }
-    modelupdated$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+    modelupdated$outsampfitstatspop=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop)
+    R2centered=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop,type = "centered")
+    R2scaled=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop,type = "scaled")
+    modelupdated$outsampfitstats=c(modelupdated$outsampfitstats,R2centered=R2centered,R2scaled=R2scaled)
   }
 
   return(modelupdated)
