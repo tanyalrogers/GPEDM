@@ -67,7 +67,7 @@
 fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
                 scaling=c("global","local","none"),
                 initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
-                rhomatrix=NULL,augdata=NULL,
+                rhomatrix=NULL,augdata=NULL,linprior="none",
                 predictmethod=NULL,newdata=NULL,
                 xname="escapement",ytrans=c("none","log","gr1","gr2"),
                 bfixed=NULL,bshared=TRUE) {
@@ -114,7 +114,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
       boptim=optimize(GPnlike_fish, interval = c(0, bmax),
                       data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
                       initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
-                      rhomatrix=rhomatrix,augdata=augdata,xname=xname,ytrans=ytrans)
+                      rhomatrix=rhomatrix,augdata=augdata,linprior=linprior,xname=xname,ytrans=ytrans)
       #get value of b
       b=boptim$minimum
       
@@ -131,7 +131,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
       boptim=optim(parinits, GPnlike_fish, bmax=bmax, #lower=rep(0,np), upper=bmax,
                    data=data,y=y,m=m,h=h,z=z,pop=pop,time=time,scaling=scaling,
                    initpars=initpars,modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,
-                   rhomatrix=rhomatrix,augdata=augdata,xname=xname,ytrans=ytrans)
+                   rhomatrix=rhomatrix,augdata=augdata,linprior=linprior,xname=xname,ytrans=ytrans)
       #get value of b
       b=boptim$par
       if(any(b<0) | any(b>bmax)) {
@@ -187,7 +187,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
   if(!is.null(z)) { x=c(x,z) }
 
   output=fitGP(data=data,y=yt,x=x,pop=pop,time=time,scaling=scaling,initpars=initpars,
-             modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
+             modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata,linprior=linprior)
   output$b=b
   
   #backtransform predictions
@@ -229,7 +229,7 @@ fitGP_fish=function(data,y,m,h,z=NULL,pop=NULL,time=NULL,
 }
 
 
-GPnlike_fish=function(b,bmax=NULL,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,xname="escapement",ytrans) {
+GPnlike_fish=function(b,bmax=NULL,data,y,m,h,z,pop,time,scaling,initpars,modeprior,fixedpars,rhofixed,rhomatrix,augdata,linprior,xname="escapement",ytrans) {
   
   #walls so b can't be outside of bounds
   if(!is.null(bmax)) {
@@ -287,7 +287,7 @@ GPnlike_fish=function(b,bmax=NULL,data,y,m,h,z,pop,time,scaling,initpars,modepri
   
   #fit model
   mfit=fitGP(data=data,y=yt,x=x,pop=pop,time=time,scaling=scaling,initpars=initpars,
-             modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata)
+             modeprior=modeprior,fixedpars=fixedpars,rhofixed=rhofixed,rhomatrix=rhomatrix,augdata=augdata,linprior=linprior)
   
   #return posterior likelihood (negative)
   return(-mfit$insampfitstats["ln_post"])

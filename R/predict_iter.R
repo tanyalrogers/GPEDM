@@ -99,6 +99,10 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
     #get prediction
     pred[[i]]=predict(object, newdata=newdatai)$outsampresults
     preds=pred[[i]]
+    if(any(is.infinite(preds$predmean))) {
+      message("predicted y is infinite at timestep ", newtimes[i], ". Stopping iteration.")
+      break
+    }    
     #create new data row for each population
     #assumes all lags are present and evenly spaced
     if(i+1 <= length(newtimes)) {
@@ -124,8 +128,8 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   outsampresults=do.call(rbind, pred)
   out=list(outsampresults=outsampresults)
   if(!is.null(hrate)) {
-    order=as.numeric(rownames(outsampresults))
-    out$outsampresults=cbind(out$outsampresults,newdata[order,hlags,drop=F])
+    out$outsampresults=merge(out$outsampresults,newdata[,c(timename,popname,hlags),drop=F],
+                             by.x = c("timestep","pop"), by.y=c(timename, popname))
   }
   
   #return updated model and predictions
@@ -214,10 +218,15 @@ msy_wrapper=function(model, newdata, hratevec, tsave) {
     for(p in 1:length(up)){
       msyforei=subset(msyfore[[h]], pop==up[p])
       nfore=nrow(msyforei)
-      catchsavepop$catch[catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
-        msyforei[(nfore-tsave+1):nfore,catch_1]
-      catchsavepop$cpue[catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
-        msyforei$predmean[(nfore-tsave+1):nfore]
+      if(tsave>nfore) {
+        tsavei=nfore
+      } else {
+        tsavei=tsave
+      }
+      catchsavepop$catch[catchsavepop$time %in% 1:tsavei & catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
+        msyforei[(nfore-tsavei+1):nfore,catch_1]
+      catchsavepop$cpue[catchsavepop$time %in% 1:tsavei & catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
+        msyforei$predmean[(nfore-tsavei+1):nfore]
     }
   }
   catchforeall=do.call(rbind, msyfore)

@@ -169,6 +169,11 @@
 #'   All populations in the dataset must appear in \code{rhomatrix}. Populations in 
 #'   \code{rhomatrix} that are not in the dataset are allowed and will not be used.
 #' @param augdata A data frame with augmentation data (see Details).
+#' @param linprior Fit GP model to the residuals of a linear relationship
+#'   between \code{y} and the first variable of \code{x} (prior to scaling) and
+#'   backtransforms as appropriate. If \code{y} is growth rate, acts like a
+#'   Ricker prior. Defaults to \code{"none"}. Option \code{"local"} fits a separate 
+#'   regression for each population, \code{"global"} fits a single regression.
 #' @inheritParams predict.GP
 #'
 #' @return A list (class GP and GPpred) with the following elements:
@@ -182,6 +187,8 @@
 #' \code{x_names}, and the names of the lagged predictors corresponding to the
 #' inverse length scales will be stored under \code{x_names2}, provided these names exist.}
 #' \item{scaling}{Scaling information.}
+#' \item{linprior}{If \code{linprior} is not \code{"none"}, linear regression information. 
+#'   \code{linprior_mod} is an \code{lm} object.}
 #' \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
 #' \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post 
@@ -216,7 +223,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                rhomatrix=NULL,augdata=NULL,
                predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,
-               returnGPgrad=FALSE, exclradius=0) {
+               returnGPgrad=FALSE, exclradius=0, linprior=c("none","local","global")) {
 
   cl <- match.call()
   
@@ -241,6 +248,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     }
   }
   scaling <- match.arg(scaling)
+  linprior <- match.arg(linprior)
   
   inputs=list()
   
@@ -329,11 +337,30 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     primary=rep(T,length(y))
   }
   
+  #subtract linear prior
+  if(linprior=="none") {
+    ydresid=yd 
+  }
+  if(linprior=="global") {
+    regdf=data.frame(y=yd,x=xd[,1])
+    linprior_reg=lm(y~x, data=regdf)
+    ylinprior=yd*NA
+    ylinprior[!is.na(xd[,1])]=predict(linprior_reg)
+    ydresid=yd-ylinprior
+  }
+  if(linprior=="local") {
+    regdf=data.frame(y=yd,x=xd[,1],pop=as.factor(popd))
+    linprior_reg=lm(y~x*pop, data=regdf)
+    ylinprior=yd*NA
+    ylinprior[!is.na(xd[,1])]=predict(linprior_reg)
+    ydresid=yd-ylinprior
+  }
+  
   #rescale data
   if(scaling=="none") {
-    ymeans=mean(yd,na.rm=T)
-    ysds=sd(yd,na.rm=T)
-    yds=yd
+    ymeans=mean(ydresid,na.rm=T)
+    ysds=sd(ydresid,na.rm=T)
+    yds=ydresid
     xmeans=apply(xd,2,mean,na.rm=T)
     xsds=apply(xd,2,sd,na.rm=T)
     xds=xd
@@ -349,22 +376,22 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     }
   }
   if(scaling=="global") {
-    ymeans=mean(yd,na.rm=T)
-    ysds=sd(yd,na.rm=T)
-    yds=scale(yd)
+    ymeans=mean(ydresid,na.rm=T)
+    ysds=sd(ydresid,na.rm=T)
+    yds=scale(ydresid)
     xmeans=apply(xd,2,mean,na.rm=T)
     xsds=apply(xd,2,sd,na.rm=T)
     xds=apply(xd,2,scale)
   }
   if(scaling=="local") {
-    ymeans=tapply(yd,popd,mean,na.rm=T)
-    ysds=tapply(yd,popd,sd,na.rm=T)
+    ymeans=tapply(ydresid,popd,mean,na.rm=T)
+    ysds=tapply(ydresid,popd,sd,na.rm=T)
     xlist=split(as.data.frame(xd),popd)
     xmeans=lapply(xlist,function(x) apply(x,2,mean,na.rm=T))
     xsds=lapply(xlist,function(x) apply(x,2,sd,na.rm=T))
     up=unique(popd)
     xds=xd
-    yds=yd
+    yds=ydresid
     for(i in 1:length(up)) {
       locmean=ymeans[as.character(up[i])==names(ymeans)]
       locsd=ysds[as.character(up[i])==names(ysds)]
@@ -454,11 +481,19 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     }
   }
   
+  #add back in linear prior
+  if(linprior!="none") {
+    ypred=ypred+ylinprior
+  }
+  
   #create additional outputs
   output$inputs=c(inputs,list(y=y,x=x,yd=yd,xd=xd,pop=pop,time=time,
                               completerows=completerows,
                               Y=Y,X=X,Pop=Pop,Time=Time,Primary=Primary))
   output$scaling=list(scaling=scaling,ymeans=ymeans,ysds=ysds,xmeans=xmeans,xsds=xsds)
+  if(linprior!="none") {
+    output$linprior=list(linprior=linprior, linprior_reg=linprior_reg, ylinprior=ylinprior)
+  }
   output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predfsd=yfsd,predsd=ysd,obs=y)
   output$insampfitstats=c(R2=getR2(y,ypred),
                           rmse=sqrt(mean((y-ypred)^2,na.rm=T)),
@@ -1246,6 +1281,18 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
           gpgrad[popnew==up[i],j]=gpgrad[popnew==up[i],j]*locsd/locsdx
         }
       }
+    }
+  }
+  
+  #add back in linear prior
+  if(!is.null(object$linprior)) {
+    if(!is.null(xnew)) {
+      regdf_new=data.frame(x=xnew[,1],pop=popnew)
+      ynewlinprior=predict(object$linprior$linprior_reg, newdata=regdf_new)
+      ypred=ypred+ynewlinprior
+    } else {
+      ynewlinprior=object$linprior$ylinprior
+      ypred=ypred+ynewlinprior
     }
   }
   

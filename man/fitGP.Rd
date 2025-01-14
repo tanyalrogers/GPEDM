@@ -26,7 +26,8 @@ fitGP(
   timenew = NULL,
   ynew = NULL,
   returnGPgrad = FALSE,
-  exclradius = 0
+  exclradius = 0,
+  linprior = c("none", "local", "global")
 )
 }
 \arguments{
@@ -107,6 +108,12 @@ respect to each input. This is only computed for out-of-sample predictions using
 
 \item{exclradius}{For \code{predictmethod="loo"} and \code{predictmethod="lto"}, the number of points
 on either side of the focal point to leave out of the training data. Defaults to 0.}
+
+\item{linprior}{Fit GP model to the residuals of a linear relationship
+between \code{y} and the first variable of \code{x} (prior to scaling) and
+backtransforms as appropriate. If \code{y} is growth rate, acts like a
+Ricker prior. Defaults to \code{"none"}. Option \code{"local"} fits a separate
+regression for each population, \code{"global"} fits a single regression.}
 }
 \value{
 A list (class GP and GPpred) with the following elements:
@@ -120,6 +127,8 @@ the names of the predictors in the input data frame will be stored under
 \code{x_names}, and the names of the lagged predictors corresponding to the
 inverse length scales will be stored under \code{x_names2}, provided these names exist.}
 \item{scaling}{Scaling information.}
+\item{linprior}{If \code{linprior} is not \code{"none"}, linear regression information.
+\code{linprior_mod} is an \code{lm} object.}
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post

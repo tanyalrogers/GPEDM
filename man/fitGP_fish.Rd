@@ -19,6 +19,7 @@ fitGP_fish(
   rhofixed = NULL,
   rhomatrix = NULL,
   augdata = NULL,
+  linprior = "none",
   predictmethod = NULL,
   newdata = NULL,
   xname = "escapement",
@@ -70,6 +71,12 @@ All populations in the dataset must appear in \code{rhomatrix}. Populations in
 \code{rhomatrix} that are not in the dataset are allowed and will not be used.}
 
 \item{augdata}{A data frame with augmentation data (see Details).}
+
+\item{linprior}{Fit GP model to the residuals of a linear relationship
+between \code{y} and the first variable of \code{x} (prior to scaling) and
+backtransforms as appropriate. If \code{y} is growth rate, acts like a
+Ricker prior. Defaults to \code{"none"}. Option \code{"local"} fits a separate
+regression for each population, \code{"global"} fits a single regression.}
 
 \item{predictmethod}{Using the training data, \code{loo} does leave-one-out prediction, \code{lto} does
 leave-timepoint-out prediction, and \code{sequential} does sequential (leave-future-out)
