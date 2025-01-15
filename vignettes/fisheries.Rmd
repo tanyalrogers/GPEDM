@@ -501,6 +501,21 @@ plot(fishfit0_trans)
 plot(fishfit0_trans, ytrans = TRUE)
 ```
 
+## Linear prior mean function
+
+There is an option in `fitGP` (and `fitGP_fish`) called `linprior` which will fit a GP model to the residuals of a linear relationship between `y` and the first variable of `x` (prior to scaling) and backtransform as appropriate. Essentially, it fits the model
+$$y_t=\beta_0+\beta_1x_{1}+f(x_{1}, x_{2},...)$$
+where $f$ is the GP. In other words, the mean function for the GP is assumed to be linear with respect to the first input, rather than constant. The mean function is what the GP reverts to in the absence of data (the larger the inverse length scale is, the more quickly this happens), so altering it can potentially aid in problems with extrapolation. In a fisheries model, if `y` is growth rate (specifically the escapement-based growth rate, `"gr2"`), the first variable of `x` will be the first lag of escapement, and so this linear relationship at acts like a Ricker prior. Option `linprior="local"` fits a separate regression for each population, `"global"` fits a single regression. Defaults to `"none"` (off).
+
+In our example, the fitted function looks largely the same. The difference between this and the previous fit is mainly in what happens when you extrapolate beyond the range of the data. We can see it in the conditional response plot is we set `extrap` to a high number.
+
+```{r}
+fishfit0_lin=fitGP_fish(data=RHlags, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time",
+                          ytrans="gr2", linprior = "global")
+getconditionals(fishfit0_trans, extrap = 1)
+getconditionals(fishfit0_lin, extrap = 1)
+```
+
 ## References
 
 Tsai CH, Munch SB, Masi MD, Stevens MH (2024) Empirical dynamic modelling for sustainable benchmarks of short-lived species. ICES Journal of Marine Science
