@@ -245,6 +245,25 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
       }
     }
   }
+  
+  #add back in linear prior
+  if(!is.null(fit$linprior)) {
+    for(i in 1:np) {
+      regdf_new=data.frame(x=outlist[[i]]$xval[,1],pop=outlist[[i]]$poppred)
+      ynewlinprior=predict(fit$linprior$linprior_reg, newdata=regdf_new)
+      outlist[[i]]$predmean[,1]=outlist[[i]]$predmean[,1]+ynewlinprior
+      if(d>1) {
+        for(j in 2:d) {
+          if(scaling=="global") locmean1=xmeans[1]
+          if(scaling=="local") locmean1=xmeans[[which(as.character(up[i])==names(xmeans))]][1]
+          if(scaling=="none") locmean1=0
+          regdf_new=data.frame(x=rep(locmean1,nvals),pop=outlist[[i]]$poppred)
+          ynewlinprior=predict(fit$linprior$linprior_reg, newdata=regdf_new)
+          outlist[[i]]$predmean[,j]=outlist[[i]]$predmean[,j]+ynewlinprior
+        }
+      }
+    }
+  }
 
   if(!is.null(fit$inputs$x_names2)) { xlabels=fit$inputs$x_names2 } 
   else if(!is.null(fit$inputs$x_names)) { xlabels=fit$inputs$x_names }
