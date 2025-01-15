@@ -917,6 +917,8 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         x2=md-bvec*hd
         colnames(x2)=object$inputs$x_names[1:ncol(x2)]
         newdata=cbind(newdata,x2)
+      } else {
+        x2=newdata[object$inputs$x_names[1:length(object$inputs$m_names)]]
       }
       if(object$inputs$y0_names %in% colnames(newdata)) {
         #get transformed y
