@@ -500,9 +500,9 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                           ln_post=-output$nllpost, ln_prior=output$lp,
                           lnL_LOO=output$lnL_LOO,df=output$df,SS=output$SS,logdet=output$logdet)
   if(length(unique(pop))>1) { #within site fit stats
-    output$insampfitstatspop=getR2pop(yd,ypred,pop)
-    R2centered=getR2pop(yd,ypred,pop,type = "centered")
-    R2scaled=getR2pop(yd,ypred,pop,type = "scaled")
+    output$insampfitstatspop=getR2pop(y,ypred,pop)
+    R2centered=getR2pop(y,ypred,pop,type = "centered")
+    R2scaled=getR2pop(y,ypred,pop,type = "scaled")
     output$insampfitstats=c(output$insampfitstats,R2centered=R2centered,R2scaled=R2scaled)
   }
   
