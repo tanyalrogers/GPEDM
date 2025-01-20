@@ -88,6 +88,10 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   }
   up=unique(newdata[,popname])
   
+  if(length(b)==1 & length(up)>1) {
+    b=rep(b, length(up))
+  }
+  
   if(is.null(names(b))) {
     names(b)=up
   }
