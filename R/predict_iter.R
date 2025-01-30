@@ -62,6 +62,9 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   if(!is.null(object$inputs$E)) {
     stop("Lags must be pre-generated to use this function. See option A1 in help(fitGP).")
   }
+  if(!(object$inputs$time_names %in% colnames(newdata))) {
+    stop("Time column '",object$inputs$time_names, "' not found in newdata.")
+  }
   
   if(!is.null(object$b)) {  
     if(!is.null(xlags)) {
@@ -85,6 +88,10 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
     newdata$pop=1
   } else {
     popname=object$inputs$pop_names
+  }
+  
+  if(!(popname %in% colnames(newdata))) {
+    stop("Pop column '",popname, "' not found in newdata.")
   }
   up=unique(newdata[,popname])
   
