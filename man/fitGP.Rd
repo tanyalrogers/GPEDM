@@ -26,7 +26,8 @@ fitGP(
   timenew = NULL,
   ynew = NULL,
   returnGPgrad = FALSE,
-  exclradius = 0
+  exclradius = 0,
+  linprior = c("none", "local", "global")
 )
 }
 \arguments{
@@ -107,6 +108,12 @@ respect to each input. This is only computed for out-of-sample predictions using
 
 \item{exclradius}{For \code{predictmethod="loo"} and \code{predictmethod="lto"}, the number of points
 on either side of the focal point to leave out of the training data. Defaults to 0.}
+
+\item{linprior}{Fit GP model to the residuals of a linear relationship
+between \code{y} and the first variable of \code{x} (prior to scaling) and
+backtransforms as appropriate. If \code{y} is growth rate, acts like a
+Ricker prior. Defaults to \code{"none"}. Option \code{"local"} fits a separate
+regression for each population, \code{"global"} fits a single regression.}
 }
 \value{
 A list (class GP and GPpred) with the following elements:
@@ -120,13 +127,16 @@ the names of the predictors in the input data frame will be stored under
 \code{x_names}, and the names of the lagged predictors corresponding to the
 inverse length scales will be stored under \code{x_names2}, provided these names exist.}
 \item{scaling}{Scaling information.}
+\item{linprior}{If \code{linprior} is not \code{"none"}, linear regression information.
+\code{linprior_mod} is an \code{lm} object.}
 \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
 \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post
 (log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to
 the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.}
+comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.
+If there are multiple populations, also includes R2centered and R2scaled.}
 \item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 deviation of the GP function, \code{predsd} includes process error.}
@@ -239,6 +249,33 @@ time point with respect to each input can be obtained by setting
 \code{returnGPgrad = T}. If you want the in-sample gradient, pass the
 original (training) data as back in as \code{newdata}. It automatic scaling
 was used, the gradient will also be backtransformed to the original units.
+
+\strong{Fit statistics:}
+
+The R2 and other fit statistics are always computed for \code{y} in the units in which it was
+supplied to the function. The R2 is specifically computed as:
+\deqn{R^2=1-SS_{err}/SS_{y}}
+which is equivalent to
+\deqn{R^2=1-MSE/Var_{y}}
+As a result, the returned R-squared may be negative, particularly for out-of-sample
+predictions, which are not guaranteed to pass through the mean. A negative R2 indicates
+that the model predictions are worse than just using the mean (MSE is larger than the variance).
+
+If there are multiple populations, there will be a total R2, which is the R2
+across populations, as well as within-population R2 values. For the total R2,
+the denominator is the variance across all datapoints, ignoring population.
+Note that if the populations have very different local means, the total R2 can
+be potentially misleading because the across-population variance will be much
+larger than the within population variance, increasing R2 even if MSE is
+constant. Put another way, simply getting the local means right can
+explain a lot of the across-population variance even if there is
+little prediction accuracy within a population. Very different local
+variances can cause similar issues. In this case, we would recommend looking at
+the within-population R2 values, or at one of the alternative R2 values provided
+in the fit stats: R2centered (total R2 with local means removed) or R2scaled (total R2 with
+local centering and scaling), which may be more accurate measures of
+performance than total R2 if the populations have very different local means
+and/or variances.
 }
 \examples{
 yrand=rnorm(20)

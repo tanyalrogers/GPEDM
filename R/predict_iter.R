@@ -62,6 +62,9 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   if(!is.null(object$inputs$E)) {
     stop("Lags must be pre-generated to use this function. See option A1 in help(fitGP).")
   }
+  if(!(object$inputs$time_names %in% colnames(newdata))) {
+    stop("Time column '",object$inputs$time_names, "' not found in newdata.")
+  }
   
   if(!is.null(object$b)) {  
     if(!is.null(xlags)) {
@@ -86,7 +89,19 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   } else {
     popname=object$inputs$pop_names
   }
+  
+  if(!(popname %in% colnames(newdata))) {
+    stop("Pop column '",popname, "' not found in newdata.")
+  }
   up=unique(newdata[,popname])
+  
+  if(length(b)==1 & length(up)>1) {
+    b=rep(b, length(up))
+  }
+  
+  if(is.null(names(b))) {
+    names(b)=up
+  }
   
   pred=list()
   
@@ -95,6 +110,10 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
     #get prediction
     pred[[i]]=predict(object, newdata=newdatai)$outsampresults
     preds=pred[[i]]
+    if(any(is.infinite(preds$predmean))) {
+      message("predicted y is infinite at timestep ", newtimes[i], ". Stopping iteration.")
+      break
+    }    
     #create new data row for each population
     #assumes all lags are present and evenly spaced
     if(i+1 <= length(newtimes)) {
@@ -107,7 +126,7 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
         }
         #compute next catch
         if(!is.null(hrate)) {
-          newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],hlags[1]]=predsj/b*hrate
+          newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],hlags[1]]=predsj/b[as.character(up[j])]*hrate
           if(length(xlags)>1) {
             newdata[newdata[,timename]==newtimes[i+1] & newdata[,popname]==up[j],hlags[2:length(xlags)]]=
               newdata[newdata[,timename]==newtimes[i] & newdata[,popname]==up[j],hlags[1:(length(xlags)-1)]]
@@ -120,8 +139,8 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
   outsampresults=do.call(rbind, pred)
   out=list(outsampresults=outsampresults)
   if(!is.null(hrate)) {
-    order=as.numeric(rownames(outsampresults))
-    out$outsampresults=cbind(out$outsampresults,newdata[order,hlags,drop=F])
+    out$outsampresults=merge(out$outsampresults,newdata[,c(timename,popname,hlags),drop=F],
+                             by.x = c("timestep","pop"), by.y=c(timename, popname))
   }
   
   #return updated model and predictions
@@ -130,20 +149,165 @@ predict_iter=function(object,newdata,xlags=NULL,hrate=NULL) {
       out$outsampfitstats=c(R2=getR2(outsampresults$obs,outsampresults$predmean), 
                             rmse=sqrt(mean((outsampresults$obs-outsampresults$predmean)^2,na.rm=T)))
       if(length(unique(outsampresults$pop))>1) { #within site fit stats
-        up=unique(outsampresults$pop)
-        np=length(up)
-        R2pop<-rmsepop<-numeric(np)
-        names(R2pop)=up
-        names(rmsepop)=up
-        for(k in 1:np) {
-          ind=which(outsampresults$pop==up[k])
-          R2pop[k]=getR2(outsampresults$obs[ind],outsampresults$predmean[ind]) 
-          rmsepop[k]=sqrt(mean((outsampresults$obs[ind]-outsampresults$predmean[ind])^2,na.rm=T))
-        }
-        out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+        out$outsampfitstatspop=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop)
+        R2centered=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop,type = "centered")
+        R2scaled=getR2pop(outsampresults$obs,outsampresults$predmean,outsampresults$pop,type = "scaled")
+        out$outsampfitstats=c(out$outsampfitstats,R2centered=R2centered,R2scaled=R2scaled)
       }
     }
   }
   class(out)="GPpred"
   return(out)
 }
+
+#' Make lag matrix for iterated prediction
+#'
+#' Creates a lag matrix that can be used for making iterated predictions. 
+#' Runs \code{makelags} with specified parameters and \code{forecast=TRUE},
+#' then appends \code{nfore-1} empty rows for each pop with timesteps iterated by 1.
+#' Requires use of a dataframe and provision of column names.
+#' 
+#' @inheritParams makelags
+#' @param data A data frame
+#' @param nfore Number of steps to forecast
+#' @param y Vector of column names 
+#' @param pop Column name for pop. Optional.
+#' @param time Column name for time. Required.
+#' @param ... Additional arguments passed to makelags
+#' @return A data frame.
+#' @export
+#' @keywords functions
+#' @examples 
+#' RHfore2pop=makelags_iter(nfore=50, data=RickerHarvest, 
+#'   y=c("CPUE_index","Catch"), 
+#'   time="Time", tau=1, E=1, pop="Region")
+makelags_iter=function(data, nfore, y, pop=NULL, E, tau, time, ...) {
+  skipcols=ifelse(is.null(pop), 1, 2)
+  #use the forecast feature to create the first row
+  foremat1=makelags(data, y=y, pop=pop, time=time, tau=tau, E=E, forecast=T, ...)
+  #get remaining timepoints
+  if(is.null(pop)) {
+    foremat2=data.frame(time=(foremat1[1,time]+1):(foremat1[1,time]+nfore-1)) 
+    colnames(foremat2)=time
+  } else {
+    foremat2=expand.grid(time=(foremat1[1,time]+1):(foremat1[1,time]+nfore-1), pop=unique(data[,pop]))
+    colnames(foremat2)=c(time,pop)
+  }
+  #create empty matrix for future values
+  forecols=colnames(foremat1)[-(1:skipcols)]
+  foremat3=matrix(NA, nrow=nrow(foremat2), ncol=ncol(foremat1)-skipcols,
+                  dimnames=list(NULL,forecols))
+  #combine everything
+  foremat=rbind(foremat1,cbind(foremat2,foremat3))
+  return(foremat)
+}
+
+#' Wrapper for computing MSY from a "fisheries model"
+#'
+#' @param model A \code{fitGP_fish} model.
+#' @param newdata Data frame for iterated prediction, such as made with
+#'   \code{makelags_iter}.
+#' @param hratevec Vector of harvest rates
+#' @param tsave Number of timepoints to average over. Should not exceed nrow(newdata)
+#' 
+#' @export
+#' @keywords functions
+msy_wrapper=function(model, newdata, hratevec, tsave) {
+  
+  up=unique(model$inputs$pop)
+  catch_1=model$inputs$h_names[1]
+  
+  msyfore=list()
+  
+  catchsavepop=expand.grid(pop=up,time=1:tsave,hrate=hratevec)
+  catchsavepop$catch=NA
+  catchsavepop$cpue=NA
+  
+  for(h in seq_along(hratevec)) {
+    msyfore[[h]]=predict_iter(model, newdata = newdata, hrate = hratevec[h])$outsampresults
+    msyfore[[h]]=cbind.data.frame(hrate=hratevec[h],msyfore[[h]])
+    for(p in 1:length(up)){
+      msyforei=subset(msyfore[[h]], pop==up[p])
+      nfore=nrow(msyforei)
+      if(tsave>nfore) {
+        tsavei=nfore
+      } else {
+        tsavei=tsave
+      }
+      catchsavepop$catch[catchsavepop$time %in% 1:tsavei & catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
+        msyforei[(nfore-tsavei+1):nfore,catch_1]
+      catchsavepop$cpue[catchsavepop$time %in% 1:tsavei & catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
+        msyforei$predmean[(nfore-tsavei+1):nfore]
+    }
+  }
+  catchforeall=do.call(rbind, msyfore)
+  
+  #sum over pops (if more than one)
+  catchsavetotal=aggregate(cbind(catch,cpue)~hrate*time, data=catchsavepop, sum)
+  
+  #average over the last 10 timepoints (keeping split by pop)
+  catchsavepopmean=aggregate(cbind(catch,cpue)~hrate*pop, data=catchsavepop, mean)
+  
+  #average over last 10 timepoints (sum of pops)
+  catchsavetotalmean=aggregate(cbind(catch,cpue)~hrate, data=catchsavetotal, mean)
+  
+  fmsy=catchsavetotalmean$hrate[which.max(catchsavetotalmean$catch)]
+  Bmsy=catchsavetotalmean$cpue[which.max(catchsavetotalmean$catch)]
+  
+  return(list(catchforeall=catchforeall, catchsavepop=catchsavepop, 
+              catchsavetotal=catchsavetotal, catchsavepopmean=catchsavepopmean,
+              catchsavetotalmean=catchsavetotalmean, fmsy=fmsy, Bmsy=Bmsy))
+}
+
+# Multi-population long form (for reference)
+# up=unique(RHfore2pop$Region)
+# 
+# catchres=expand.grid(pop=up,time=1:tsave,hrate=hratevec)
+# catchres$catch=NA
+# catchres$cpue=NA
+# for(h in seq_along(hratevec)) {
+#   msyfore=predict_iter(fishfit2pop2, newdata = RHfore2pop, hrate = hratevec[h])$outsampresults
+#   for(p in 1:length(up)){
+#     msyforei=subset(msyfore, pop==up[p])
+#     catchres$catch[catchres$hrate==hratevec[h] & catchres$pop==up[p]]=
+#       msyforei$Catch_1[(nfore-tsave+1):nfore]
+#     catchres$cpue[catchres$hrate==hratevec[h] & catchres$pop==up[p]]=
+#       msyforei$predmean[(nfore-tsave+1):nfore]
+#   }
+# }
+# 
+# #average over the last 10 timepoints (keeping split by pop)
+# catchresagg=aggregate(cbind(catch,cpue)~hrate*pop, data=catchres, mean)
+# 
+# #if you might want to add together the values the pops, assuming they are in the same units
+# #sum over pops
+# catchrestotal=aggregate(cbind(catch,cpue)~hrate*time, data=catchres, sum)
+# #average over last 10 timepoints
+# catchresaggtotal=aggregate(cbind(catch,cpue)~hrate, data=catchrestotal, mean)
+# 
+# (fmsy=catchresaggtotal$hrate[which.max(catchresaggtotal$catch)])
+# (Bmsy=catchresaggtotal$cpue[which.max(catchresaggtotal$catch)])
+# 
+# #Total
+# par(mfrow=c(1,2),mar=c(4,4,2,1))
+# plot(catch~hrate, data=catchrestotal, col="gray")
+# lines(catch~hrate, data=catchresaggtotal, lwd=2, col="red")
+# abline(v=fmsy, col="red")
+# plot(cpue~hrate, data=catchrestotal, col="gray")
+# lines(cpue~hrate, data=catchresaggtotal, lwd=2, col="red")
+# abline(v=fmsy, col="red")
+# 
+# #Split up by pop
+# par(mfrow=c(1,2),mar=c(4,4,2,1))
+# plot(catch~hrate, data=catchres[catchres$pop==up[1],], col="tomato", ylim=range(catchres$catch))
+# points(catch~hrate, data=catchres[catchres$pop==up[2],], col="blue")
+# lines(catch~hrate, data=catchresagg[catchresagg$pop==up[1],], lwd=2, col="tomato")
+# lines(catch~hrate, data=catchresagg[catchresagg$pop==up[2],], lwd=2, col="blue")
+# abline(v=fmsy, col="black")
+# legend(x="topleft", legend = up, pch=1, col=c("tomato","blue"))
+# plot(cpue~hrate, data=catchres[catchres$pop==up[1],], col="red")
+# points(cpue~hrate, data=catchres[catchres$pop==up[2],], col="blue")
+# lines(cpue~hrate, data=catchresagg[catchresagg$pop==up[1],], lwd=2, col="red")
+# lines(cpue~hrate, data=catchresagg[catchresagg$pop==up[2],], lwd=2, col="blue")
+# abline(v=fmsy, col="black")
+# legend(x="topleft", legend = up, pch=1, col=c("red","blue"))

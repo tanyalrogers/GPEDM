@@ -21,6 +21,12 @@ pairs with missing values are removed before computations are done.
 }
 \details{
 Returned R-squared might be negative. This indicates that the prediction is
-worse than using the mean.
+worse than using the mean. This function specifically computes:
+\deqn{R^2=1-SS_{err}/SS_{y}}
+which is equivalent to
+\deqn{R^2=1-MSE/Var_{y}}
+}
+\seealso{
+\code{\link{getR2pop}}
 }
 \keyword{functions}

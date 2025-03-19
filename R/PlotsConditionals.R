@@ -11,7 +11,12 @@ summary.GP=function(object, ...) {
   d=ncol(object$inputs$X)
   cat("Number of predictors:",d,"\n")
   if(!is.null(object$b)) {
-    cat("Fisheries model b:",round(object$b, 5),"\n")
+    if(length(object$b)==1) {
+      cat("Fisheries model b:",round(object$b, 5),"\n")
+    } else {
+      cat("Fisheries model b:\n")
+      print.data.frame(data.frame(b=object$b), digits=5)
+    }
   }
   cat("Length scale parameters:\n")
   if(!is.null(object$inputs$x_names2)) {
@@ -237,6 +242,25 @@ getconditionals=function(fit,xrange="default", extrap=0.01, nvals=25, plot=T) {
         locmean=xmeans[[which(as.character(up[i])==names(xmeans))]][j]
         locsd=xsds[[which(as.character(up[i])==names(xsds))]][j]
         outlist[[i]]$xval[,j]=outlist[[i]]$xval[,j]*locsd+locmean
+      }
+    }
+  }
+  
+  #add back in linear prior
+  if(!is.null(fit$linprior)) {
+    for(i in 1:np) {
+      regdf_new=data.frame(x=outlist[[i]]$xval[,1],pop=outlist[[i]]$poppred)
+      ynewlinprior=predict(fit$linprior$linprior_reg, newdata=regdf_new)
+      outlist[[i]]$predmean[,1]=outlist[[i]]$predmean[,1]+ynewlinprior
+      if(d>1) {
+        for(j in 2:d) {
+          if(scaling=="global") locmean1=xmeans[1]
+          if(scaling=="local") locmean1=xmeans[[which(as.character(up[i])==names(xmeans))]][1]
+          if(scaling=="none") locmean1=0
+          regdf_new=data.frame(x=rep(locmean1,nvals),pop=outlist[[i]]$poppred)
+          ynewlinprior=predict(fit$linprior$linprior_reg, newdata=regdf_new)
+          outlist[[i]]$predmean[,j]=outlist[[i]]$predmean[,j]+ynewlinprior
+        }
       }
     }
   }

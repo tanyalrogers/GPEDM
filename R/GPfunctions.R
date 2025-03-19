@@ -101,6 +101,33 @@
 #' \code{returnGPgrad = T}. If you want the in-sample gradient, pass the
 #' original (training) data as back in as \code{newdata}. It automatic scaling
 #' was used, the gradient will also be backtransformed to the original units.
+#' 
+#' \strong{Fit statistics:}
+#' 
+#' The R2 and other fit statistics are always computed for \code{y} in the units in which it was 
+#' supplied to the function. The R2 is specifically computed as:
+#' \deqn{R^2=1-SS_{err}/SS_{y}}
+#' which is equivalent to
+#' \deqn{R^2=1-MSE/Var_{y}}
+#' As a result, the returned R-squared may be negative, particularly for out-of-sample 
+#' predictions, which are not guaranteed to pass through the mean. A negative R2 indicates 
+#' that the model predictions are worse than just using the mean (MSE is larger than the variance).
+#' 
+#' If there are multiple populations, there will be a total R2, which is the R2
+#' across populations, as well as within-population R2 values. For the total R2,
+#' the denominator is the variance across all datapoints, ignoring population.
+#' Note that if the populations have very different local means, the total R2 can
+#' be potentially misleading because the across-population variance will be much
+#' larger than the within population variance, increasing R2 even if MSE is
+#' constant. Put another way, simply getting the local means right can
+#' explain a lot of the across-population variance even if there is 
+#' little prediction accuracy within a population. Very different local
+#' variances can cause similar issues. In this case, we would recommend looking at
+#' the within-population R2 values, or at one of the alternative R2 values provided
+#' in the fit stats: R2centered (total R2 with local means removed) or R2scaled (total R2 with
+#' local centering and scaling), which may be more accurate measures of
+#' performance than total R2 if the populations have very different local means
+#' and/or variances.
 #'
 #' @param data A data frame, or matrix with named columns.
 #' @param y The response variable (required). If \code{data} is supplied, a column name
@@ -142,6 +169,11 @@
 #'   All populations in the dataset must appear in \code{rhomatrix}. Populations in 
 #'   \code{rhomatrix} that are not in the dataset are allowed and will not be used.
 #' @param augdata A data frame with augmentation data (see Details).
+#' @param linprior Fit GP model to the residuals of a linear relationship
+#'   between \code{y} and the first variable of \code{x} (prior to scaling) and
+#'   backtransforms as appropriate. If \code{y} is growth rate, acts like a
+#'   Ricker prior. Defaults to \code{"none"}. Option \code{"local"} fits a separate 
+#'   regression for each population, \code{"global"} fits a single regression.
 #' @inheritParams predict.GP
 #'
 #' @return A list (class GP and GPpred) with the following elements:
@@ -155,13 +187,16 @@
 #' \code{x_names}, and the names of the lagged predictors corresponding to the
 #' inverse length scales will be stored under \code{x_names2}, provided these names exist.}
 #' \item{scaling}{Scaling information.}
+#' \item{linprior}{If \code{linprior} is not \code{"none"}, linear regression information. 
+#'   \code{linprior_mod} is an \code{lm} object.}
 #' \item{insampresults}{Data frame with in-sample predictions. \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
 #' \item{insampfitstats}{Fit statistics for in-sample predictions. Includes R2, rmse, ln_post 
 #'   (log posterior likelihood evaluated at the mode), lnL_LOO (generalized cross-validation approximate
 #'   leave-one-out negative log likelihood), and df (estimated degrees of freedom, equal to 
 #'   the trace of the smoother matrix). lnL_LOO does not include the prior, so is not directly
-#'   comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.}
+#'   comparable to ln_post. For diagnostics, also includes likelihood components ln_prior, SS, logdet.
+#'   If there are multiple populations, also includes R2centered and R2scaled.}
 #' \item{insampfitstatspop}{If >1 population, fit statistics (R2 and rmse) for in-sample predictions by population.}
 #' \item{outsampresults}{Data frame with out-of-sample predictions (if requested). \code{predfsd} is the standard
 #' deviation of the GP function, \code{predsd} includes process error.}
@@ -188,7 +223,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
                rhomatrix=NULL,augdata=NULL,
                predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,
-               returnGPgrad=FALSE, exclradius=0) {
+               returnGPgrad=FALSE, exclradius=0, linprior=c("none","local","global")) {
 
   cl <- match.call()
   
@@ -213,6 +248,7 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     }
   }
   scaling <- match.arg(scaling)
+  linprior <- match.arg(linprior)
   
   inputs=list()
   
@@ -301,11 +337,30 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     primary=rep(T,length(y))
   }
   
+  #subtract linear prior
+  if(linprior=="none") {
+    ydresid=yd 
+  }
+  if(linprior=="global") {
+    regdf=data.frame(y=yd,x=xd[,1])
+    linprior_reg=lm(y~x, data=regdf)
+    ylinprior=yd*NA
+    ylinprior[!is.na(xd[,1])]=predict(linprior_reg)
+    ydresid=yd-ylinprior
+  }
+  if(linprior=="local") {
+    regdf=data.frame(y=yd,x=xd[,1],pop=as.factor(popd))
+    linprior_reg=lm(y~x*pop, data=regdf)
+    ylinprior=yd*NA
+    ylinprior[!is.na(xd[,1])]=predict(linprior_reg)
+    ydresid=yd-ylinprior
+  }
+  
   #rescale data
   if(scaling=="none") {
-    ymeans=mean(yd,na.rm=T)
-    ysds=sd(yd,na.rm=T)
-    yds=yd
+    ymeans=mean(ydresid,na.rm=T)
+    ysds=sd(ydresid,na.rm=T)
+    yds=ydresid
     xmeans=apply(xd,2,mean,na.rm=T)
     xsds=apply(xd,2,sd,na.rm=T)
     xds=xd
@@ -321,22 +376,22 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     }
   }
   if(scaling=="global") {
-    ymeans=mean(yd,na.rm=T)
-    ysds=sd(yd,na.rm=T)
-    yds=scale(yd)
+    ymeans=mean(ydresid,na.rm=T)
+    ysds=sd(ydresid,na.rm=T)
+    yds=scale(ydresid)
     xmeans=apply(xd,2,mean,na.rm=T)
     xsds=apply(xd,2,sd,na.rm=T)
     xds=apply(xd,2,scale)
   }
   if(scaling=="local") {
-    ymeans=tapply(yd,popd,mean,na.rm=T)
-    ysds=tapply(yd,popd,sd,na.rm=T)
+    ymeans=tapply(ydresid,popd,mean,na.rm=T)
+    ysds=tapply(ydresid,popd,sd,na.rm=T)
     xlist=split(as.data.frame(xd),popd)
     xmeans=lapply(xlist,function(x) apply(x,2,mean,na.rm=T))
     xsds=lapply(xlist,function(x) apply(x,2,sd,na.rm=T))
     up=unique(popd)
     xds=xd
-    yds=yd
+    yds=ydresid
     for(i in 1:length(up)) {
       locmean=ymeans[as.character(up[i])==names(ymeans)]
       locsd=ysds[as.character(up[i])==names(ysds)]
@@ -426,28 +481,29 @@ fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
     }
   }
   
+  #add back in linear prior
+  if(linprior!="none") {
+    ypred=ypred+ylinprior
+  }
+  
   #create additional outputs
   output$inputs=c(inputs,list(y=y,x=x,yd=yd,xd=xd,pop=pop,time=time,
                               completerows=completerows,
                               Y=Y,X=X,Pop=Pop,Time=Time,Primary=Primary))
   output$scaling=list(scaling=scaling,ymeans=ymeans,ysds=ysds,xmeans=xmeans,xsds=xsds)
+  if(linprior!="none") {
+    output$linprior=list(linprior=linprior, linprior_reg=linprior_reg, ylinprior=ylinprior)
+  }
   output$insampresults=data.frame(timestep=time,pop=pop,predmean=ypred,predfsd=yfsd,predsd=ysd,obs=y)
   output$insampfitstats=c(R2=getR2(y,ypred),
                           rmse=sqrt(mean((y-ypred)^2,na.rm=T)),
                           ln_post=-output$nllpost, ln_prior=output$lp,
                           lnL_LOO=output$lnL_LOO,df=output$df,SS=output$SS,logdet=output$logdet)
   if(length(unique(pop))>1) { #within site fit stats
-    up=unique(pop)
-    np=length(up)
-    R2pop<-rmsepop<-numeric(np)
-    names(R2pop)=up
-    names(rmsepop)=up
-    for(k in 1:np) {
-      ind=which(pop==up[k])
-      R2pop[k]=getR2(yd[ind],ypred[ind])
-      rmsepop[k]=sqrt(mean((yd[ind]-ypred[ind])^2,na.rm=T))
-    }
-    output$insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+    output$insampfitstatspop=getR2pop(y,ypred,pop)
+    R2centered=getR2pop(y,ypred,pop,type = "centered")
+    R2scaled=getR2pop(y,ypred,pop,type = "scaled")
+    output$insampfitstats=c(output$insampfitstats,R2centered=R2centered,R2scaled=R2scaled)
   }
   
   output[c("lnL_LOO","df","nllpost","mean","cov","SS","logdet","lp")]=NULL #take these out of main list
@@ -852,9 +908,17 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
         md=newdata[,object$inputs$m_names,drop=F]
         hd=newdata[,object$inputs$h_names,drop=F]
         #compute composite variable in newdata
-        x2=md-b*hd
+        if(length(b)>1) {
+          popvec=newdata[,object$inputs$pop_names]
+          bvec=b[match(popvec, names(b))]
+        } else { #if only one population
+          bvec=rep(b, nrow(md))
+        }
+        x2=md-bvec*hd
         colnames(x2)=object$inputs$x_names[1:ncol(x2)]
         newdata=cbind(newdata,x2)
+      } else {
+        x2=newdata[object$inputs$x_names[1:length(object$inputs$m_names)]]
       }
       if(object$inputs$y0_names %in% colnames(newdata)) {
         #get transformed y
@@ -1222,6 +1286,18 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     }
   }
   
+  #add back in linear prior
+  if(!is.null(object$linprior)) {
+    if(!is.null(xnew)) {
+      regdf_new=data.frame(x=xnew[,1],pop=popnew)
+      ynewlinprior=predict(object$linprior$linprior_reg, newdata=regdf_new)
+      ypred=ypred+ynewlinprior
+    } else {
+      ynewlinprior=object$linprior$ylinprior
+      ypred=ypred+ynewlinprior
+    }
+  }
+  
   #probably need to output xnew (combine with table?, only if 1 predictor?)
   out=list(outsampresults=data.frame(timestep=timenew,pop=popnew,predmean=ypred,predfsd=yfsd,predsd=ysd))
   if(!is.null(ynew)) { out$outsampresults=cbind(out$outsampresults, obs=ynew) }
@@ -1251,17 +1327,10 @@ predict.GP=function(object,predictmethod=c("loo","lto","sequential"),newdata=NUL
     out$outsampfitstats=c(R2=getR2(ynew,ypred), 
                           rmse=sqrt(mean((ynew-ypred)^2,na.rm=T)))
     if(length(unique(popnew))>1) { #within site fit stats
-      up=unique(popnew)
-      np=length(up)
-      R2pop<-rmsepop<-numeric(np)
-      names(R2pop)=up
-      names(rmsepop)=up
-      for(k in 1:np) {
-        ind=which(popnew==up[k])
-        R2pop[k]=getR2(ynew[ind],ypred[ind]) 
-        rmsepop[k]=sqrt(mean((ynew[ind]-ypred[ind])^2,na.rm=T))
-      }
-      out$outsampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+      out$outsampfitstatspop=getR2pop(ynew,ypred,popnew)
+      R2centered=getR2pop(ynew,ypred,popnew,type = "centered")
+      R2scaled=getR2pop(ynew,ypred,popnew,type = "scaled")
+      out$outsampfitstats=c(out$outsampfitstats,R2centered=R2centered,R2scaled=R2scaled)
     }
   }
   if(returnGPgrad) {
@@ -1283,17 +1352,88 @@ logit=function(x, min=0, max=1) {
 #' 
 #' @details
 #' Returned R-squared might be negative. This indicates that the prediction is 
-#' worse than using the mean.
+#' worse than using the mean. This function specifically computes:
+#' \deqn{R^2=1-SS_{err}/SS_{y}}
+#' which is equivalent to
+#' \deqn{R^2=1-MSE/Var_{y}}
 #'
 #' @param obs Vector of observed values.
 #' @param pred Vector of predicted values.
 #' @return The R-squared value.
+#' @seealso \code{\link{getR2pop}}
 #' @export
 #' @keywords functions
 getR2=function(obs, pred) {
   d=na.omit(cbind(obs, pred))
   R2=1-sum((d[,1]-d[,2])^2)/sum((d[,1]-mean(d[,1]))^2)
   return(R2)
+}
+
+#' Calculate R-squared by population (and other stuff)
+#'
+#' Calculates R-squared values for each population. Can also compute modified 
+#' total R-squared values, with data centered and/or scaled within populations.
+#' This can provide a more useful total fit estimate if the populations have
+#' very different local means.
+#' 
+#' @details
+#' Returned R-squared might be negative. This indicates that the prediction is 
+#' worse than using the mean.
+#'
+#' @param obs Vector of observed values.
+#' @param pred Vector of predicted values.
+#' @param pop Vector of pop identifiers.
+#' @param type The type of R-squared to calculate: \code{"within"} (default) gets
+#'   within-population, \code{"centered"} gets across-population but with local means removed,
+#'   \code{"scaled"} get across-population but with local scaling (local means removed and 
+#'   rescaled to unit variance).
+#' @return If \code{type="within"}, a list of 2 named vectors with R-squared and rmse for
+#'   each populaiton. Otherwise a scalar (the R-squared).
+#' @seealso \code{\link{getR2}}
+#' @export
+#' @keywords functions
+getR2pop=function(obs, pred, pop, type=c("within","centered","scaled")) {
+  type=match.arg(type)
+  up=unique(pop)
+  np=length(up)
+  if(type=="within") {
+    R2pop<-rmsepop<-numeric(np)
+    names(R2pop)=up
+    names(rmsepop)=up
+    for(p in 1:np) {
+      ind=which(pop==up[p])
+      R2pop[p]=getR2(obs[ind],pred[ind])
+      rmsepop[p]=sqrt(mean((obs[ind]-pred[ind])^2,na.rm=T))
+    }
+    insampfitstatspop=list(R2pop=R2pop,rmsepop=rmsepop)
+    return(insampfitstatspop)
+  }
+  if(type=="centered") {
+    ymeans=tapply(obs,pop,mean,na.rm=T)
+    obs_s=obs
+    pred_s=pred
+    for(p in 1:length(up)) {
+      locmean=ymeans[as.character(up[p])==names(ymeans)]
+      obs_s[pop==up[p]]=(obs_s[pop==up[p]]-locmean)
+      pred_s[pop==up[p]]=(pred_s[pop==up[p]]-locmean)
+    }
+    R2=getR2(obs_s, pred_s)
+    return(R2)
+  }
+  if(type=="scaled") {
+    ymeans=tapply(obs,pop,mean,na.rm=T)
+    ysds=tapply(obs,pop,sd,na.rm=T)
+    obs_s=obs
+    pred_s=pred
+    for(p in 1:length(up)) {
+      locmean=ymeans[as.character(up[p])==names(ymeans)]
+      locsd=ysds[as.character(up[p])==names(ysds)]
+      obs_s[pop==up[p]]=(obs_s[pop==up[p]]-locmean)/locsd
+      pred_s[pop==up[p]]=(pred_s[pop==up[p]]-locmean)/locsd
+    }
+    R2=getR2(obs_s, pred_s)
+    return(R2)
+  }
 }
 
 #' Generate delay vectors

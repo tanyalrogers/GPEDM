@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(GPEDM)
+library(ggplot2)
 ```
 
 ## Introduction
@@ -80,6 +81,91 @@ summary(fishfit)
 getconditionals(fishfit)
 ```
 
+## Multiple populations
+
+If you have multiple regions (populations), each with their own CPUE index and Catch values, you can fit a hierarchical model using `fitGP_fish` in the same way as `fitGP`. The default behavior is to assume that $b$ is the same for both population (`bshared=TRUE`). Supplying a single value under `bfixed` will use the same fixed value for all populations. 
+
+To estimate separate $b$ values for each population, set `bshared=FALSE`. This will use the Nelder-Mead method of `stats::optim`, which will be quite a bit slower than the single $b$ optimization, so more than 3 populations would not be recommended. You can fix different values of $b$ for each population by supplying a named vector under `bfixed`.
+
+If using different values of $b$, be sure to use `scaling="local"` because the values are assumed to be in different units by virtue of having different catchabilities, but the dynamics should be proportional. You may want to check whether the combined model actually produces better within-population fits than the models fit separately. If there are sufficient data, there is a good chance it will not.
+
+The sample dataset contains time series for a second region B, where the true value of $b$ is 0.005. It also has a different catch history.
+
+```{r sampledataB, fig.height=3}
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(Catch~Time, data=RickerHarvestB, type="l", main="Region B")
+plot(CPUE_index~Time, data=RickerHarvestB, type="l", main="Region B")
+```
+
+A separate model fith to region B:
+
+```{r modelfitB}
+#model for region B
+RHlagsB=makelags(RickerHarvestB, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, append=T)
+zeropin=data.frame(Time=0,CPUE_index=0,CPUE_index_1=0,Catch_1=0)
+
+fishfitB=fitGP_fish(data=RHlagsB, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time",
+                    augdata=zeropin)
+summary(fishfitB)
+```
+
+A hierarchical model assuming a single $b$ value:
+
+```{r hier1}
+RHlags2pop=makelags(RickerHarvest, y=c("CPUE_index","Catch"), time="Time", 
+                    pop = "Region", tau=1, E=1, append=T)
+zeropin=data.frame(Region=c("A","B"),Time=0,CPUE_index=0,CPUE_index_1=0,Catch_1=0)
+
+#model assuming a shared b
+fishfit2pop1=fitGP_fish(data=RHlags2pop, y="CPUE_index", m="CPUE_index_1", h="Catch_1",
+                        pop="Region", time="Time", scaling = "local", augdata = zeropin)
+summary(fishfit2pop1)
+```
+
+A hierarchical model assuming separate values of $b$ (estimated):
+
+```{r hier2}
+#model assuming separate b values (takes a while to run)
+fishfit2pop2=fitGP_fish(data=RHlags2pop, y="CPUE_index", m="CPUE_index_1", h="Catch_1",
+                        pop="Region", time="Time", scaling = "local", augdata = zeropin,
+                        bshared = FALSE)
+summary(fishfit2pop2)
+```
+
+A hierarchical model assuming separate values of $b$ (fixed):
+
+```{r hier3}
+#model assuming separate b values (fixed values)
+b=c(A=0.01, B=0.005)
+fishfit2pop2f=fitGP_fish(data=RHlags2pop, y="CPUE_index", m="CPUE_index_1", h="Catch_1",
+                        pop="Region", time="Time", scaling = "local", augdata = zeropin,
+                        bfixed = b)
+summary(fishfit2pop2f)
+getconditionals(fishfit2pop2f)
+```
+
+If more flexibility is required or you want to do something more elaborate, below is code for how you could calculate escapement externally given some value(s) of $b$, and fit a regular `fitGP` to the escapement values. The example below fits the same model as above (with $b$ fixed).
+
+```{r combomodel, fig.height=3}
+bA=0.01
+bB=0.005
+RHlags$escapement_1=RHlags$CPUE_index_1-RHlags$Catch_1*bA
+RHlagsB$escapement_1=RHlagsB$CPUE_index_1-RHlagsB$Catch_1*bB
+
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(CPUE_index~escapement_1, data=RHlags, main="Region A")
+plot(CPUE_index~escapement_1, data=RHlagsB, main="Region B")
+```
+
+```{r combomodel2}
+RHlagscombo=rbind(RHlags, RHlagsB)
+zeropin=data.frame(Region=c("A","B"),Time=0,CPUE_index=0,escapement_1=0)
+
+fishfitcombo=fitGP(data=RHlagscombo, y="CPUE_index", x="escapement_1", time="Time",
+                   pop="Region", scaling="local", augdata=zeropin)
+summary(fishfitcombo)
+```
+
 ## Getting MSY using iterated prediction
 
 Given a fitted fisheries model, the steady state catch and biomass given a certain harvest rate can be obtained using iterated prediction. This can be done using the `predict_iter` function. Similar to `predict`, you supply a `newdata` data frame, which (for a one-population model) should contain the `time`, `m`, and `h` columns. You also supply a harvest rate `hrate` from 0 to 1, which indicates the proportion of predicted CPUE biomass to be harvested. 
@@ -93,144 +179,224 @@ In `newdata`, only the first timepoint (row) for `m` and `h` needs to be filled 
 nfore=50
 
 #use the forecast feature to create the first row
-RHfore=makelags(RickerHarvestA, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, forecast=T)
+RHfore1=makelags(RickerHarvestA, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, forecast=T)
 #get remaining timepoints. use expand.grid here if you have multiple populations.
-RHfore2=data.frame(Time=(RHfore$Time[1]+1):(RHfore$Time[1]+nfore-1)) 
+RHfore2=data.frame(Time=(RHfore1$Time[1]+1):(RHfore1$Time[1]+nfore-1)) 
 #create empty matrix for future values
 RHfore3=matrix(NA, nrow=nrow(RHfore2), ncol=2,
                dimnames=list(NULL,c("CPUE_index_1","Catch_1")))
 #combine everything
-RHfore=rbind(RHfore,cbind(RHfore2,RHfore3))
+RHfore=rbind(RHfore1,cbind(RHfore2,RHfore3))
 
 head(RHfore)
+```
 
+Since that is kind of annoying, I have written a wrapper for it called `makelags_iter`. The arguments are the same as `makelags` but you specify `nfore` and it makes the matrix above.
+
+```{r}
+RHfore=makelags_iter(nfore=50, data=RickerHarvestA, y=c("CPUE_index","Catch"), 
+                     time="Time", tau=1, E=1)
+head(RHfore)
+```
+
+This matrix can be passed to `predict_iter`, specifying a harvest rate.
+
+```{r}
 msyfore=predict_iter(fishfit, newdata = RHfore, hrate = 0.5)
 ```
 
-The resulting escapement and catch values will be included in the `outsampresults` table.
+The output of `predict_iter` can be passed to `plot` if desired, which will plot CPUE (y). Note that there will not be any observed values. The resulting escapement and catch values will be included in the `outsampresults` table.
 
 ```{r msy2, fig.height=3}
-head(msyfore$outsampresults)
+plot(msyfore)
 
-par(mfrow=c(1,2),mar=c(4,4,2,1))
-plot(predmean~timestep, data=msyfore$outsampresults, type="l")
-plot(Catch_1~timestep, data=msyfore$outsampresults, type="l")
+head(msyfore$outsampresults)
+```
+
+For a given harvest rate, may be valuable to plot the projection alongside the past values.
+
+```{r msyplots1, fig.height=3}
+#CPUE
+ggplot(msyfore$outsampresults, aes(x=timestep, y=predmean)) +
+  geom_line(size=1) + #iterated predictions
+  geom_line(data=fishfit$insampresults) + ylab("CPUE") + #past predictions
+  geom_point(data=fishfit$insampresults, aes(y=obs)) #observed values
+#Catch
+ggplot(msyfore$outsampresults, aes(x=timestep, y=Catch_1)) +
+  geom_line(size=1) +
+  geom_line(data=RHlags, aes(x=Time)) #past catches
+#Escapement
+ggplot(msyfore$outsampresults, aes(x=timestep, y=escapement_1)) +
+  geom_line(size=1) +
+  geom_line(data=fishfit$insampresults) #past escapements
 ```
 
 Evaluating the steady state catch across a range of `hrate` values allows you to obtain the maximum sustainable yield (MSY), associated fishing rate (f_MSY), and associated CPUE indexed biomass (proportional to B_MSY). In the example below, we make iterated predictions for 50 timesteps as above, but record just the last 10 values. Since the resulting time series in this example can exhibit chaos and cycles, we then take the average over those values for each harvest rate.
 
 ```{r msy3, fig.height=3}
 #vector of harvest rates
-hratevec=seq(0,1,length.out=40)
+hratevec=seq(0,1,length.out=30)
 #number of timepoints to save
 tsave=10
 
-catchres=expand.grid(time=1:tsave,hrate=hratevec)
-catchres$catch=NA
-catchres$cpue=NA
+catchsave=expand.grid(time=1:tsave,hrate=hratevec)
+catchsave$catch=NA
+catchsave$cpue=NA
 for(i in seq_along(hratevec)) {
   msyfore=predict_iter(fishfit, newdata = RHfore, hrate = hratevec[i])
   #note that the next 2 lines only work if there is one population
-  catchres$catch[catchres$hrate==hratevec[i]]=msyfore$outsampresults$Catch_1[(nfore-tsave+1):nfore]
-  catchres$cpue[catchres$hrate==hratevec[i]]=msyfore$outsampresults$predmean[(nfore-tsave+1):nfore]
+  catchsave$catch[catchsave$hrate==hratevec[i]]=
+    msyfore$outsampresults$Catch_1[(nfore-tsave+1):nfore]
+  catchsave$cpue[catchsave$hrate==hratevec[i]]=
+    msyfore$outsampresults$predmean[(nfore-tsave+1):nfore]
 }
 
 #average over the last 10 timepoints
-catchresagg=aggregate(cbind(catch,cpue)~hrate, data=catchres, mean)
-(fmsy=catchresagg$hrate[which.max(catchresagg$catch)])
-(Bmsy=catchresagg$cpue[which.max(catchresagg$catch)])
+catchsavemean=aggregate(cbind(catch,cpue)~hrate, data=catchsave, mean)
+(fmsy=catchsavemean$hrate[which.max(catchsavemean$catch)])
+(Bmsy=catchsavemean$cpue[which.max(catchsavemean$catch)])
 
 par(mfrow=c(1,2),mar=c(4,4,2,1))
-plot(catch~hrate, data=catchres, col="gray")
-lines(catch~hrate, data=catchresagg, lwd=2, col="red")
+plot(catch~hrate, data=catchsave, col="gray")
+lines(catch~hrate, data=catchsavemean, lwd=2, col="red")
 abline(v=fmsy, col="red")
-plot(cpue~hrate, data=catchres, col="gray")
-lines(cpue~hrate, data=catchresagg, lwd=2, col="red")
+plot(cpue~hrate, data=catchsave, col="gray")
+lines(cpue~hrate, data=catchsavemean, lwd=2, col="red")
 abline(v=fmsy, col="red")
+```
+
+Here's a wrapper for all of that as well. Since there is only one population here, the 'total' and 'pop' output tables are identical. The ones you really care about are `catchforeall` which are all the predictions, `catchsavetotal` which are the last `tsave` predictions, and `catchsavetotalmean` which is the average of the last `tsave` predictions.
+
+```{r msy3.5, fig.height=3}
+hratevec=seq(0,1,length.out=30)
+msyout=msy_wrapper(model=fishfit, newdata = RHfore, hratevec = hratevec, tsave = 10)
+msyout$fmsy
+msyout$Bmsy
+
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(catch~hrate, data=msyout$catchsavetotal, col="gray")
+lines(catch~hrate, data=msyout$catchsavetotalmean, lwd=2, col="red")
+abline(v=msyout$fmsy, col="red")
+plot(cpue~hrate, data=msyout$catchsavetotal, col="gray")
+lines(cpue~hrate, data=msyout$catchsavetotalmean, lwd=2, col="red")
+abline(v=msyout$fmsy, col="red")
+```
+
+Let's look at the trajectory for the population at fmsy.
+
+```{r msyplots2, fig.height=3}
+#you can get this either by rerunning predict_iter
+msytraj=predict_iter(fishfit, newdata = RHfore, hrate = fmsy)$outsampresults
+#or if you have used the msy_wrapper, you can get it out or the catchforeall table
+msytraj=subset(msyout$catchforeall, hrate==fmsy)
+
+#CPUE
+ggplot(msytraj, aes(x=timestep, y=predmean)) +
+  geom_line(size=1) + #iterated predictions
+  geom_line(data=fishfit$insampresults) + ylab("CPUE") + #past predictions
+  geom_point(data=fishfit$insampresults, aes(y=obs)) #observed values
+#Catch
+ggplot(msytraj, aes(x=timestep, y=Catch_1)) +
+  geom_line(size=1) +
+  geom_line(data=RHlags, aes(x=Time))
+#Escapement
+ggplot(msytraj, aes(x=timestep, y=escapement_1)) +
+  geom_line(size=1) +
+  geom_line(data=fishfit$insampresults)
+```
+
+Let's compare this to the true analytical solution for this model using the simulation parameters.
+
+```{r msy4, fig.height=3}
+r=3; K=1000
+q=0.01 #catchability b
+tbiomass=K/(1-hratevec)*(r-log(1/(1-hratevec))) #steady state biomass
+tcpue=q*tbiomass
+tcatch=hratevec*tbiomass
+
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(catch~hrate, data=msyout$catchsavetotalmean, type="l", lwd=2, col="red")
+lines(tcatch~hratevec, lwd=2, col="cornflowerblue")
+abline(v=msyout$fmsy, col="red")
+legend(x="topleft", legend = c("EDM","true"), col=c("red","cornflowerblue"), lwd=2, cex=0.8)
+plot(cpue~hrate, data=msyout$catchsavetotalmean, type="l", lwd=2, col="red")
+lines(tcpue~hratevec, lwd=2, col="cornflowerblue")
+abline(v=msyout$fmsy, col="red")
+legend(x="topleft", legend = c("EDM","true"), col=c("red","cornflowerblue"), lwd=2, cex=0.8)
 ```
 
 It is also possible to set this up using a constant catch value rather than constant catch rate. To do this, omit `hrate` and fill all the catch rows and columns in `newdata` with a constant value. In this example with chaotic dynamics, this can lead to negative escapement, so it was not done here.
-
-## Multiple populations
-
-The `fitGP_fish` model can only have a single value of $b$. If you have multiple regions (populations), each with their own CPUE index and Catch values, you can fit a hierarchical model using `fitGP_fish` in the same way as `fitGP`, but the catchability will be assumed the same for both regions. If you have reason to believe this is not the case (e.g. different survey methods are used in each region, so the units of CPUE are not the same), one solution is to fit models separately for each region and obtain separate estimates for $b$. 
-
-The sample dataset contains time series for a second region B, where the true value of $b$ is 0.005. It also has a different catch history.
-
-```{r sampledataB, fig.height=3}
-par(mfrow=c(1,2),mar=c(4,4,2,1))
-plot(Catch~Time, data=RickerHarvestB, type="l", main="Region B")
-plot(CPUE_index~Time, data=RickerHarvestB, type="l", main="Region B")
-```
-
-```{r modelfitB}
-#model for region B
-RHlagsB=makelags(RickerHarvestB, y=c("CPUE_index","Catch"), time="Time", tau=1, E=1, append=T)
-zeropin=data.frame(Time=0,CPUE_index=0,CPUE_index_1=0,Catch_1=0)
-
-fishfitB=fitGP_fish(data=RHlagsB, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time",
-                    augdata=zeropin)
-summary(fishfitB)
-```
-
-If you felt the need to combine these into a single hierarchical model, you could fix the values of $b$ for each population, calculate escapement, and fit a regular `fitGP` to the escapement values. Be sure to use `scaling="local"` because the values are assumed to be in different units by virtue of having different catchabilities, but the dynamics should be proportional. You may want to check whether the combined model actually produces better within-population fits than the models fit separately. If there are sufficient data, there is a good chance it will not.
-
-```{r combomodel, fig.height=3}
-bA=fishfit$b
-bB=fishfitB$b
-RHlags$escapement_1=RHlags$CPUE_index_1-RHlags$Catch_1*bA
-RHlagsB$escapement_1=RHlagsB$CPUE_index_1-RHlagsB$Catch_1*bB
-
-par(mfrow=c(1,2),mar=c(4,4,2,1))
-plot(CPUE_index~escapement_1, data=RHlags, main="Region A")
-plot(CPUE_index~escapement_1, data=RHlagsB, main="Region B")
-
-#alternatively, you could pull escapement out of the insampresults table, 
-#or use it to double check your math
-
-head(fishfit$insampresults)
-
-head(RHlags)
-```
-
-```{r combomodel2}
-RHlagscombo=rbind(RHlags, RHlagsB)
-zeropin=data.frame(Region=c("A","B"),Time=0,CPUE_index=0,escapement_1=0)
-
-fishfitcombo=fitGP(data=RHlagscombo, y="CPUE_index", x="escapement_1", time="Time",
-                   pop="Region", scaling="local", augdata=zeropin)
-summary(fishfitcombo)
-
-getconditionals(fishfitcombo)
-```
 
 ## MSY with multiple populations
 
 If you have a multi-population `fitGP_fish` model that assumes a single values of $b$, or if you are using separate `fitGP_fish` models for each population, you should be able to use `predict_iter` as above, but will need to keep track of the predictions for each population and decide if you want to add them together or not.
 
-If you have a multi-population `fitGP` model with fixed $b$ values for each population, this gets a little tricky, since `predict_iter` is only designed to work with one value of $b$. You will probably have to write a custom loop, like below. This is mostly the internal code of `predict_iter` but with some modification.
+At present, the harvest rate is assumed the same for all populations. This may change in the future.
+
+```{r msy2pop1}
+#make the forecast matrix
+RHfore2pop=makelags_iter(nfore=50, data=RickerHarvest, y=c("CPUE_index","Catch"), 
+                         time="Time", tau=1, E=1, pop="Region")
+head(RHfore2pop)
+```
+
+Plots of the trajectories for a given harvest rate:
+
+```{r msyplots3, fig.height=3}
+msyfore2pop=predict_iter(fishfit2pop2, newdata = RHfore2pop, hrate = 0.5)
+head(msyfore2pop$outsampresults)
+
+#CPUE
+ggplot(msyfore2pop$outsampresults, aes(x=timestep, y=predmean, color=pop, group=pop)) +
+  geom_line(size=1) +
+  geom_line(data=fishfit2pop2$insampresults) + ylab("CPUE") +
+  geom_point(data=fishfit2pop2$insampresults, aes(y=obs))
+#Catch
+ggplot(msyfore2pop$outsampresults, aes(x=timestep, y=Catch_1, color=pop, group=pop)) +
+  geom_line(size=1) +
+  geom_line(data=RHlags2pop, aes(x=Time, color=Region, group=Region))
+#Escapement
+ggplot(msyfore2pop$outsampresults, aes(x=timestep, y=escapement_1, color=pop, group=pop)) +
+  geom_line(size=1) +
+  geom_line(data=fishfit2pop2$insampresults)
+```
+
+Evaluate a grid of harvest rates to obtain MSY using the wrapper. Since there are multiple populations, the 'total' and 'pop' tables will be different. The MSY estimates reported by the function are based on `catchsavetotalmean`, but you could compute population specific estimates if desired.
+
+```{r msy2pop2, fig.height=3}
+hratevec=seq(0,1,length.out=30)
+msyout2pop=msy_wrapper(model=fishfit2pop2, newdata = RHfore2pop, hratevec = hratevec, tsave = 10)
+msyout2pop$fmsy
+msyout2pop$Bmsy
+
+#Total
+par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(catch~hrate, data=msyout2pop$catchsavetotal, col="gray")
+lines(catch~hrate, data=msyout2pop$catchsavetotalmean, lwd=2, col="red")
+abline(v=msyout2pop$fmsy, col="red")
+plot(cpue~hrate, data=msyout2pop$catchsavetotal, col="gray")
+lines(cpue~hrate, data=msyout2pop$catchsavetotalmean, lwd=2, col="red")
+abline(v=msyout2pop$fmsy, col="red")
+
+#Split up by pop
+ggplot(msyout2pop$catchsavepop, aes(x=hrate, y=catch, color=pop)) +
+  geom_point(alpha=0.5) +
+  geom_line(data=msyout2pop$catchsavepopmean, size=1) +
+  geom_vline(xintercept = msyout2pop$fmsy, color="black")
+ggplot(msyout2pop$catchsavepop, aes(x=hrate, y=cpue, color=pop)) +
+  geom_point(alpha=0.5) +
+  geom_line(data=msyout2pop$catchsavepopmean, size=1) +
+  geom_vline(xintercept = msyout2pop$fmsy, color="black")
+```
+
+If you are computing escapement externally, you will probably have to write a custom loop, like below. This is mostly the internal code of `predict_iter` but with some modification.
 
 ```{r combomsy}
-#number of timesteps to iterate
-nfore=50
-
-#use the forecast feature to create the first row
-RHforecombo=makelags(RickerHarvest, y=c("CPUE_index","Catch"), time="Time", 
-                     pop="Region", tau=1, E=1, forecast=T)
-#get remaining timepoints
-RHforecombo2=expand.grid(Time=(RHforecombo$Time[1]+1):(RHforecombo$Time[1]+nfore-1),
-                         Region=unique(RickerHarvest$Region))
-#create empty matrix for future values
-RHforecombo3=matrix(NA, nrow=nrow(RHforecombo2), ncol=2,
-                    dimnames=list(NULL,c("CPUE_index_1","Catch_1")))
-#combine everything
-RHforecombo=rbind(RHforecombo,cbind(RHforecombo2,RHforecombo3))
-
 #calculate escapement
-RHforecombo$b=ifelse(RHforecombo$Region=="A", bA, bB)
-RHforecombo$escapement_1=RHforecombo$CPUE_index_1-RHforecombo$Catch_1*RHforecombo$b
+RHfore2pop$b=ifelse(RHfore2pop$Region=="A", bA, bB)
+RHfore2pop$escapement_1=RHfore2pop$CPUE_index_1-RHfore2pop$Catch_1*RHfore2pop$b
 
-head(RHforecombo)
+head(RHfore2pop)
 
 #vector of harvest rates
 hratevec=seq(0,1,length.out=40)
@@ -243,19 +409,19 @@ timename="Time"
 object=fishfitcombo
 xlags="CPUE_index_1"
 hlags="Catch_1"
-newtimes=unique(RHforecombo[,timename])
-up=unique(RHforecombo[,popname])
+newtimes=unique(RHfore2pop[,timename])
+up=unique(RHfore2pop[,popname])
 
 #setup final data frame
-catchres=expand.grid(Region=up,time=1:tsave,hrate=hratevec)
-catchres$catch=NA
-catchres$cpue=NA
+catchsavepop=expand.grid(pop=up,time=1:tsave,hrate=hratevec)
+catchsavepop$catch=NA
+catchsavepop$cpue=NA
 
 pred=list()
 
 for(h in seq_along(hratevec)) {
   
-  newdata=RHforecombo
+  newdata=RHfore2pop
   hrate = hratevec[h]
   
   #iterated prediction loop
@@ -291,31 +457,27 @@ for(h in seq_along(hratevec)) {
   msyfore=cbind(msyfore,newdata[,hlags,drop=F])
   
   #pull out last tsave timepoints for each population
-  for(i in 1:length(up)){
-    msyforei=subset(msyfore, pop==up[i])
-    catchres$catch[catchres$hrate==hratevec[h] & catchres$Region==up[i]]=
-      msyforei$Catch_1[(nfore-tsave+1):nfore]
-    catchres$cpue[catchres$hrate==hratevec[h] & catchres$Region==up[i]]=
+  for(p in 1:length(up)){
+    msyforei=subset(msyfore, pop==up[p])
+    nfore=nrow(msyforei)
+    catchsavepop$catch[catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
+      msyforei[(nfore-tsave+1):nfore,hlags[1]]
+    catchsavepop$cpue[catchsavepop$hrate==hratevec[h] & catchsavepop$pop==up[p]]=
       msyforei$predmean[(nfore-tsave+1):nfore]
   }
 }
 
-#add two regions together (could keep separate if desired)
-#this is more relevant for catch than cpue, since cpue are in different units and sum is not really interpretable
-catchresagg0=aggregate(cbind(catch,cpue)~hrate*time, data=catchres, sum)
+#sum over pops (if more than one)
+catchsavetotal=aggregate(cbind(catch,cpue)~hrate*time, data=catchsavepop, sum)
 
-#average over the last 10 timepoints
-catchresagg=aggregate(cbind(catch,cpue)~hrate, data=catchresagg0, mean)
-(fmsy=catchresagg$hrate[which.max(catchresagg$catch)])
-(Bmsy=catchresagg$cpue[which.max(catchresagg$catch)])
+#average over the last 10 timepoints (keeping split by pop)
+catchsavepopmean=aggregate(cbind(catch,cpue)~hrate*pop, data=catchsavepop, mean)
 
-par(mfrow=c(1,2),mar=c(4,4,2,1))
-plot(catch~hrate, data=catchresagg0, col="gray")
-lines(catch~hrate, data=catchresagg, lwd=2, col="red")
-abline(v=fmsy, col="red")
-plot(cpue~hrate, data=catchresagg0, col="gray")
-lines(cpue~hrate, data=catchresagg, lwd=2, col="red")
-abline(v=fmsy, col="red")
+#average over last 10 timepoints (sum of pops)
+catchsavetotalmean=aggregate(cbind(catch,cpue)~hrate, data=catchsavetotal, mean)
+
+(fmsy=catchsavetotalmean$hrate[which.max(catchsavetotalmean$catch)])
+(Bmsy=catchsavetotalmean$cpue[which.max(catchsavetotalmean$catch)])
 ```
 
 ## Data transformations
@@ -339,6 +501,21 @@ plot(fishfit0_trans)
 plot(fishfit0_trans, ytrans = TRUE)
 ```
 
+## Linear prior mean function
+
+There is an option in `fitGP` (and `fitGP_fish`) called `linprior` which will fit a GP model to the residuals of a linear relationship between `y` and the first variable of `x` (prior to scaling) and backtransform as appropriate. Essentially, it fits the model
+$$y_t=\beta_0+\beta_1x_{1}+f(x_{1}, x_{2},...)$$
+where $f$ is the GP. In other words, the mean function for the GP is assumed to be linear with respect to the first input, rather than constant. The mean function is what the GP reverts to in the absence of data (the larger the inverse length scale is, the more quickly this happens), so altering it can potentially aid in problems with extrapolation. In a fisheries model, if `y` is growth rate (specifically the escapement-based growth rate, `"gr2"`), the first variable of `x` will be the first lag of escapement, and so this linear relationship at acts like a Ricker prior. Option `linprior="local"` fits a separate regression for each population, `"global"` fits a single regression. Defaults to `"none"` (off).
+
+In our example, the fitted function looks largely the same. The difference between this and the previous fit is mainly in what happens when you extrapolate beyond the range of the data. We can see it in the conditional response plot is we set `extrap` to a high number.
+
+```{r}
+fishfit0_lin=fitGP_fish(data=RHlags, y="CPUE_index", m="CPUE_index_1", h="Catch_1", time="Time",
+                          ytrans="gr2", linprior = "global")
+getconditionals(fishfit0_trans, extrap = 1)
+getconditionals(fishfit0_lin, extrap = 1)
+```
+
 ## References
 
-Tsai CH, Munch SB, Masi MD, Stevens MH (in press) Empirical dynamic modelling for sustainable benchmarks of short-lived species: an example of brown shrimp fisheries in the Gulf of Mexico. ICES Journal of Marine Science
+Tsai CH, Munch SB, Masi MD, Stevens MH (2024) Empirical dynamic modelling for sustainable benchmarks of short-lived species. ICES Journal of Marine Science
