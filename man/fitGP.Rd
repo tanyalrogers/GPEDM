@@ -184,7 +184,7 @@ should NOT contain missing values.
 
 \strong{Hyperparameters:}
 
-The model uses a squared exponential covariance function. See the (not yet written)
+The model uses a squared exponential covariance function. See the "Extended introduction"
 vignette for mathematical details.
 
 There is one inverse length scale \code{phi} estimated for each predictor

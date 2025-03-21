@@ -1,7 +1,7 @@
 Package: GPEDM
 Title: Gaussian Process regression for Empirical Dynamic Modeling
-Version: 0.0.0.9009
-Date: 2024-07-08
+Version: 0.0.0.9010
+Date: 2025-03-19
 Authors@R: 
     c(person(given = "Stephan",
            family = "Munch",
@@ -20,7 +20,7 @@ License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.2
 LinkingTo: 
     Rcpp
 Imports: 

@@ -28,7 +28,7 @@
 #'   with the default initspars each time (TRUE). Starting at the last values can reduce the number 
 #'   of iterations required, saving time, but might trap you in a local minimum.
 #' @param refit.b If a "fisheries model", should the b parameter be refit at each iteration? 
-#'   Defaults to FALSE (b fixed to value in oroginal model).
+#'   Defaults to FALSE (b fixed to value in original model).
 #' @return A list (class GP and GPpred) with the same elements as \code{\link{fitGP}}. 
 #'   The model information will be for the final model including all of the original training
 #'   data plus \code{newdata}. The \code{outsampresults} and \code{outsampfitstats} will be

@@ -7,6 +7,7 @@ output: github_document
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
+  warning = FALSE,
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%"
@@ -24,7 +25,7 @@ This is version `r packageVersion("GPEDM")`
 
 This package contains functions for fiting hierarchical, separable length scale Gaussian process (GP) models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.  
 
-The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary` to view a summary, `predict` to generate other or additional predictions from a fitted model, `plot` to plot observed and predicted values, `update` to update an existing model, and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See [Specifying training data] and the function documentation for more detailed instructions.
+The main function is `fitGP` which is used to train the model and can also produce predictions if desired. Use `summary` to view a summary, `predict` to generate other or additional predictions from a fitted model, `plot` to plot observed and predicted values, `update` to update an existing model, and `getconditionals` to obtain conditional reponses. Also available for use are the functions `makelags` which can be used to create delay vectors, and `getR2` for getting R2 values. See [Specifying training data] and the function documentation for more detailed instructions. For a longer introductory tutorial with more mathematical details see [this vignette](https://tanyalrogers.github.io/GPEDM/articles/extendedintro.html)
 
 ## Installation
 

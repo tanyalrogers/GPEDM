@@ -17,7 +17,7 @@ with the default initspars each time (TRUE). Starting at the last values can red
 of iterations required, saving time, but might trap you in a local minimum.}
 
 \item{refit.b}{If a "fisheries model", should the b parameter be refit at each iteration?
-Defaults to FALSE (b fixed to value in oroginal model).}
+Defaults to FALSE (b fixed to value in original model).}
 }
 \value{
 A list (class GP and GPpred) with the same elements as \code{\link{fitGP}}.

@@ -1,6 +1,7 @@
 ---
 title: "Variable Timestep Method"
 output: rmarkdown::html_vignette
+toc: true
 vignette: >
   %\VignetteIndexEntry{Variable Timestep Method}
   %\VignetteEngine{knitr::rmarkdown}

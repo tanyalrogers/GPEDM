@@ -1,3 +1,10 @@
+# GPEDM 0.0.0.9010
+* Allow multiple b values when fitting fisheries models.
+* Add alternate R2 values for hier models.
+* All `linprior` option to `fitGP`.
+* Bug fixes in fisheries model.
+* Add 2 vignettes (extended introduction, practical).
+
 # GPEDM 0.0.0.9009
 * Add `exclradius` to `predict.GP` options. 
 

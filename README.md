@@ -9,7 +9,7 @@
 **Disclaimer: This is very much a work in progress. Use at your own risk
 and please report any problems.**
 
-This is version 0.0.0.9009
+This is version 0.0.0.9010
 
 This package contains functions for fiting hierarchical, separable
 length scale Gaussian process (GP) models with automatic relevance
@@ -25,7 +25,9 @@ an existing model, and `getconditionals` to obtain conditional reponses.
 Also available for use are the functions `makelags` which can be used to
 create delay vectors, and `getR2` for getting R2 values. See [Specifying
 training data](#specifying-training-data) and the function documentation
-for more detailed instructions.
+for more detailed instructions. For a longer introductory tutorial with
+more mathematical details see [this
+vignette](https://tanyalrogers.github.io/GPEDM/articles/extendedintro.html)
 
 ## Installation
 
@@ -145,7 +147,6 @@ ggplot(tlogtest$insampresults,aes(x=timestep,y=predmean)) +
   geom_line() + geom_ribbon(aes(ymin=predmean-predfsd,ymax=predmean+predfsd), alpha=0.4) +
   geom_point(aes(y=obs)) +
   theme_bw()
-#> Warning: Removed 3 rows containing missing values (geom_path).
 ```
 
 <img src="man/figures/README-ggplot-timeseries-1.png" width="100%" />
@@ -358,7 +359,6 @@ ggplot(tlogfore$insampresults,aes(x=timestep,y=predmean)) +
   geom_errorbar(data=tlogfore$outsampresults,
                 aes(ymin=predmean-predsd,ymax=predmean+predsd),color="red") +
   theme_bw()
-#> Warning: Removed 3 rows containing missing values (geom_path).
 ```
 
 <img src="man/figures/README-forecast-1.png" width="100%" />
@@ -654,14 +654,14 @@ framework for missing or irregular samples. Ecological Modelling,
 
 ## Disclaimer
 
-The United States Department of Commerce (DOC) GitHub project code is
-provided on an ‘as is’ basis and the user assumes responsibility for its
-use. DOC has relinquished control of the information and no longer has
-responsibility to protect the integrity, confidentiality, or
-availability of the information. Any claims against the Department of
-Commerce stemming from the use of its GitHub project will be governed by
-all applicable Federal law. Any reference to specific commercial
-products, processes, or services by service mark, trademark,
+“This repository is a scientific product and is not official
+communication of the National Oceanic and Atmospheric Administration, or
+the United States Department of Commerce. All NOAA GitHub project code
+is provided on an ‘as is’ basis and the user assumes responsibility for
+its use. Any claims against the Department of Commerce or Department of
+Commerce bureaus stemming from the use of this GitHub project will be
+governed by all applicable Federal law. Any reference to specific
+commercial products, processes, or services by service mark, trademark,
 manufacturer, or otherwise, does not constitute or imply their
 endorsement, recommendation or favoring by the Department of Commerce.
 The Department of Commerce seal and logo, or the seal and logo of a DOC

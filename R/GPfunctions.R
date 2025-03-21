@@ -36,7 +36,7 @@
 #' 
 #' \strong{Hyperparameters:} 
 #' 
-#' The model uses a squared exponential covariance function. See the (not yet written)
+#' The model uses a squared exponential covariance function. See the "Extended introduction"
 #' vignette for mathematical details.
 #' 
 #' There is one inverse length scale \code{phi} estimated for each predictor
@@ -1555,6 +1555,7 @@ makelags=function(data=NULL,y,pop=NULL,E,tau,yname=NULL,
   
   #if data frame is supplied, take columns from it and store names
   if(!is.null(data)) {
+    data=as.data.frame(data)
     yname=y
     y=data[,y]
     if(!is.null(x)) { 
