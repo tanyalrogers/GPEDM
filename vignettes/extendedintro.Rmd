@@ -48,7 +48,7 @@ There are basically two ways to specify a model structure.
 
 **Custom Lags Method:** Construct the lags yourself externally, and supply the exact response variable and the exact collection of predictor variables to use. The model fitting function will use those directly. This allows for the most flexibility and customization, in that you can use any response variable and any collection of lag predictors from any number of variables. 
 
-The timesteps (each row in your data table) are *evenly spaced* and *in chronological order*, otherwise the automatic lag construction will not work properly.
+The timesteps (each row in your data table) have to be *evenly spaced* and *in chronological order*, otherwise the automatic lag construction will not work properly.
 
 The model fitting function is `fitGP`. The data are supplied to these functions under `data`. Here's a table of the most important parameters.
 
@@ -92,7 +92,7 @@ Predicting with the GP has two stages (for a given `E` and `tau` or set of predi
 
 The training data are supplied under `data` in `fitGP`. Test data are supplied (in a separate data frame) under `newdata` in either `predict` or `fitGP`. The column names used in the model need to appear in both `data` and `newdata`. This is similar to making predictions from other models in R. 
 
-To get predicted values using leave-one-out cross-validation, set `predictmethod = "loo"` in either `predict` or `fitGP`. This will conduct leave-one-out over all of the training data. There are also a couple other `predictmethod` options built in. The option `lto` (leave-timepoint-out) is the same as leave-one-out except that is leaves out all points from a given time (only relevant if there are multiple populations). For both `"loo"` and `"lto"`, an exclusion radius (Theiler window) can be set using `exclradius` (default to 0). The option `sequential` makes a prediction for each time point in the training data, leaving out all future time points.  Note that in all of these methods, training data are iteratively omitted for the predictions, but the hyperparameter values used are those obtained using all of the training data (the model is not refit).
+To get predicted values using leave-one-out cross-validation, set `predictmethod = "loo"` in either `predict` or `fitGP`. This will conduct leave-one-out over all of the training data. There are also a couple other `predictmethod` options built in. The option `lto` (leave-timepoint-out) is the same as leave-one-out except that is leaves out all points from a given time (only relevant if there are multiple populations). For both `"loo"` and `"lto"`, an exclusion radius (Theiler window) can be set using `exclradius` (defaults to 0). The option `sequential` makes a prediction for each time point in the training data, leaving out all future time points.  Note that in all of these methods, training data are iteratively omitted for the predictions, but the hyperparameter values used are those obtained using all of the training data (the model is not refit).
 
 The function `predict_seq` also generates predictions for a data frame `newdata`, but sequentially adds each new observation to the training data and refits the model. This simulates a real-time forecasting application. This prediction method is similar to `predictmethod="sequential"` (leave-future-out), but in this case, the future time points are not included in the training data used to obtain the hyperparameters. It is also similar to the train/test split using newdata, but in this case, the training data and model hyperparameters are sequentially updated with each timestep. This method is definitely slower than just fitting the hyperparameters once, but can be worth doing to avoid annoying reviewer comments.
 
@@ -100,9 +100,9 @@ For iterated multistep predictions, check out the function `predict_iter`.
 
 ## Example data
 
-Our example dataset will be the chaotic 3-species Hastings-Powell model. There are simulated data from this model included in the `GPEDM` package. We will add a bit of observation noise to the data (Fig. \ref{fig:dataplot}).
+Our example dataset will be the chaotic 3-species Hastings-Powell model. There are simulated data from this model included in the `GPEDM` package. We will add a bit of observation noise to the data.
 
-```{r dataplot, fig.width=5, fig.height=4, fig.cap="\\label{fig:dataplot} Time series from the Hastings-Powell model with added observation noise."}
+```{r dataplot, fig.width=5, fig.height=4}
 head(HastPow3sp)
 n=nrow(HastPow3sp)
 set.seed(1)
@@ -141,7 +141,7 @@ gp_out1 <- fitGP(data = HPtrain, time = "Time",
 
 The `summary` function quickly gives you the fitted values of the inverse length scales `phi` for each predictor, the variance terms, the $R^2$ value for the training data (`In-sample R-squared`), and the $R^2$ value for the test data (`Out-of-sample R-squared`) if test data were provided. A crude plot of the observed and predicted values can be obtained using `plot`. By default, `plot` will plot the out-of-sample predictions (for the test data, or the leave-one-out predictions if requested) if available. 
 
-```{r gpplot, fig.width=7, fig.height=3, fig.cap="\\label{fig:gpplot} Observed and predicted values from a GP model."}
+```{r gpplot, fig.width=7, fig.height=3}
 summary(gp_out1)
 
 plot(gp_out1)
@@ -170,7 +170,7 @@ gp_out1$outsampfitstats
 
 If you wanted to make predictions for another test dataset, say the next 100 values, you can use `predict` rather than refit the model. The function `plot` will work on this output as well. The function `summary` will not, but you can access the fit statistics and predictions directly.
 
-```{r predict, fig.width=7, fig.height=3, fig.cap="\\label{fig:gpplot} Observed and predicted values from a GP model for a second test dataset."}
+```{r predict, fig.width=7, fig.height=3}
 HPtest2 <- HastPow3sp[301:400,]
 pred1 <- predict(gp_out1, newdata = HPtest2)
 
@@ -181,7 +181,7 @@ head(pred1$outsampresults, 10)
 
 Note that the first `E*tau` values are missing, which will happen when using the E/tau Method, since data prior to the start of the test dataset are unknown. This can be prevented using the Custom Lags Method. This approach also allows you to change the forecast horizon by changing the lags used. For instance, if you wanted to use a forecast horizon of 3 with a `tau` of 2, you would change the lags to 3, 5, and 7. 
 
-```{r gp2a, fig.width=7, fig.height=3, fig.cap="\\label{fig:gp2a} Observed and predicted values from a GP model. This uses the Custom Lags Method."}
+```{r gp2a, fig.width=7, fig.height=3}
 #Custom Lags Method with training/test split
 HastPow3sp_lags=makelags(data = HastPow3sp, y = "X", E = 3, tau = 2, append = T)
 colnames(HastPow3sp_lags)
@@ -200,7 +200,7 @@ plot(gp_out2a)
 
 To use leave-one-out on whatever dataset is in `data`, set `predictmethod = "loo"`, and set `exclradius` if necessary. The predictions will also be under `outsampresults`. Note that predicting using leave-one-out is slower than predicting for `newdata` because each prediction requires a matrix inversion (because the training data change with the removal of each point). Predicting with `newdata` requires no matrix inversions and is very quick. 
 
-```{r gp2b, fig.width=7, fig.height=3, fig.cap="\\label{fig:gp2b} Observed and predicted values from a GP model. This uses the Custom Lags Method and leave-one-out."}
+```{r gp2b, fig.width=7, fig.height=3}
 #Custom Lags Method with leave one out
 HastPow3sp_lags=makelags(data = HastPow3sp, y = "X", E = 3, tau = 2, append = T)
 colnames(HastPow3sp_lags)
@@ -266,7 +266,7 @@ The `fitGP` and `makelags` are designed to accept data from multiple populations
 
 As an example, here are some simulated data from 2 populations (`PopA` and `PopB`) with theta logistic dynamics. The data contain some small lognormal process noise, and the populations have different theta values.
 
-```{r data, fig.width=7, fig.height=3, fig.cap="\\label{fig:data} Time series from two simulated populations with theta logistic dynamics."}
+```{r data, fig.width=7, fig.height=3}
 head(thetalog2pop)
 pA=subset(thetalog2pop,Population=="PopA")
 pB=subset(thetalog2pop,Population=="PopB")
@@ -293,7 +293,7 @@ From the summary, we can see that ARD has (perhaps unsurprisingly) deemed lags 2
 
 Here's a plot.
 
-```{r hierplot, fig.cap="\\label{fig:hierplot} Observed and predicted values from a 2 population hierarchical GP model."}
+```{r hierplot}
 plot(tlogtest)
 ```
 
@@ -303,12 +303,14 @@ For more information on fitting hierarchical models, including the use of pairwi
 
 One thing you might be wondering is how we can visualize the shape of our fitted function $f$. If $f$ is 1- or 2-dimensional, we can create a grid of input values, pass them as `newdata`, and plot the resulting line or surface. If the function is more than 2 dimensional, this gets tricky, but we can look at slices of $f$ with respect to certain predictors, holding the values of the other predictors constant. The function `getconditionals` is a wrapper that will compute and plot conditional responses to each input variable with all other input variables set to their mean value. Although it does not show interactions, it can be useful for visualizing the effects of the predictors. Can also be used to check that your function isn't doing something nonsensical and inconsistent with biology. To create 2-d conditionals surfaces, or to look at conditional responses with other predictors fixed to values other than their mean, you can pass an appropriately constructed grid to `newdata`. Visualizing models this way makes it possible to think about EDM from a more 'mechanistic' functional viewpoint.
 
-```{r conditionals1, fig.width=7, fig.height=3, fig.cap="\\label{fig:conditionals1} Conditional responses to each predictor in the multivariate model for the Hastings-Powell simulation."}
+```{r conditionals1, fig.width=7, fig.height=3}
 #From the multivariate Hastings-Powell simulation
 getconditionals(gp_out_mv)
 ```
 
-```{r conditionals2, fig.cap="\\label{fig:conditionals1} Conditional responses to each predictor in the model for the 2 population theta logistic simulation. Recall that the phi values for lags 2 and 3 were 0, so the corresponding relationship is flat."}
+Here are the conditional responses for the 2 population theta logistic simulation. Recall that the `phi` values for lags 2 and 3 were 0, so the corresponding relationship is flat.
+
+```{r conditionals2}
 #From the 2 population theta logistic
 getconditionals(tlogtest)
 ```
@@ -317,7 +319,7 @@ getconditionals(tlogtest)
 
 Just as with S-map, it is possible to obtain local slope coefficients from a GP model. The partial derivatives of the fitted GP function at each time point with respect to each input can be obtained from the `predict` function, setting `returnGPgrad = T`. They will be under `model$GPgrad`. The gradient will be computed for each out-of-sample prediction point requested (using methods `"loo"`, `"lto"`, or `newdata`). If you want the in-sample gradient, pass the original (training) data back in as `newdata`.
 
-```{r gpgrad, fig.cap="\\label{fig:gpgrad} Local slope coefficients from the multivariate GP model."}
+```{r gpgrad}
 #From the multivariate Hastings-Powell simulation
 grad1=predict(gp_out_mv2, predictmethod = "loo", exclradius = 6, returnGPgrad = T)
 head(grad1$GPgrad)
@@ -335,3 +337,5 @@ plot(d_Z_2~Time, data=gradplot, type="l")
 You can, alternatively, pass the training/test data to the functions as vectors and matrices rather than in a data frame. This may make more sense if you're doing simulations and just have a bunch of vectors and matrices, rather than importing data in a data frame.
 
 The `makelags` function has some other bells and whistles you might want to check out, like creating matrix for forecasting beyond the end of a time series, and creating lags suitable for the variable step size method (more about that [here](https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html)).
+
+There are a few additional, optional arguments to `fitGP`. `initpars` are the starting values of the hyperparameters, if for some reason you want to change those. `modeprior` is a value used in the `phi` prior that controls the expected number of modes the resulting function has over the unit interval (defaults to 1). Larger values for `modeprior` make the prior less informative. The only reason to change this would be to test whether the prior is having any influence on the results. `linprior` fits the model to the residuals of a linear relationship between `y` and the first variable of `x`. More information about this can be found in the [fisheries vignette](https://tanyalrogers.github.io/GPEDM/articles/fisheries.html).
