@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9009</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9010</span>
       </span>
     </div>
 
@@ -75,7 +75,8 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tanyalrogers.github.io/GPEDM">GPEDM</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tanyalrogers.github.io/GPEDM">GPEDM</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
@@ -229,6 +230,183 @@ function may not actually intersect the origin.</p>
 <p><img src="fisheries_files/figure-html/modelfit2-1.png" width="700"></p>
 </div>
 <div class="section level2">
+<h2 id="multiple-populations">Multiple populations<a class="anchor" aria-label="anchor" href="#multiple-populations"></a>
+</h2>
+<p>If you have multiple regions (populations), each with their own CPUE
+index and Catch values, you can fit a hierarchical model using
+<code>fitGP_fish</code> in the same way as <code>fitGP</code>. The
+default behavior is to assume that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+is the same for both population (<code>bshared=TRUE</code>). Supplying a
+single value under <code>bfixed</code> will use the same fixed value for
+all populations.</p>
+<p>To estimate separate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+values for each population, set <code>bshared=FALSE</code>. This will
+use the Nelder-Mead method of <code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">stats::optim</a></code>, which will be
+quite a bit slower than the single
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+optimization, so more than 3 populations would not be recommended. You
+can fix different values of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+for each population by supplying a named vector under
+<code>bfixed</code>.</p>
+<p>If using different values of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
+be sure to use <code>scaling="local"</code> because the values are
+assumed to be in different units by virtue of having different
+catchabilities, but the dynamics should be proportional. You may want to
+check whether the combined model actually produces better
+within-population fits than the models fit separately. If there are
+sufficient data, there is a good chance it will not.</p>
+<p>The sample dataset contains time series for a second region B, where
+the true value of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+is 0.005. It also has a different catch history.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Catch</span><span class="op">~</span><span class="va">Time</span>, data<span class="op">=</span><span class="va">RickerHarvestB</span>, type<span class="op">=</span><span class="st">"l"</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">Time</span>, data<span class="op">=</span><span class="va">RickerHarvestB</span>, type<span class="op">=</span><span class="st">"l"</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/sampledataB-1.png" width="700"></p>
+<p>A separate model fith to region B:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#model for region B</span></span>
+<span><span class="va">RHlagsB</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvestB</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, append<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,CPUE_index_1<span class="op">=</span><span class="fl">0</span>,Catch_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fishfitB</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlagsB</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
+<span>                    augdata<span class="op">=</span><span class="va">zeropin</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfitB</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 1 </span></span>
+<span><span class="co">#&gt; Fisheries model b: 0.00471 </span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;         predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 escapement_1       0.81279</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.04297006</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 3.263646</span></span>
+<span><span class="co">#&gt; Number of populations: 1</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9609037</span></span></code></pre></div>
+<p>A hierarchical model assuming a single
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+value:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RHlags2pop</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvest</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, </span>
+<span>                    pop <span class="op">=</span> <span class="st">"Region"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, append<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Region<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span><span class="op">)</span>,Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,CPUE_index_1<span class="op">=</span><span class="fl">0</span>,Catch_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">#model assuming a shared b</span></span>
+<span><span class="va">fishfit2pop1</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags2pop</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>,</span>
+<span>                        pop<span class="op">=</span><span class="st">"Region"</span>, time<span class="op">=</span><span class="st">"Time"</span>, scaling <span class="op">=</span> <span class="st">"local"</span>, augdata <span class="op">=</span> <span class="va">zeropin</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfit2pop1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 1 </span></span>
+<span><span class="co">#&gt; Fisheries model b: 0.00492 </span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;         predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 escapement_1       1.83144</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.07313195</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 1.963022</span></span>
+<span><span class="co">#&gt; Number of populations: 2</span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.9642383</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9311925 </span></span>
+<span><span class="co">#&gt; In-sample R-squared by population:</span></span>
+<span><span class="co">#&gt;          R2</span></span>
+<span><span class="co">#&gt; A 0.9063203</span></span>
+<span><span class="co">#&gt; B 0.9585102</span></span></code></pre></div>
+<p>A hierarchical model assuming separate values of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+(estimated):</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#model assuming separate b values (takes a while to run)</span></span>
+<span><span class="va">fishfit2pop2</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags2pop</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>,</span>
+<span>                        pop<span class="op">=</span><span class="st">"Region"</span>, time<span class="op">=</span><span class="st">"Time"</span>, scaling <span class="op">=</span> <span class="st">"local"</span>, augdata <span class="op">=</span> <span class="va">zeropin</span>,</span>
+<span>                        bshared <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfit2pop2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 1 </span></span>
+<span><span class="co">#&gt; Fisheries model b:</span></span>
+<span><span class="co">#&gt;          b</span></span>
+<span><span class="co">#&gt; A 0.010015</span></span>
+<span><span class="co">#&gt; B 0.004720</span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;         predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 escapement_1       0.91005</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.03853103</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 3.298228</span></span>
+<span><span class="co">#&gt; Number of populations: 2</span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.920653</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9727368 </span></span>
+<span><span class="co">#&gt; In-sample R-squared by population:</span></span>
+<span><span class="co">#&gt;          R2</span></span>
+<span><span class="co">#&gt; A 0.9684365</span></span>
+<span><span class="co">#&gt; B 0.9605205</span></span></code></pre></div>
+<p>A hierarchical model assuming separate values of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+(fixed):</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#model assuming separate b values (fixed values)</span></span>
+<span><span class="va">b</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>A<span class="op">=</span><span class="fl">0.01</span>, B<span class="op">=</span><span class="fl">0.005</span><span class="op">)</span></span>
+<span><span class="va">fishfit2pop2f</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags2pop</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>,</span>
+<span>                        pop<span class="op">=</span><span class="st">"Region"</span>, time<span class="op">=</span><span class="st">"Time"</span>, scaling <span class="op">=</span> <span class="st">"local"</span>, augdata <span class="op">=</span> <span class="va">zeropin</span>,</span>
+<span>                        bfixed <span class="op">=</span> <span class="va">b</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfit2pop2f</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 1 </span></span>
+<span><span class="co">#&gt; Fisheries model b:</span></span>
+<span><span class="co">#&gt;       b</span></span>
+<span><span class="co">#&gt; A 0.010</span></span>
+<span><span class="co">#&gt; B 0.005</span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;         predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 escapement_1       0.89022</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.04024012</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 3.43141</span></span>
+<span><span class="co">#&gt; Number of populations: 2</span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.9244014</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9722251 </span></span>
+<span><span class="co">#&gt; In-sample R-squared by population:</span></span>
+<span><span class="co">#&gt;          R2</span></span>
+<span><span class="co">#&gt; A 0.9684097</span></span>
+<span><span class="co">#&gt; B 0.9574334</span></span>
+<span><span class="fu"><a href="../reference/getconditionals.html">getconditionals</a></span><span class="op">(</span><span class="va">fishfit2pop2f</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/hier3-1.png" width="700"></p>
+<p>If more flexibility is required or you want to do something more
+elaborate, below is code for how you could calculate escapement
+externally given some value(s) of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
+and fit a regular <code>fitGP</code> to the escapement values. The
+example below fits the same model as above (with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+fixed).</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bA</span><span class="op">=</span><span class="fl">0.01</span></span>
+<span><span class="va">bB</span><span class="op">=</span><span class="fl">0.005</span></span>
+<span><span class="va">RHlags</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHlags</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHlags</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">bA</span></span>
+<span><span class="va">RHlagsB</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHlagsB</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHlagsB</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">bB</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">escapement_1</span>, data<span class="op">=</span><span class="va">RHlags</span>, main<span class="op">=</span><span class="st">"Region A"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">escapement_1</span>, data<span class="op">=</span><span class="va">RHlagsB</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/combomodel-1.png" width="700"></p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RHlagscombo</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">RHlags</span>, <span class="va">RHlagsB</span><span class="op">)</span></span>
+<span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Region<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span><span class="op">)</span>,Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,escapement_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fishfitcombo</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlagscombo</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, x<span class="op">=</span><span class="st">"escapement_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
+<span>                   pop<span class="op">=</span><span class="st">"Region"</span>, scaling<span class="op">=</span><span class="st">"local"</span>, augdata<span class="op">=</span><span class="va">zeropin</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfitcombo</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Number of predictors: 1 </span></span>
+<span><span class="co">#&gt; Length scale parameters:</span></span>
+<span><span class="co">#&gt;         predictor posteriormode</span></span>
+<span><span class="co">#&gt; phi1 escapement_1       0.89022</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.04024012</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 3.43141</span></span>
+<span><span class="co">#&gt; Number of populations: 2</span></span>
+<span><span class="co">#&gt; Dynamic correlation (rho): 0.9244014</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9722251 </span></span>
+<span><span class="co">#&gt; In-sample R-squared by population:</span></span>
+<span><span class="co">#&gt;          R2</span></span>
+<span><span class="co">#&gt; A 0.9684097</span></span>
+<span><span class="co">#&gt; B 0.9574334</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="getting-msy-using-iterated-prediction">Getting MSY using iterated prediction<a class="anchor" aria-label="anchor" href="#getting-msy-using-iterated-prediction"></a>
 </h2>
 <p>Given a fitted fisheries model, the steady state catch and biomass
@@ -260,19 +438,19 @@ and values must be supplied for all time points. If there are multiple
 populations, <code>newdata</code> should contain <code>pop</code> and
 there should be duplicated timesteps for each population (see the next
 sections for a 2-population example).</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#number of timesteps to iterate</span></span>
 <span><span class="va">nfore</span><span class="op">=</span><span class="fl">50</span></span>
 <span></span>
 <span><span class="co">#use the forecast feature to create the first row</span></span>
-<span><span class="va">RHfore</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvestA</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, forecast<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
+<span><span class="va">RHfore1</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvestA</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, forecast<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
 <span><span class="co">#get remaining timepoints. use expand.grid here if you have multiple populations.</span></span>
-<span><span class="va">RHfore2</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Time<span class="op">=</span><span class="op">(</span><span class="va">RHfore</span><span class="op">$</span><span class="va">Time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="op">(</span><span class="va">RHfore</span><span class="op">$</span><span class="va">Time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="va">nfore</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span> </span>
+<span><span class="va">RHfore2</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Time<span class="op">=</span><span class="op">(</span><span class="va">RHfore1</span><span class="op">$</span><span class="va">Time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="op">(</span><span class="va">RHfore1</span><span class="op">$</span><span class="va">Time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="va">nfore</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span> </span>
 <span><span class="co">#create empty matrix for future values</span></span>
 <span><span class="va">RHfore3</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="cn">NA</span>, nrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">RHfore2</span><span class="op">)</span>, ncol<span class="op">=</span><span class="fl">2</span>,</span>
 <span>               dimnames<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index_1"</span>,<span class="st">"Catch_1"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#combine everything</span></span>
-<span><span class="va">RHfore</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">RHfore</span>,<span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">RHfore2</span>,<span class="va">RHfore3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">RHfore</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">RHfore1</span>,<span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">RHfore2</span>,<span class="va">RHfore3</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">RHfore</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Time CPUE_index_1  Catch_1</span></span>
@@ -281,13 +459,37 @@ sections for a 2-population example).</p>
 <span><span class="co">#&gt; 3  103           NA       NA</span></span>
 <span><span class="co">#&gt; 4  104           NA       NA</span></span>
 <span><span class="co">#&gt; 5  105           NA       NA</span></span>
-<span><span class="co">#&gt; 6  106           NA       NA</span></span>
-<span></span>
-<span><span class="va">msyfore</span><span class="op">=</span><span class="fu"><a href="../reference/predict_iter.html">predict_iter</a></span><span class="op">(</span><span class="va">fishfit</span>, newdata <span class="op">=</span> <span class="va">RHfore</span>, hrate <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
-<p>The resulting escapement and catch values will be included in the
-<code>outsampresults</code> table.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 6  106           NA       NA</span></span></code></pre></div>
+<p>Since that is kind of annoying, I have written a wrapper for it
+called <code>makelags_iter</code>. The arguments are the same as
+<code>makelags</code> but you specify <code>nfore</code> and it makes
+the matrix above.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">RHfore</span><span class="op">=</span><span class="fu"><a href="../reference/makelags_iter.html">makelags_iter</a></span><span class="op">(</span>nfore<span class="op">=</span><span class="fl">50</span>, data<span class="op">=</span><span class="va">RickerHarvestA</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, </span>
+<span>                     time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">RHfore</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Time CPUE_index_1  Catch_1</span></span>
+<span><span class="co">#&gt; 1  101     22.36223 661.5723</span></span>
+<span><span class="co">#&gt; 2  102           NA       NA</span></span>
+<span><span class="co">#&gt; 3  103           NA       NA</span></span>
+<span><span class="co">#&gt; 4  104           NA       NA</span></span>
+<span><span class="co">#&gt; 5  105           NA       NA</span></span>
+<span><span class="co">#&gt; 6  106           NA       NA</span></span></code></pre></div>
+<p>This matrix can be passed to <code>predict_iter</code>, specifying a
+harvest rate.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">msyfore</span><span class="op">=</span><span class="fu"><a href="../reference/predict_iter.html">predict_iter</a></span><span class="op">(</span><span class="va">fishfit</span>, newdata <span class="op">=</span> <span class="va">RHfore</span>, hrate <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
+<p>The output of <code>predict_iter</code> can be passed to
+<code>plot</code> if desired, which will plot CPUE (y). Note that there
+will not be any observed values. The resulting escapement and catch
+values will be included in the <code>outsampresults</code> table.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">msyfore</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Plotting out of sample results.</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msy2-1.png" width="700"></p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   timestep pop predmean_trans predfsd_trans predsd_trans predmean escapement_1</span></span>
 <span><span class="co">#&gt; 1      101   1       66.63400      1.106339     4.929575 66.63400    15.697977</span></span>
 <span><span class="co">#&gt; 2      102   1       23.73961      1.240739     4.961467 23.73961    33.317000</span></span>
@@ -301,12 +503,39 @@ sections for a 2-population example).</p>
 <span><span class="co">#&gt; 3 1178.3370</span></span>
 <span><span class="co">#&gt; 4 3653.3394</span></span>
 <span><span class="co">#&gt; 5  920.4534</span></span>
-<span><span class="co">#&gt; 6 3690.1269</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">predmean</span><span class="op">~</span><span class="va">timestep</span>, data<span class="op">=</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span>, type<span class="op">=</span><span class="st">"l"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Catch_1</span><span class="op">~</span><span class="va">timestep</span>, data<span class="op">=</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span>, type<span class="op">=</span><span class="st">"l"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="fisheries_files/figure-html/msy2-1.png" width="700"></p>
+<span><span class="co">#&gt; 6 3690.1269</span></span></code></pre></div>
+<p>For a given harvest rate, may be valuable to plot the projection
+alongside the past values.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#CPUE</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span> <span class="co">#iterated predictions</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"CPUE"</span><span class="op">)</span> <span class="op">+</span> <span class="co">#past predictions</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="co">#observed values</span></span>
+<span><span class="co">#&gt; Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use `linewidth` instead.</span></span>
+<span><span class="co">#&gt; This warning is displayed once every 8 hours.</span></span>
+<span><span class="co">#&gt; Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span>
+<span><span class="co">#&gt; generated.</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots1-1.png" width="700"></p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Catch</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">Catch_1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">Time</span><span class="op">)</span><span class="op">)</span> <span class="co">#past catches</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots1-2.png" width="700"></p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Escapement</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">escapement_1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span> <span class="co">#past escapements</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots1-3.png" width="700"></p>
 <p>Evaluating the steady state catch across a range of
 <code>hrate</code> values allows you to obtain the maximum sustainable
 yield (MSY), associated fishing rate (f_MSY), and associated CPUE
@@ -315,40 +544,95 @@ iterated predictions for 50 timesteps as above, but record just the last
 10 values. Since the resulting time series in this example can exhibit
 chaos and cycles, we then take the average over those values for each
 harvest rate.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#vector of harvest rates</span></span>
-<span><span class="va">hratevec</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">40</span><span class="op">)</span></span>
+<span><span class="va">hratevec</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">30</span><span class="op">)</span></span>
 <span><span class="co">#number of timepoints to save</span></span>
 <span><span class="va">tsave</span><span class="op">=</span><span class="fl">10</span></span>
 <span></span>
-<span><span class="va">catchres</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>time<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="va">tsave</span>,hrate<span class="op">=</span><span class="va">hratevec</span><span class="op">)</span></span>
-<span><span class="va">catchres</span><span class="op">$</span><span class="va">catch</span><span class="op">=</span><span class="cn">NA</span></span>
-<span><span class="va">catchres</span><span class="op">$</span><span class="va">cpue</span><span class="op">=</span><span class="cn">NA</span></span>
+<span><span class="va">catchsave</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>time<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="va">tsave</span>,hrate<span class="op">=</span><span class="va">hratevec</span><span class="op">)</span></span>
+<span><span class="va">catchsave</span><span class="op">$</span><span class="va">catch</span><span class="op">=</span><span class="cn">NA</span></span>
+<span><span class="va">catchsave</span><span class="op">$</span><span class="va">cpue</span><span class="op">=</span><span class="cn">NA</span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">hratevec</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">msyfore</span><span class="op">=</span><span class="fu"><a href="../reference/predict_iter.html">predict_iter</a></span><span class="op">(</span><span class="va">fishfit</span>, newdata <span class="op">=</span> <span class="va">RHfore</span>, hrate <span class="op">=</span> <span class="va">hratevec</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span></span>
 <span>  <span class="co">#note that the next 2 lines only work if there is one population</span></span>
-<span>  <span class="va">catchres</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">catchres</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">=</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span><span class="op">]</span></span>
-<span>  <span class="va">catchres</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="va">catchres</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">=</span><span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">$</span><span class="va">predmean</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span><span class="op">]</span></span>
+<span>  <span class="va">catchsave</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">catchsave</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">=</span></span>
+<span>    <span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span><span class="op">]</span></span>
+<span>  <span class="va">catchsave</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="va">catchsave</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">=</span></span>
+<span>    <span class="va">msyfore</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">$</span><span class="va">predmean</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span><span class="op">]</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co">#average over the last 10 timepoints</span></span>
-<span><span class="va">catchresagg</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchres</span>, <span class="va">mean</span><span class="op">)</span></span>
-<span><span class="op">(</span><span class="va">fmsy</span><span class="op">=</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">hrate</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.8717949</span></span>
-<span><span class="op">(</span><span class="va">Bmsy</span><span class="op">=</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 74.54768</span></span>
+<span><span class="va">catchsavemean</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchsave</span>, <span class="va">mean</span><span class="op">)</span></span>
+<span><span class="op">(</span><span class="va">fmsy</span><span class="op">=</span><span class="va">catchsavemean</span><span class="op">$</span><span class="va">hrate</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchsavemean</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.862069</span></span>
+<span><span class="op">(</span><span class="va">Bmsy</span><span class="op">=</span><span class="va">catchsavemean</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchsavemean</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 74.7035</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchres</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchsave</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchsavemean</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchres</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchsave</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchsavemean</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/msy3-1.png" width="700"></p>
+<p>Here’s a wrapper for all of that as well. Since there is only one
+population here, the ‘total’ and ‘pop’ output tables are identical. The
+ones you really care about are <code>catchforeall</code> which are all
+the predictions, <code>catchsavetotal</code> which are the last
+<code>tsave</code> predictions, and <code>catchsavetotalmean</code>
+which is the average of the last <code>tsave</code> predictions.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hratevec</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">30</span><span class="op">)</span></span>
+<span><span class="va">msyout</span><span class="op">=</span><span class="fu"><a href="../reference/msy_wrapper.html">msy_wrapper</a></span><span class="op">(</span>model<span class="op">=</span><span class="va">fishfit</span>, newdata <span class="op">=</span> <span class="va">RHfore</span>, hratevec <span class="op">=</span> <span class="va">hratevec</span>, tsave <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">msyout</span><span class="op">$</span><span class="va">fmsy</span></span>
+<span><span class="co">#&gt; [1] 0.862069</span></span>
+<span><span class="va">msyout</span><span class="op">$</span><span class="va">Bmsy</span></span>
+<span><span class="co">#&gt; [1] 74.7035</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchsavetotal</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchsavetotalmean</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchsavetotal</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchsavetotalmean</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msy3.5-1.png" width="700"></p>
+<p>Let’s look at the trajectory for the population at fmsy.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#you can get this either by rerunning predict_iter</span></span>
+<span><span class="va">msytraj</span><span class="op">=</span><span class="fu"><a href="../reference/predict_iter.html">predict_iter</a></span><span class="op">(</span><span class="va">fishfit</span>, newdata <span class="op">=</span> <span class="va">RHfore</span>, hrate <span class="op">=</span> <span class="va">fmsy</span><span class="op">)</span><span class="op">$</span><span class="va">outsampresults</span></span>
+<span><span class="co">#or if you have used the msy_wrapper, you can get it out or the catchforeall table</span></span>
+<span><span class="va">msytraj</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchforeall</span>, <span class="va">hrate</span><span class="op">==</span><span class="va">fmsy</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">#CPUE</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msytraj</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span> <span class="co">#iterated predictions</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"CPUE"</span><span class="op">)</span> <span class="op">+</span> <span class="co">#past predictions</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="co">#observed values</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots2-1.png" width="700"></p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Catch</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msytraj</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">Catch_1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">Time</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots2-2.png" width="700"></p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Escapement</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msytraj</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">escapement_1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots2-3.png" width="700"></p>
 <p>Let’s compare this to the true analytical solution for this model
 using the simulation parameters.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span><span class="op">=</span><span class="fl">3</span>; <span class="va">K</span><span class="op">=</span><span class="fl">1000</span></span>
 <span><span class="va">q</span><span class="op">=</span><span class="fl">0.01</span> <span class="co">#catchability b</span></span>
 <span><span class="va">tbiomass</span><span class="op">=</span><span class="va">K</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">hratevec</span><span class="op">)</span><span class="op">*</span><span class="op">(</span><span class="va">r</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">hratevec</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="co">#steady state biomass</span></span>
@@ -356,13 +640,13 @@ using the simulation parameters.</p>
 <span><span class="va">tcatch</span><span class="op">=</span><span class="va">hratevec</span><span class="op">*</span><span class="va">tbiomass</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, type<span class="op">=</span><span class="st">"l"</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchsavetotalmean</span>, type<span class="op">=</span><span class="st">"l"</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">tcatch</span><span class="op">~</span><span class="va">hratevec</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"cornflowerblue"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span>x<span class="op">=</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EDM"</span>,<span class="st">"true"</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>,<span class="st">"cornflowerblue"</span><span class="op">)</span>, lwd<span class="op">=</span><span class="fl">2</span>, cex<span class="op">=</span><span class="fl">0.8</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, type<span class="op">=</span><span class="st">"l"</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">catchsavetotalmean</span>, type<span class="op">=</span><span class="st">"l"</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">tcpue</span><span class="op">~</span><span class="va">hratevec</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"cornflowerblue"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">msyout</span><span class="op">$</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span>x<span class="op">=</span><span class="st">"topleft"</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EDM"</span>,<span class="st">"true"</span><span class="op">)</span>, col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>,<span class="st">"cornflowerblue"</span><span class="op">)</span>, lwd<span class="op">=</span><span class="fl">2</span>, cex<span class="op">=</span><span class="fl">0.8</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/msy4-1.png" width="700"></p>
 <p>It is also possible to set this up using a constant catch value
@@ -370,120 +654,6 @@ rather than constant catch rate. To do this, omit <code>hrate</code> and
 fill all the catch rows and columns in <code>newdata</code> with a
 constant value. In this example with chaotic dynamics, this can lead to
 negative escapement, so it was not done here.</p>
-</div>
-<div class="section level2">
-<h2 id="multiple-populations">Multiple populations<a class="anchor" aria-label="anchor" href="#multiple-populations"></a>
-</h2>
-<p>The <code>fitGP_fish</code> model can only have a single value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>.
-If you have multiple regions (populations), each with their own CPUE
-index and Catch values, you can fit a hierarchical model using
-<code>fitGP_fish</code> in the same way as <code>fitGP</code>, but the
-catchability will be assumed the same for both regions. If you have
-reason to believe this is not the case (e.g. different survey methods
-are used in each region, so the units of CPUE are not the same), one
-solution is to fit models separately for each region and obtain separate
-estimates for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>.</p>
-<p>The sample dataset contains time series for a second region B, where
-the true value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-is 0.005. It also has a different catch history.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Catch</span><span class="op">~</span><span class="va">Time</span>, data<span class="op">=</span><span class="va">RickerHarvestB</span>, type<span class="op">=</span><span class="st">"l"</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">Time</span>, data<span class="op">=</span><span class="va">RickerHarvestB</span>, type<span class="op">=</span><span class="st">"l"</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="fisheries_files/figure-html/sampledataB-1.png" width="700"></p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#model for region B</span></span>
-<span><span class="va">RHlagsB</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvestB</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, append<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
-<span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,CPUE_index_1<span class="op">=</span><span class="fl">0</span>,Catch_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fishfitB</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlagsB</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
-<span>                    augdata<span class="op">=</span><span class="va">zeropin</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfitB</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Number of predictors: 1 </span></span>
-<span><span class="co">#&gt; Fisheries model b: 0.00471 </span></span>
-<span><span class="co">#&gt; Length scale parameters:</span></span>
-<span><span class="co">#&gt;         predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 escapement_1       0.81279</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.04297006</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 3.263646</span></span>
-<span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9609037</span></span></code></pre></div>
-<p>If you felt the need to combine these into a single hierarchical
-model, you could fix the values of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-for each population, calculate escapement, and fit a regular
-<code>fitGP</code> to the escapement values. Be sure to use
-<code>scaling="local"</code> because the values are assumed to be in
-different units by virtue of having different catchabilities, but the
-dynamics should be proportional. You may want to check whether the
-combined model actually produces better within-population fits than the
-models fit separately. If there are sufficient data, there is a good
-chance it will not.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bA</span><span class="op">=</span><span class="va">fishfit</span><span class="op">$</span><span class="va">b</span></span>
-<span><span class="va">bB</span><span class="op">=</span><span class="va">fishfitB</span><span class="op">$</span><span class="va">b</span></span>
-<span><span class="va">RHlags</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHlags</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHlags</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">bA</span></span>
-<span><span class="va">RHlagsB</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHlagsB</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHlagsB</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">bB</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">escapement_1</span>, data<span class="op">=</span><span class="va">RHlags</span>, main<span class="op">=</span><span class="st">"Region A"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">CPUE_index</span><span class="op">~</span><span class="va">escapement_1</span>, data<span class="op">=</span><span class="va">RHlagsB</span>, main<span class="op">=</span><span class="st">"Region B"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="fisheries_files/figure-html/combomodel-1.png" width="700"></p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="co">#alternatively, you could pull escapement out of the insampresults table, </span></span>
-<span><span class="co">#or use it to double check your math</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">fishfit</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   timestep pop predmean_trans predfsd_trans predsd_trans obs_trans  predmean</span></span>
-<span><span class="co">#&gt; 1        1   1             NA            NA           NA 15.074782        NA</span></span>
-<span><span class="co">#&gt; 2        2   1      68.289036      1.087417     4.925363 64.075778 68.289036</span></span>
-<span><span class="co">#&gt; 3        3   1       1.782877      3.063742     5.697652  1.987008  1.782877</span></span>
-<span><span class="co">#&gt; 4        4   1      30.355635      1.717190     5.101516 30.573418 30.355635</span></span>
-<span><span class="co">#&gt; 5        5   1      30.195782      1.250233     4.963850 31.422368 30.195782</span></span>
-<span><span class="co">#&gt; 6        6   1      28.145480      1.208751     4.953565 28.992217 28.145480</span></span>
-<span><span class="co">#&gt;         obs escapement_1</span></span>
-<span><span class="co">#&gt; 1 15.074782           NA</span></span>
-<span><span class="co">#&gt; 2 64.075778    14.922928</span></span>
-<span><span class="co">#&gt; 3  1.987008    63.223982</span></span>
-<span><span class="co">#&gt; 4 30.573418     1.969092</span></span>
-<span><span class="co">#&gt; 5 31.422368    29.884736</span></span>
-<span><span class="co">#&gt; 6 28.992217    30.866527</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">RHlags</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   Time CPUE_index     Catch Region CPUE_index_1   Catch_1 escapement_1</span></span>
-<span><span class="co">#&gt; 1    1  15.074782 15.074782      A           NA        NA           NA</span></span>
-<span><span class="co">#&gt; 2    2  64.075778 84.559322      A    15.074782 15.074782    14.922928</span></span>
-<span><span class="co">#&gt; 3    3   1.987008  1.778593      A    64.075778 84.559322    63.223982</span></span>
-<span><span class="co">#&gt; 4    4  30.573418 68.366708      A     1.987008  1.778593     1.969092</span></span>
-<span><span class="co">#&gt; 5    5  31.422368 55.179338      A    30.573418 68.366708    29.884736</span></span>
-<span><span class="co">#&gt; 6    6  28.992217 52.203880      A    31.422368 55.179338    30.866527</span></span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">RHlagscombo</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">RHlags</span>, <span class="va">RHlagsB</span><span class="op">)</span></span>
-<span><span class="va">zeropin</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Region<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span><span class="op">)</span>,Time<span class="op">=</span><span class="fl">0</span>,CPUE_index<span class="op">=</span><span class="fl">0</span>,escapement_1<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fishfitcombo</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP.html">fitGP</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlagscombo</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, x<span class="op">=</span><span class="st">"escapement_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
-<span>                   pop<span class="op">=</span><span class="st">"Region"</span>, scaling<span class="op">=</span><span class="st">"local"</span>, augdata<span class="op">=</span><span class="va">zeropin</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfitcombo</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Number of predictors: 1 </span></span>
-<span><span class="co">#&gt; Length scale parameters:</span></span>
-<span><span class="co">#&gt;         predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 escapement_1       0.90713</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.03850814</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 3.305875</span></span>
-<span><span class="co">#&gt; Number of populations: 2</span></span>
-<span><span class="co">#&gt; Dynamic correlation (rho): 0.917763</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9727649 </span></span>
-<span><span class="co">#&gt; In-sample R-squared by population:</span></span>
-<span><span class="co">#&gt;          R2</span></span>
-<span><span class="co">#&gt; A 0.9684791</span></span>
-<span><span class="co">#&gt; B 0.9605194</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/getconditionals.html">getconditionals</a></span><span class="op">(</span><span class="va">fishfitcombo</span><span class="op">)</span></span></code></pre></div>
-<p><img src="fisheries_files/figure-html/combomodel2-1.png" width="700"></p>
 </div>
 <div class="section level2">
 <h2 id="msy-with-multiple-populations">MSY with multiple populations<a class="anchor" aria-label="anchor" href="#msy-with-multiple-populations"></a>
@@ -495,42 +665,115 @@ or if you are using separate <code>fitGP_fish</code> models for each
 population, you should be able to use <code>predict_iter</code> as
 above, but will need to keep track of the predictions for each
 population and decide if you want to add them together or not.</p>
-<p>If you have a multi-population <code>fitGP</code> model with fixed
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-values for each population, this gets a little tricky, since
-<code>predict_iter</code> is only designed to work with one value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>.
-You will probably have to write a custom loop, like below. This is
-mostly the internal code of <code>predict_iter</code> but with some
-modification.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#number of timesteps to iterate</span></span>
-<span><span class="va">nfore</span><span class="op">=</span><span class="fl">50</span></span>
+<p>At present, the harvest rate is assumed the same for all populations.
+This may change in the future.</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#make the forecast matrix</span></span>
+<span><span class="va">RHfore2pop</span><span class="op">=</span><span class="fu"><a href="../reference/makelags_iter.html">makelags_iter</a></span><span class="op">(</span>nfore<span class="op">=</span><span class="fl">50</span>, data<span class="op">=</span><span class="va">RickerHarvest</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, </span>
+<span>                         time<span class="op">=</span><span class="st">"Time"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, pop<span class="op">=</span><span class="st">"Region"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">RHfore2pop</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Time Region CPUE_index_1   Catch_1</span></span>
+<span><span class="co">#&gt; 1  101      A     22.36223  661.5723</span></span>
+<span><span class="co">#&gt; 2  101      B     31.04974 3854.1177</span></span>
+<span><span class="co">#&gt; 3  102      A           NA        NA</span></span>
+<span><span class="co">#&gt; 4  103      A           NA        NA</span></span>
+<span><span class="co">#&gt; 5  104      A           NA        NA</span></span>
+<span><span class="co">#&gt; 6  105      A           NA        NA</span></span></code></pre></div>
+<p>Plots of the trajectories for a given harvest rate:</p>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">msyfore2pop</span><span class="op">=</span><span class="fu"><a href="../reference/predict_iter.html">predict_iter</a></span><span class="op">(</span><span class="va">fishfit2pop2</span>, newdata <span class="op">=</span> <span class="va">RHfore2pop</span>, hrate <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">msyfore2pop</span><span class="op">$</span><span class="va">outsampresults</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   timestep pop predmean_trans predfsd_trans predsd_trans predmean escapement_1</span></span>
+<span><span class="co">#&gt; 1      101   A       67.20451     1.0805364     5.238766 67.20451     15.73647</span></span>
+<span><span class="co">#&gt; 2      101   B       22.21612     0.7308345     2.627487 22.21612     12.85822</span></span>
+<span><span class="co">#&gt; 3      102   A       23.57338     1.1304705     5.249293 23.57338     33.60225</span></span>
+<span><span class="co">#&gt; 4      102   B       25.68929     0.7574316     2.635009 25.68929     11.10806</span></span>
+<span><span class="co">#&gt; 5      103   A       74.26029     1.0231498     5.227232 74.26029     11.78669</span></span>
+<span><span class="co">#&gt; 6      103   B       22.24372     0.7311363     2.627571 22.24372     12.84464</span></span>
+<span><span class="co">#&gt;     Catch_1</span></span>
+<span><span class="co">#&gt; 1  661.5723</span></span>
+<span><span class="co">#&gt; 2 3854.1177</span></span>
+<span><span class="co">#&gt; 3 3355.1344</span></span>
+<span><span class="co">#&gt; 4 2353.3919</span></span>
+<span><span class="co">#&gt; 5 1176.8833</span></span>
+<span><span class="co">#&gt; 6 2721.3100</span></span>
 <span></span>
-<span><span class="co">#use the forecast feature to create the first row</span></span>
-<span><span class="va">RHforecombo</span><span class="op">=</span><span class="fu"><a href="../reference/makelags.html">makelags</a></span><span class="op">(</span><span class="va">RickerHarvest</span>, y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index"</span>,<span class="st">"Catch"</span><span class="op">)</span>, time<span class="op">=</span><span class="st">"Time"</span>, </span>
-<span>                     pop<span class="op">=</span><span class="st">"Region"</span>, tau<span class="op">=</span><span class="fl">1</span>, E<span class="op">=</span><span class="fl">1</span>, forecast<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span>
-<span><span class="co">#get remaining timepoints</span></span>
-<span><span class="va">RHforecombo2</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>Time<span class="op">=</span><span class="op">(</span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">Time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="op">(</span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">Time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">+</span><span class="va">nfore</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>                         Region<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">RickerHarvest</span><span class="op">$</span><span class="va">Region</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#create empty matrix for future values</span></span>
-<span><span class="va">RHforecombo3</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="cn">NA</span>, nrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">RHforecombo2</span><span class="op">)</span>, ncol<span class="op">=</span><span class="fl">2</span>,</span>
-<span>                    dimnames<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CPUE_index_1"</span>,<span class="st">"Catch_1"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#combine everything</span></span>
-<span><span class="va">RHforecombo</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">RHforecombo</span>,<span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">RHforecombo2</span>,<span class="va">RHforecombo3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#CPUE</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyfore2pop</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">predmean</span>, color<span class="op">=</span><span class="va">pop</span>, group<span class="op">=</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit2pop2</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ylab</a></span><span class="op">(</span><span class="st">"CPUE"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit2pop2</span><span class="op">$</span><span class="va">insampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 2 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots3-1.png" width="700"></p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Catch</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyfore2pop</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">Catch_1</span>, color<span class="op">=</span><span class="va">pop</span>, group<span class="op">=</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags2pop</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">Time</span>, color<span class="op">=</span><span class="va">Region</span>, group<span class="op">=</span><span class="va">Region</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 2 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots3-2.png" width="700"></p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Escapement</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyfore2pop</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">timestep</span>, y<span class="op">=</span><span class="va">escapement_1</span>, color<span class="op">=</span><span class="va">pop</span>, group<span class="op">=</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">fishfit2pop2</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 2 rows containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msyplots3-3.png" width="700"></p>
+<p>Evaluate a grid of harvest rates to obtain MSY using the wrapper.
+Since there are multiple populations, the ‘total’ and ‘pop’ tables will
+be different. The MSY estimates reported by the function are based on
+<code>catchsavetotalmean</code>, but you could compute population
+specific estimates if desired.</p>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hratevec</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">30</span><span class="op">)</span></span>
+<span><span class="va">msyout2pop</span><span class="op">=</span><span class="fu"><a href="../reference/msy_wrapper.html">msy_wrapper</a></span><span class="op">(</span>model<span class="op">=</span><span class="va">fishfit2pop2</span>, newdata <span class="op">=</span> <span class="va">RHfore2pop</span>, hratevec <span class="op">=</span> <span class="va">hratevec</span>, tsave <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">fmsy</span></span>
+<span><span class="co">#&gt; [1] 0.862069</span></span>
+<span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">Bmsy</span></span>
+<span><span class="co">#&gt; [1] 112.3226</span></span>
 <span></span>
-<span><span class="co">#calculate escapement</span></span>
-<span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">b</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">Region</span><span class="op">==</span><span class="st">"A"</span>, <span class="va">bA</span>, <span class="va">bB</span><span class="op">)</span></span>
-<span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">RHforecombo</span><span class="op">$</span><span class="va">b</span></span>
+<span><span class="co">#Total</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavetotal</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavetotalmean</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavetotal</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavetotalmean</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msy2pop2-1.png" width="700"></p>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="co">#Split up by pop</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavepop</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">hrate</span>, y<span class="op">=</span><span class="va">catch</span>, color<span class="op">=</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>alpha<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavepopmean</span>, size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="va">msyout2pop</span><span class="op">$</span><span class="va">fmsy</span>, color<span class="op">=</span><span class="st">"black"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msy2pop2-2.png" width="700"></p>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavepop</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">hrate</span>, y<span class="op">=</span><span class="va">cpue</span>, color<span class="op">=</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>alpha<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">msyout2pop</span><span class="op">$</span><span class="va">catchsavepopmean</span>, size<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="va">msyout2pop</span><span class="op">$</span><span class="va">fmsy</span>, color<span class="op">=</span><span class="st">"black"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/msy2pop2-3.png" width="700"></p>
+<p>If you are computing escapement externally, you will probably have to
+write a custom loop, like below. This is mostly the internal code of
+<code>predict_iter</code> but with some modification.</p>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#calculate escapement</span></span>
+<span><span class="va">RHfore2pop</span><span class="op">$</span><span class="va">b</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">RHfore2pop</span><span class="op">$</span><span class="va">Region</span><span class="op">==</span><span class="st">"A"</span>, <span class="va">bA</span>, <span class="va">bB</span><span class="op">)</span></span>
+<span><span class="va">RHfore2pop</span><span class="op">$</span><span class="va">escapement_1</span><span class="op">=</span><span class="va">RHfore2pop</span><span class="op">$</span><span class="va">CPUE_index_1</span><span class="op">-</span><span class="va">RHfore2pop</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">*</span><span class="va">RHfore2pop</span><span class="op">$</span><span class="va">b</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">RHforecombo</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   Time Region CPUE_index_1   Catch_1           b escapement_1</span></span>
-<span><span class="co">#&gt; 1  101      A     22.36223  661.5723 0.010073354     15.69798</span></span>
-<span><span class="co">#&gt; 2  101      B     31.04974 3854.1177 0.004709497     12.89878</span></span>
-<span><span class="co">#&gt; 3  102      A           NA        NA 0.010073354           NA</span></span>
-<span><span class="co">#&gt; 4  103      A           NA        NA 0.010073354           NA</span></span>
-<span><span class="co">#&gt; 5  104      A           NA        NA 0.010073354           NA</span></span>
-<span><span class="co">#&gt; 6  105      A           NA        NA 0.010073354           NA</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">RHfore2pop</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Time Region CPUE_index_1   Catch_1     b escapement_1</span></span>
+<span><span class="co">#&gt; 1  101      A     22.36223  661.5723 0.010     15.74651</span></span>
+<span><span class="co">#&gt; 2  101      B     31.04974 3854.1177 0.005     11.77915</span></span>
+<span><span class="co">#&gt; 3  102      A           NA        NA 0.010           NA</span></span>
+<span><span class="co">#&gt; 4  103      A           NA        NA 0.010           NA</span></span>
+<span><span class="co">#&gt; 5  104      A           NA        NA 0.010           NA</span></span>
+<span><span class="co">#&gt; 6  105      A           NA        NA 0.010           NA</span></span>
 <span></span>
 <span><span class="co">#vector of harvest rates</span></span>
 <span><span class="va">hratevec</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">40</span><span class="op">)</span></span>
@@ -543,19 +786,19 @@ modification.</p>
 <span><span class="va">object</span><span class="op">=</span><span class="va">fishfitcombo</span></span>
 <span><span class="va">xlags</span><span class="op">=</span><span class="st">"CPUE_index_1"</span></span>
 <span><span class="va">hlags</span><span class="op">=</span><span class="st">"Catch_1"</span></span>
-<span><span class="va">newtimes</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">RHforecombo</span><span class="op">[</span>,<span class="va">timename</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">up</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">RHforecombo</span><span class="op">[</span>,<span class="va">popname</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">newtimes</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">RHfore2pop</span><span class="op">[</span>,<span class="va">timename</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">up</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">RHfore2pop</span><span class="op">[</span>,<span class="va">popname</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">#setup final data frame</span></span>
-<span><span class="va">catchres</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>Region<span class="op">=</span><span class="va">up</span>,time<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="va">tsave</span>,hrate<span class="op">=</span><span class="va">hratevec</span><span class="op">)</span></span>
-<span><span class="va">catchres</span><span class="op">$</span><span class="va">catch</span><span class="op">=</span><span class="cn">NA</span></span>
-<span><span class="va">catchres</span><span class="op">$</span><span class="va">cpue</span><span class="op">=</span><span class="cn">NA</span></span>
+<span><span class="va">catchsavepop</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>pop<span class="op">=</span><span class="va">up</span>,time<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="va">tsave</span>,hrate<span class="op">=</span><span class="va">hratevec</span><span class="op">)</span></span>
+<span><span class="va">catchsavepop</span><span class="op">$</span><span class="va">catch</span><span class="op">=</span><span class="cn">NA</span></span>
+<span><span class="va">catchsavepop</span><span class="op">$</span><span class="va">cpue</span><span class="op">=</span><span class="cn">NA</span></span>
 <span></span>
 <span><span class="va">pred</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">h</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">hratevec</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  </span>
-<span>  <span class="va">newdata</span><span class="op">=</span><span class="va">RHforecombo</span></span>
+<span>  <span class="va">newdata</span><span class="op">=</span><span class="va">RHfore2pop</span></span>
 <span>  <span class="va">hrate</span> <span class="op">=</span> <span class="va">hratevec</span><span class="op">[</span><span class="va">h</span><span class="op">]</span></span>
 <span>  </span>
 <span>  <span class="co">#iterated prediction loop</span></span>
@@ -591,34 +834,29 @@ modification.</p>
 <span>  <span class="va">msyfore</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">msyfore</span>,<span class="va">newdata</span><span class="op">[</span>,<span class="va">hlags</span>,drop<span class="op">=</span><span class="cn">F</span><span class="op">]</span><span class="op">)</span></span>
 <span>  </span>
 <span>  <span class="co">#pull out last tsave timepoints for each population</span></span>
-<span>  <span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">up</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
-<span>    <span class="va">msyforei</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">msyfore</span>, <span class="va">pop</span><span class="op">==</span><span class="va">up</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span></span>
-<span>    <span class="va">catchres</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">catchres</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">h</span><span class="op">]</span> <span class="op">&amp;</span> <span class="va">catchres</span><span class="op">$</span><span class="va">Region</span><span class="op">==</span><span class="va">up</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">=</span></span>
-<span>      <span class="va">msyforei</span><span class="op">$</span><span class="va">Catch_1</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span><span class="op">]</span></span>
-<span>    <span class="va">catchres</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="va">catchres</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">h</span><span class="op">]</span> <span class="op">&amp;</span> <span class="va">catchres</span><span class="op">$</span><span class="va">Region</span><span class="op">==</span><span class="va">up</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">=</span></span>
+<span>  <span class="kw">for</span><span class="op">(</span><span class="va">p</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">up</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
+<span>    <span class="va">msyforei</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">msyfore</span>, <span class="va">pop</span><span class="op">==</span><span class="va">up</span><span class="op">[</span><span class="va">p</span><span class="op">]</span><span class="op">)</span></span>
+<span>    <span class="va">nfore</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">msyforei</span><span class="op">)</span></span>
+<span>    <span class="va">catchsavepop</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">catchsavepop</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">h</span><span class="op">]</span> <span class="op">&amp;</span> <span class="va">catchsavepop</span><span class="op">$</span><span class="va">pop</span><span class="op">==</span><span class="va">up</span><span class="op">[</span><span class="va">p</span><span class="op">]</span><span class="op">]</span><span class="op">=</span></span>
+<span>      <span class="va">msyforei</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span>,<span class="va">hlags</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span>    <span class="va">catchsavepop</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="va">catchsavepop</span><span class="op">$</span><span class="va">hrate</span><span class="op">==</span><span class="va">hratevec</span><span class="op">[</span><span class="va">h</span><span class="op">]</span> <span class="op">&amp;</span> <span class="va">catchsavepop</span><span class="op">$</span><span class="va">pop</span><span class="op">==</span><span class="va">up</span><span class="op">[</span><span class="va">p</span><span class="op">]</span><span class="op">]</span><span class="op">=</span></span>
 <span>      <span class="va">msyforei</span><span class="op">$</span><span class="va">predmean</span><span class="op">[</span><span class="op">(</span><span class="va">nfore</span><span class="op">-</span><span class="va">tsave</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">:</span><span class="va">nfore</span><span class="op">]</span></span>
 <span>  <span class="op">}</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="co">#add two regions together (could keep separate if desired)</span></span>
-<span><span class="co">#this is more relevant for catch than cpue, since cpue are in different units and sum is not really interpretable</span></span>
-<span><span class="va">catchresagg0</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span><span class="op">*</span><span class="va">time</span>, data<span class="op">=</span><span class="va">catchres</span>, <span class="va">sum</span><span class="op">)</span></span>
+<span><span class="co">#sum over pops (if more than one)</span></span>
+<span><span class="va">catchsavetotal</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span><span class="op">*</span><span class="va">time</span>, data<span class="op">=</span><span class="va">catchsavepop</span>, <span class="va">sum</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co">#average over the last 10 timepoints</span></span>
-<span><span class="va">catchresagg</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg0</span>, <span class="va">mean</span><span class="op">)</span></span>
-<span><span class="op">(</span><span class="va">fmsy</span><span class="op">=</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">hrate</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#average over the last 10 timepoints (keeping split by pop)</span></span>
+<span><span class="va">catchsavepopmean</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span><span class="op">*</span><span class="va">pop</span>, data<span class="op">=</span><span class="va">catchsavepop</span>, <span class="va">mean</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">#average over last 10 timepoints (sum of pops)</span></span>
+<span><span class="va">catchsavetotalmean</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">catch</span>,<span class="va">cpue</span><span class="op">)</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchsavetotal</span>, <span class="va">mean</span><span class="op">)</span></span>
+<span></span>
+<span><span class="op">(</span><span class="va">fmsy</span><span class="op">=</span><span class="va">catchsavetotalmean</span><span class="op">$</span><span class="va">hrate</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchsavetotalmean</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.8717949</span></span>
-<span><span class="op">(</span><span class="va">Bmsy</span><span class="op">=</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchresagg</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 111.5395</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>,mar<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span>,<span class="fl">2</span>,<span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg0</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">catch</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg0</span>, col<span class="op">=</span><span class="st">"gray"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="va">cpue</span><span class="op">~</span><span class="va">hrate</span>, data<span class="op">=</span><span class="va">catchresagg</span>, lwd<span class="op">=</span><span class="fl">2</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">fmsy</span>, col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="fisheries_files/figure-html/combomsy-1.png" width="700"></p>
+<span><span class="op">(</span><span class="va">Bmsy</span><span class="op">=</span><span class="va">catchsavetotalmean</span><span class="op">$</span><span class="va">cpue</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">catchsavetotalmean</span><span class="op">$</span><span class="va">catch</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 111.6516</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="data-transformations">Data transformations<a class="anchor" aria-label="anchor" href="#data-transformations"></a>
@@ -642,60 +880,99 @@ transformed variable.</p>
 plot the transformed variable. The <code>plot</code> method will plot
 the untransformed variable (without standard deviations), unless you
 specify <code>ytrans=TRUE</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fishfit0_trans</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
 <span>                          ytrans<span class="op">=</span><span class="st">"gr2"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Number of predictors: 1 </span></span>
-<span><span class="co">#&gt; Fisheries model b: 0.00999 </span></span>
+<span><span class="co">#&gt; Fisheries model b: 0.00981 </span></span>
 <span><span class="co">#&gt; Length scale parameters:</span></span>
 <span><span class="co">#&gt;         predictor posteriormode</span></span>
-<span><span class="co">#&gt; phi1 escapement_1        0.0147</span></span>
-<span><span class="co">#&gt; Process variance (ve): 0.003107975</span></span>
-<span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.061891</span></span>
+<span><span class="co">#&gt; phi1 escapement_1       0.01457</span></span>
+<span><span class="co">#&gt; Process variance (ve): 0.003093382</span></span>
+<span><span class="co">#&gt; Pointwise prior variance (sigma2): 4.082601</span></span>
 <span><span class="co">#&gt; Number of populations: 1</span></span>
-<span><span class="co">#&gt; In-sample R-squared: 0.9699757</span></span>
+<span><span class="co">#&gt; In-sample R-squared: 0.9700048</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">$</span><span class="va">insampresults</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   timestep pop predmean_trans predfsd_trans predsd_trans   obs_trans  predmean</span></span>
-<span><span class="co">#&gt; 1        1   1             NA            NA           NA          NA        NA</span></span>
-<span><span class="co">#&gt; 2        2   1    1.521140792    0.01280244   0.09325684  1.45708307 68.314643</span></span>
-<span><span class="co">#&gt; 3        3   1   -3.366951044    0.03411867   0.09847344 -3.46016533  2.181133</span></span>
-<span><span class="co">#&gt; 4        4   1    2.747539387    0.02517346   0.09574256  2.74248280 30.728406</span></span>
-<span><span class="co">#&gt; 5        5   1    0.006878638    0.01323636   0.09331740  0.04998079 30.096769</span></span>
-<span><span class="co">#&gt; 6        6   1   -0.094470806    0.01321071   0.09331376 -0.06279442 28.088242</span></span>
+<span><span class="co">#&gt;   timestep pop predmean_trans predfsd_trans predsd_trans   obs_trans predmean</span></span>
+<span><span class="co">#&gt; 1        1   1             NA            NA           NA          NA       NA</span></span>
+<span><span class="co">#&gt; 2        2   1     1.51840279    0.01277130   0.09303044  1.45690654 68.13988</span></span>
+<span><span class="co">#&gt; 3        3   1    -3.36206912    0.03390825   0.09819025 -3.46039904  2.19232</span></span>
+<span><span class="co">#&gt; 4        4   1     2.74031519    0.02511391   0.09551055  2.74232496 30.51203</span></span>
+<span><span class="co">#&gt; 5        5   1     0.01032261    0.01321373   0.09309221  0.04958110 30.21267</span></span>
+<span><span class="co">#&gt; 6        6   1    -0.09053364    0.01318509   0.09308814 -0.06310678 28.20786</span></span>
 <span><span class="co">#&gt;         obs escapement_1</span></span>
 <span><span class="co">#&gt; 1 15.074782           NA</span></span>
-<span><span class="co">#&gt; 2 64.075778    14.922928</span></span>
-<span><span class="co">#&gt; 3  1.987008    63.223982</span></span>
-<span><span class="co">#&gt; 4 30.573418     1.969092</span></span>
-<span><span class="co">#&gt; 5 31.422368    29.884736</span></span>
-<span><span class="co">#&gt; 6 28.992217    30.866527</span></span>
+<span><span class="co">#&gt; 2 64.075778    14.924034</span></span>
+<span><span class="co">#&gt; 3  1.987008    63.230185</span></span>
+<span><span class="co">#&gt; 4 30.573418     1.969223</span></span>
+<span><span class="co">#&gt; 5 31.422368    29.889751</span></span>
+<span><span class="co">#&gt; 6 28.992217    30.870574</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/getconditionals.html">getconditionals</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">)</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/ytrans-1.png" width="700"></p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fishfit0_trans</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting in sample results.</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/ytransplots-1.png" width="700"></p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fishfit0_trans</span>, ytrans <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Plotting in sample results.</span></span></code></pre></div>
 <p><img src="fisheries_files/figure-html/ytransplots-2.png" width="700"></p>
 </div>
 <div class="section level2">
+<h2 id="linear-prior-mean-function">Linear prior mean function<a class="anchor" aria-label="anchor" href="#linear-prior-mean-function"></a>
+</h2>
+<p>There is an option in <code>fitGP</code> (and
+<code>fitGP_fish</code>) called <code>linprior</code> which will fit a
+GP model to the residuals of a linear relationship between
+<code>y</code> and the first variable of <code>x</code> (prior to
+scaling) and backtransform as appropriate. Essentially, it fits the
+model
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>t</mi></msub><mo>=</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><msub><mi>x</mi><mn>1</mn></msub><mo>+</mo><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><msub><mi>x</mi><mn>2</mn></msub><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">y_t=\beta_0+\beta_1x_{1}+f(x_{1}, x_{2},...)</annotation></semantics></math>
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+is the GP. In other words, the mean function for the GP is assumed to be
+linear with respect to the first input, rather than constant. The mean
+function is what the GP reverts to in the absence of data (the larger
+the inverse length scale is, the more quickly this happens), so altering
+it can potentially aid in problems with extrapolation. In a fisheries
+model, if <code>y</code> is growth rate (specifically the
+escapement-based growth rate, <code>"gr2"</code>), the first variable of
+<code>x</code> will be the first lag of escapement, and so this linear
+relationship at acts like a Ricker prior. Option
+<code>linprior="local"</code> fits a separate regression for each
+population, <code>"global"</code> fits a single regression. Defaults to
+<code>"none"</code> (off).</p>
+<p>In our example, the fitted function looks largely the same. The
+difference between this and the previous fit is mainly in what happens
+when you extrapolate beyond the range of the data. We can see it in the
+conditional response plot is we set <code>extrap</code> to a high
+number.</p>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fishfit0_lin</span><span class="op">=</span><span class="fu"><a href="../reference/fitGP_fish.html">fitGP_fish</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">RHlags</span>, y<span class="op">=</span><span class="st">"CPUE_index"</span>, m<span class="op">=</span><span class="st">"CPUE_index_1"</span>, h<span class="op">=</span><span class="st">"Catch_1"</span>, time<span class="op">=</span><span class="st">"Time"</span>,</span>
+<span>                          ytrans<span class="op">=</span><span class="st">"gr2"</span>, linprior <span class="op">=</span> <span class="st">"global"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/getconditionals.html">getconditionals</a></span><span class="op">(</span><span class="va">fishfit0_trans</span>, extrap <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/getconditionals.html">getconditionals</a></span><span class="op">(</span><span class="va">fishfit0_lin</span>, extrap <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<p><img src="fisheries_files/figure-html/unnamed-chunk-5-2.png" width="700"></p>
+</div>
+<div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<p>Tsai CH, Munch SB, Masi MD, Stevens MH (in press) Empirical dynamic
-modelling for sustainable benchmarks of short-lived species: an example
-of brown shrimp fisheries in the Gulf of Mexico. ICES Journal of Marine
-Science</p>
+<p>Tsai CH, Munch SB, Masi MD, Stevens MH (2024) Empirical dynamic
+modelling for sustainable benchmarks of short-lived species. ICES
+Journal of Marine Science</p>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 

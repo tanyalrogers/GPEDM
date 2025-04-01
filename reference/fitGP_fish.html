@@ -18,7 +18,7 @@ designed for use in fisheries applications."><!-- mathjax --><script src="https:
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9009</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9010</span>
       </span>
     </div>
 
@@ -70,11 +70,13 @@ designed for use in fisheries applications.</p>
 <span>  rhofixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rhomatrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  augdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  linprior <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  predictmethod <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  xname <span class="op">=</span> <span class="st">"escapement"</span>,</span>
 <span>  ytrans <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"log"</span>, <span class="st">"gr1"</span>, <span class="st">"gr2"</span><span class="op">)</span>,</span>
-<span>  bfixed <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  bfixed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bshared <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -153,6 +155,14 @@ All populations in the dataset must appear in <code>rhomatrix</code>. Population
 <dd><p>A data frame with augmentation data (see Details).</p></dd>
 
 
+<dt id="arg-linprior">linprior<a class="anchor" aria-label="anchor" href="#arg-linprior"></a></dt>
+<dd><p>Fit GP model to the residuals of a linear relationship
+between <code>y</code> and the first variable of <code>x</code> (prior to scaling) and
+backtransforms as appropriate. If <code>y</code> is growth rate, acts like a
+Ricker prior. Defaults to <code>"none"</code>. Option <code>"local"</code> fits a separate
+regression for each population, <code>"global"</code> fits a single regression.</p></dd>
+
+
 <dt id="arg-predictmethod">predictmethod<a class="anchor" aria-label="anchor" href="#arg-predictmethod"></a></dt>
 <dd><p>Using the training data, <code>loo</code> does leave-one-out prediction, <code>lto</code> does
 leave-timepoint-out prediction, and <code>sequential</code> does sequential (leave-future-out)
@@ -175,7 +185,16 @@ units.</p></dd>
 
 
 <dt id="arg-bfixed">bfixed<a class="anchor" aria-label="anchor" href="#arg-bfixed"></a></dt>
-<dd><p>Fixes b and bypasses optimization.</p></dd>
+<dd><p>Fixes b and bypasses optimization. If there are multiple pops, can be
+a scalar (shared across pops), or a named vector with different b's for each pop.</p></dd>
+
+
+<dt id="arg-bshared">bshared<a class="anchor" aria-label="anchor" href="#arg-bshared"></a></dt>
+<dd><p>If there are multiple pops, should they share the same b (TRUE,
+default) or have different values of b (FALSE)? Note that optimizing multiple b
+values can be slow. Ignored if <code>bfixed</code> is supplied. If <code>bshared=FALSE</code>
+and either <code>pop</code> is not supplied or there is only one pop, reverts back to a single b
+estimate.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -195,6 +214,14 @@ with proportionality constant \(b\). The composite variable \(m-bh\) is the biom
 number of individuals remaining after harvesting (escapement).</p>
 <p>Parameter \(b\) is found using <code>optimize</code> applied to the posterior likelihood.
 Alternatively, a fixed value for \(b\) can be provided under <code>bfixed</code>.</p>
+<p>If fitting a hierarchical model, the default behavior is to estimate a single
+value of\(b\) shared by all pops (<code>bshared=TRUE</code>). You can fix a
+single shared value of \(b\) by providing a single value under
+<code>bfixed</code>. Alternatively, you can estimate different values of \(b\)
+for each population by setting <code>bshared=FALSE</code>. This will use the
+Nelder-Mead method of <code>optim</code> (and will be quite a bit slower than the
+single parameter optimization). You can fix different values of \(b\) for
+each population by supplying a named vector under <code>bfixed</code>.</p>
 <p>Parameter <code>ytrans</code> applies a transformation to \(y\) before fitting the model.
 Inputs <code>y</code> and <code>m</code> should be in untransformed CPUE. <code>ytrans="none"</code> (the
 default) will apply no tranformation, <code>ytrans="log"</code> with compute \(log(y)\),

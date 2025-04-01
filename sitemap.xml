@@ -2,9 +2,11 @@
 <url><loc>https://tanyalrogers.github.io/GPEDM/404.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/LICENSE-text.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/articles/choosingE.html</loc></url>
+<url><loc>https://tanyalrogers.github.io/GPEDM/articles/extendedintro.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/articles/fisheries.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/articles/hierarchical.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/articles/index.html</loc></url>
+<url><loc>https://tanyalrogers.github.io/GPEDM/articles/practical.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/articles/vtimestep.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/authors.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/index.html</loc></url>
@@ -15,10 +17,13 @@
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/fitGP.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/fitGP_fish.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/getR2.html</loc></url>
+<url><loc>https://tanyalrogers.github.io/GPEDM/reference/getR2pop.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/getconditionals.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/getrhomatrix.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/index.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/makelags.html</loc></url>
+<url><loc>https://tanyalrogers.github.io/GPEDM/reference/makelags_iter.html</loc></url>
+<url><loc>https://tanyalrogers.github.io/GPEDM/reference/msy_wrapper.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/plot.GPpred.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/posdef.html</loc></url>
 <url><loc>https://tanyalrogers.github.io/GPEDM/reference/predict.GP.html</loc></url>

@@ -3,10 +3,12 @@ pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   choosingE: choosingE.html
+  extendedintro: extendedintro.html
   fisheries: fisheries.html
   hierarchical: hierarchical.html
+  practical: practical.html
   vtimestep: vtimestep.html
-last_built: 2025-01-08T00:46Z
+last_built: 2025-04-01T21:35Z
 urls:
   reference: https://tanyalrogers.github.io/GPEDM/reference
   article: https://tanyalrogers.github.io/GPEDM/articles

@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">GPEDM</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9009</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9010</span>
       </span>
     </div>
 
@@ -70,9 +70,9 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <p><strong>Disclaimer: This is very much a work in progress. Use at your own risk and please report any problems.</strong></p>
-<p>This is version 0.0.0.9009</p>
+<p>This is version 0.0.0.9010</p>
 <p>This package contains functions for fiting hierarchical, separable length scale Gaussian process (GP) models with automatic relevance determination (ARD) for use in Empirical Dynamic Modeling (EDM) and other applications. This is an adaptation of code originally developed by Stephan Munch in MATLAB.</p>
-<p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary</code> to view a summary, <code>predict</code> to generate other or additional predictions from a fitted model, <code>plot</code> to plot observed and predicted values, <code>update</code> to update an existing model, and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See <a href="#specifying-training-data">Specifying training data</a> and the function documentation for more detailed instructions.</p>
+<p>The main function is <code>fitGP</code> which is used to train the model and can also produce predictions if desired. Use <code>summary</code> to view a summary, <code>predict</code> to generate other or additional predictions from a fitted model, <code>plot</code> to plot observed and predicted values, <code>update</code> to update an existing model, and <code>getconditionals</code> to obtain conditional reponses. Also available for use are the functions <code>makelags</code> which can be used to create delay vectors, and <code>getR2</code> for getting R2 values. See <a href="#specifying-training-data">Specifying training data</a> and the function documentation for more detailed instructions. For a longer introductory tutorial with more mathematical details see <a href="https://tanyalrogers.github.io/GPEDM/articles/extendedintro.html">this vignette</a></p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -148,8 +148,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="va">pop</span><span class="op">~</span><span class="va">.</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_ribbon.html" class="external-link">geom_ribbon</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predfsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predfsd</span><span class="op">)</span>, alpha<span class="op">=</span><span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">obs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Removed 3 rows containing missing values (geom_path).</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-ggplot-timeseries-1.png" width="100%"></p>
 </div>
 <div class="section level3">
@@ -288,8 +287,7 @@
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">outsampresults</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y<span class="op">=</span><span class="va">predmean</span><span class="op">)</span>, color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html" class="external-link">geom_errorbar</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">tlogfore</span><span class="op">$</span><span class="va">outsampresults</span>,</span>
 <span>                <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>ymin<span class="op">=</span><span class="va">predmean</span><span class="op">-</span><span class="va">predsd</span>,ymax<span class="op">=</span><span class="va">predmean</span><span class="op">+</span><span class="va">predsd</span><span class="op">)</span>,color<span class="op">=</span><span class="st">"red"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Removed 3 rows containing missing values (geom_path).</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-forecast-1.png" width="100%"></p>
 </div>
 <div class="section level3">
@@ -505,7 +503,7 @@ B. supply a vector for <code>y</code> and a vector or matrix for <code>x</code>.
 <div class="section level2">
 <h2 id="disclaimer">Disclaimer<a class="anchor" aria-label="anchor" href="#disclaimer"></a>
 </h2>
-<p>The United States Department of Commerce (DOC) GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. DOC has relinquished control of the information and no longer has responsibility to protect the integrity, confidentiality, or availability of the information. Any claims against the Department of Commerce stemming from the use of its GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.”</p>
+<p>“This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.”</p>
 </div>
 </div>
   </div>
