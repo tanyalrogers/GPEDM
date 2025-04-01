@@ -8,3 +8,5 @@
 ^pkgdown$
 ^\.github$
 ^src-i386$
+^doc$
+^Meta$

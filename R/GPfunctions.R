@@ -36,7 +36,7 @@
 #' 
 #' \strong{Hyperparameters:} 
 #' 
-#' The model uses a squared exponential covariance function. See the (not yet written)
+#' The model uses a squared exponential covariance function. See the "Extended introduction"
 #' vignette for mathematical details.
 #' 
 #' There is one inverse length scale \code{phi} estimated for each predictor
@@ -221,9 +221,9 @@
 fitGP=function(data=NULL,y,x=NULL,pop=NULL,time=NULL,E=NULL,tau=NULL,
                scaling=c("global","local","none"),
                initpars=NULL,modeprior=1,fixedpars=NULL,rhofixed=NULL,
-               rhomatrix=NULL,augdata=NULL,
+               rhomatrix=NULL,augdata=NULL,linprior=c("none","local","global"),
                predictmethod=NULL,newdata=NULL,xnew=NULL,popnew=NULL,timenew=NULL,ynew=NULL,
-               returnGPgrad=FALSE, exclradius=0, linprior=c("none","local","global")) {
+               returnGPgrad=FALSE, exclradius=0) {
 
   cl <- match.call()
   
@@ -1555,6 +1555,7 @@ makelags=function(data=NULL,y,pop=NULL,E,tau,yname=NULL,
   
   #if data frame is supplied, take columns from it and store names
   if(!is.null(data)) {
+    data=as.data.frame(data)
     yname=y
     y=data[,y]
     if(!is.null(x)) { 

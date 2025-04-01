@@ -1,6 +1,7 @@
 ---
 title: "GPEDM Models For Fisheries"
 output: rmarkdown::html_vignette
+toc: true
 vignette: >
   %\VignetteIndexEntry{GPEDM Models For Fisheries}
   %\VignetteEngine{knitr::rmarkdown}

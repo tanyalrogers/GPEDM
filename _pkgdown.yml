@@ -33,3 +33,13 @@ reference:
 - title: Datasets
   contents:
   - has_keyword("datasets")
+  
+articles:
+- title: All vignettes
+  contents:
+  - extendedintro
+  - practical
+  - choosingE
+  - hierarchical
+  - vtimestep
+  - fisheries

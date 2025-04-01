@@ -1,6 +1,7 @@
 ---
 title: "Hierarchical Models and Dynamic Correlation"
 output: rmarkdown::html_vignette
+toc: true
 vignette: >
   %\VignetteIndexEntry{Hierarchical Models and Dynamic Correlation}
   %\VignetteEngine{knitr::rmarkdown}
